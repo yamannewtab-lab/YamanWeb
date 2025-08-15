@@ -43,15 +43,15 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                 <div className="space-y-6">
                     <div>
                         <label htmlFor="quiz-name" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizNameLabel')}</label>
-                        <input type="text" id="quiz-name" name="name" required className="mt-1 block w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm dark:text-slate-200 focus:dark:bg-slate-700" />
+                        <input type="text" id="quiz-name" name="name" required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white" />
                     </div>
                     <div>
                         <label htmlFor="quiz-age" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizAgeLabel')}</label>
-                        <input type="number" id="quiz-age" name="age" required className="mt-1 block w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm dark:text-slate-200 focus:dark:bg-slate-700" />
+                        <input type="number" id="quiz-age" name="age" required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white" />
                     </div>
                     <div>
                         <label htmlFor="quiz-from" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizFromLabel')}</label>
-                        <input type="text" id="quiz-from" name="from" required className="mt-1 block w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm dark:text-slate-200 focus:dark:bg-slate-700" />
+                        <input type="text" id="quiz-from" name="from" required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white" />
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizWeeklyLabel')}</label>
@@ -64,14 +64,14 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                                     className={`border-2 rounded-md p-2 text-center font-semibold transition-colors ${
                                         ijazahApplication.daysPerWeek === day
                                             ? 'bg-indigo-600 text-white border-indigo-600'
-                                            : 'border-slate-300 dark:border-slate-600 hover:bg-indigo-100 dark:hover:bg-slate-700'
+                                            : 'border-slate-300 hover:bg-indigo-100 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-indigo-900/50'
                                     }`}
                                 >
                                     {day}
                                 </button>
                             ))}
                         </div>
-                        <p className="text-center mt-2 text-sm text-slate-500 dark:text-slate-400 h-4">
+                        <p className="text-center mt-2 text-sm text-slate-500 h-4 dark:text-slate-400">
                             {price ? `Price: ${price.toLocaleString()} IDR / month` : 'Custom Price'}
                         </p>
                     </div>
@@ -80,13 +80,13 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                         <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                                 <input type="radio" id="quiz-time1" name="time" value={t('timeSlot1')} className="sr-only peer" defaultChecked />
-                                <label htmlFor="quiz-time1" className="block w-full text-center p-3 rounded-lg border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 cursor-pointer transition-all peer-checked:border-indigo-600 peer-checked:bg-indigo-600 peer-checked:text-white text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">
+                                <label htmlFor="quiz-time1" className="block w-full text-center p-3 rounded-lg border-2 border-slate-300 bg-white cursor-pointer transition-all peer-checked:border-indigo-600 peer-checked:bg-indigo-600 peer-checked:text-white text-slate-800 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600">
                                     <span className="font-semibold">{t('timeSlot1')}</span>
                                 </label>
                             </div>
                             <div>
                                 <input type="radio" id="quiz-time2" name="time" value={t('timeSlot2')} className="sr-only peer" />
-                                <label htmlFor="quiz-time2" className="block w-full text-center p-3 rounded-lg border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 cursor-pointer transition-all peer-checked:border-indigo-600 peer-checked:bg-indigo-600 peer-checked:text-white text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">
+                                <label htmlFor="quiz-time2" className="block w-full text-center p-3 rounded-lg border-2 border-slate-300 bg-white cursor-pointer transition-all peer-checked:border-indigo-600 peer-checked:bg-indigo-600 peer-checked:text-white text-slate-800 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600">
                                     <span className="font-semibold">{t('timeSlot2')}</span>
                                 </label>
                             </div>
@@ -95,16 +95,16 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                     </div>
                     <div>
                         <span className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizSheikhLabel')}</span>
-                        <div className="mt-2 grid grid-cols-2 gap-2 rounded-lg bg-slate-200 dark:bg-slate-700 p-1">
+                        <div className="mt-2 grid grid-cols-2 gap-2 rounded-lg bg-slate-200 p-1 dark:bg-slate-900">
                             <div>
                                 <input type="radio" id="sheikh-yes" name="sheikh" value="yes" className="sr-only peer" />
-                                <label htmlFor="sheikh-yes" className="block w-full text-center py-1.5 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-slate-600 dark:text-slate-300 peer-checked:bg-white dark:peer-checked:bg-slate-900 peer-checked:text-slate-900 dark:peer-checked:text-slate-100 peer-checked:shadow">
+                                <label htmlFor="sheikh-yes" className="block w-full text-center py-1.5 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-slate-600 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow dark:text-slate-400 dark:peer-checked:bg-slate-700 dark:peer-checked:text-slate-100">
                                     <span className="font-semibold">{t('yes')}</span>
                                 </label>
                             </div>
                             <div>
                                 <input type="radio" id="sheikh-no" name="sheikh" value="no" className="sr-only peer" defaultChecked />
-                                <label htmlFor="sheikh-no" className="block w-full text-center py-1.5 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-slate-600 dark:text-slate-300 peer-checked:bg-white dark:peer-checked:bg-slate-900 peer-checked:text-slate-900 dark:peer-checked:text-slate-100 peer-checked:shadow">
+                                <label htmlFor="sheikh-no" className="block w-full text-center py-1.5 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-slate-600 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow dark:text-slate-400 dark:peer-checked:bg-slate-700 dark:peer-checked:text-slate-100">
                                     <span className="font-semibold">{t('no')}</span>
                                 </label>
                             </div>
@@ -112,7 +112,7 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                     </div>
                     <div>
                         <label htmlFor="quiz-journey" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizJourneyLabel')}</label>
-                        <textarea id="quiz-journey" name="journey" rows={4} required className="mt-1 block w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm dark:text-slate-200 focus:dark:bg-slate-700"></textarea>
+                        <textarea id="quiz-journey" name="journey" rows={4} required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white"></textarea>
                     </div>
                 </div>
                 <div className="mt-8">
@@ -122,13 +122,13 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
             <div className="mt-4 text-center">
                  <button 
                     onClick={() => navigateTo('ijazah')} 
-                    className="w-full sm:w-1/2 mx-auto bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold px-4 py-2 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+                    className="w-full sm:w-1/2 mx-auto bg-slate-200 text-slate-700 font-semibold px-4 py-2 rounded-lg hover:bg-slate-300 transition-colors dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600"
                 >
                     {t('changeIjazahButton')}
                 </button>
             </div>
             <div className="mt-8 text-center">
-                <button onClick={() => navigateTo('home')} className="text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">{t('backToHome')}</button>
+                <button onClick={() => navigateTo('home')} className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors dark:text-slate-400 dark:hover:text-indigo-400">{t('backToHome')}</button>
             </div>
         </div>
     );

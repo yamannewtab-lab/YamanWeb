@@ -8,7 +8,7 @@ interface CoursesPageProps {
 }
 
 const CourseCard: React.FC<{ imgSrc: string, title: string, onImageClick: (src: string) => void }> = ({ imgSrc, title, onImageClick }) => (
-    <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-shadow">
+    <div className="bg-slate-50 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-shadow dark:bg-slate-700">
         <div className="cursor-pointer" onClick={() => onImageClick(imgSrc)}>
             <img 
                 src={imgSrc} 
@@ -22,7 +22,7 @@ const CourseCard: React.FC<{ imgSrc: string, title: string, onImageClick: (src: 
             />
         </div>
         <div className="p-6">
-            <h3 className="font-bold text-xl text-slate-800 dark:text-slate-200">{title}</h3>
+            <h3 className="font-bold text-xl text-slate-800 dark:text-slate-100">{title}</h3>
         </div>
     </div>
 );
@@ -38,7 +38,7 @@ const CoursesPage: React.FC<CoursesPageProps> = ({ navigateTo, t, onImageClick }
                 <CourseCard imgSrc="/photo_2025-08-14_10-28-01.jpg" title={t('course2Text')} onImageClick={onImageClick} />
             </div>
             <div className="mt-12 text-center">
-                <button onClick={() => navigateTo('home')} className="text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">{t('backToHome')}</button>
+                <button onClick={() => navigateTo('home')} className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors dark:text-slate-400 dark:hover:text-indigo-400">{t('backToHome')}</button>
             </div>
         </div>
     );

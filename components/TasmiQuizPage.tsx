@@ -44,36 +44,36 @@ const TasmiQuizPage: React.FC<TasmiQuizPageProps> = ({ navigateTo, t }) => {
                 <div className="space-y-6">
                     <div>
                         <label htmlFor="tasmi-name" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizNameLabel')}</label>
-                        <input type="text" id="tasmi-name" name="name" required className="mt-1 block w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm dark:text-slate-200 focus:dark:bg-slate-700" />
+                        <input type="text" id="tasmi-name" name="name" required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white" />
                     </div>
                     <div>
                         <label htmlFor="tasmi-phone" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('phoneLabel')}</label>
-                        <input type="tel" id="tasmi-phone" name="phone" required className="mt-1 block w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm dark:text-slate-200 focus:dark:bg-slate-700" />
+                        <input type="tel" id="tasmi-phone" name="phone" required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white" />
                     </div>
                     <div>
                         <label htmlFor="tasmi-portion" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('tasmiPortionLabel')}</label>
-                        <select id="tasmi-portion" name="portion" className="mt-1 block w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm text-slate-900 dark:text-slate-200 focus:dark:bg-slate-700">
+                        <select id="tasmi-portion" name="portion" className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm text-slate-900 dark:bg-slate-700 dark:border-slate-600 dark:text-white">
                             <option>{t('tasmiFatihahOption')}</option>
                             <option>{t('tasmiJuzAmmaOption')}</option>
                         </select>
                     </div>
                     <div>
                         <label htmlFor="tasmi-sessions" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('tasmiSessionsLabel')}</label>
-                        <input type="number" id="tasmi-sessions" name="sessions" required defaultValue="1" max="5" className="mt-1 block w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm dark:text-slate-200 focus:dark:bg-slate-700" />
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{t('maxSessionsText')}</p>
+                        <input type="number" id="tasmi-sessions" name="sessions" required defaultValue="1" max="5" className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white" />
+                        <p className="text-xs text-slate-500 mt-1 dark:text-slate-400">{t('maxSessionsText')}</p>
                     </div>
                     <div>
                         <span className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizTimeLabel')}</span>
                         <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
                              <div>
                                 <input type="radio" id="tasmi-time1" name="time" value={t('timeSlot1')} className="sr-only peer" defaultChecked />
-                                <label htmlFor="tasmi-time1" className="block w-full text-center p-3 rounded-lg border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 cursor-pointer transition-all peer-checked:border-indigo-600 peer-checked:bg-indigo-600 peer-checked:text-white text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">
+                                <label htmlFor="tasmi-time1" className="block w-full text-center p-3 rounded-lg border-2 border-slate-300 bg-white cursor-pointer transition-all peer-checked:border-indigo-600 peer-checked:bg-indigo-600 peer-checked:text-white text-slate-800 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600">
                                     <span className="font-semibold">{t('timeSlot1')}</span>
                                 </label>
                             </div>
                             <div>
                                 <input type="radio" id="tasmi-time2" name="time" value={t('timeSlot2')} className="sr-only peer" />
-                                <label htmlFor="tasmi-time2" className="block w-full text-center p-3 rounded-lg border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 cursor-pointer transition-all peer-checked:border-indigo-600 peer-checked:bg-indigo-600 peer-checked:text-white text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">
+                                <label htmlFor="tasmi-time2" className="block w-full text-center p-3 rounded-lg border-2 border-slate-300 bg-white cursor-pointer transition-all peer-checked:border-indigo-600 peer-checked:bg-indigo-600 peer-checked:text-white text-slate-800 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600">
                                     <span className="font-semibold">{t('timeSlot2')}</span>
                                 </label>
                             </div>
@@ -82,7 +82,7 @@ const TasmiQuizPage: React.FC<TasmiQuizPageProps> = ({ navigateTo, t }) => {
                     </div>
                     <div>
                         <label htmlFor="tasmi-journey" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizJourneyLabel')}</label>
-                        <textarea id="tasmi-journey" name="journey" rows={4} required className="mt-1 block w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm dark:text-slate-200 focus:dark:bg-slate-700"></textarea>
+                        <textarea id="tasmi-journey" name="journey" rows={4} required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white"></textarea>
                     </div>
                 </div>
                 <div className="mt-8">
@@ -90,7 +90,7 @@ const TasmiQuizPage: React.FC<TasmiQuizPageProps> = ({ navigateTo, t }) => {
                 </div>
             </form>
             <div className="mt-12 text-center">
-                <button onClick={() => navigateTo('home')} className="text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">{t('backToHome')}</button>
+                <button onClick={() => navigateTo('home')} className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors dark:text-slate-400 dark:hover:text-indigo-400">{t('backToHome')}</button>
             </div>
         </div>
     );
