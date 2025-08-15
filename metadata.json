@@ -1,0 +1,5 @@
+{
+  "name": "Maqrat Alrahman Course Registration",
+  "description": "A web application for registering for Islamic courses, Ijazah programs, and free Tasmi' sessions offered by Maqrat Alrahman. Users can switch between English, Arabic, and Indonesian.",
+  "requestFramePermissions": []
+}
