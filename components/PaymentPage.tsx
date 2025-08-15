@@ -29,6 +29,7 @@ const PaymentPage: React.FC<PaymentPageProps> = ({ navigateTo, t, ijazahApplicat
 *Name:* ${fullDetails.name}
 *Age:* ${fullDetails.age}
 *Country:* ${fullDetails.from}
+*Speaks:* ${fullDetails.language}
 *Studied with a Sheikh before?:* ${fullDetails.sheikh}
 
 *Journey with the Qur'an:*
@@ -79,6 +80,10 @@ ${fullDetails.journey}
                         <div>
                             <p className="text-sm text-slate-500 dark:text-slate-400">{t('summaryTime')}</p>
                             <p className="font-semibold text-slate-800 dark:text-slate-200">{fullDetails.preferredTime}</p>
+                        </div>
+                         <div>
+                            <p className="text-sm text-slate-500 dark:text-slate-400">{t('summaryLanguage')}</p>
+                            <p className="font-semibold text-slate-800 dark:text-slate-200">{fullDetails.language}</p>
                         </div>
                         <div className="border-t border-slate-200 pt-4 dark:border-slate-600">
                             <p className="text-sm text-slate-500 dark:text-slate-400">{t('summaryPrice')}</p>

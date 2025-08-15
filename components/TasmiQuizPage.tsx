@@ -18,6 +18,7 @@ const TasmiQuizPage: React.FC<TasmiQuizPageProps> = ({ navigateTo, t }) => {
         const sessions = formData.get('sessions');
         const time = formData.get('time');
         const journey = formData.get('journey');
+        const language = formData.get('language');
 
         const message = `*New Free Tasmi' Request*
 
@@ -26,6 +27,7 @@ const TasmiQuizPage: React.FC<TasmiQuizPageProps> = ({ navigateTo, t }) => {
 *Portion to Recite:* ${portion}
 *Number of Sessions:* ${sessions}
 *Preferred Time:* ${time}
+*Speaks:* ${language}
 *Journey with Qur'an:* ${journey}
         `.trim().replace(/\n\s*\n/g, '\n\n');
 
@@ -79,6 +81,29 @@ const TasmiQuizPage: React.FC<TasmiQuizPageProps> = ({ navigateTo, t }) => {
                             </div>
                         </div>
                         <p className="text-center mt-2 text-xs text-slate-500 dark:text-slate-400">{t('timezoneNote')}</p>
+                    </div>
+                    <div>
+                        <span className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizLanguageLabel')}</span>
+                        <div className="mt-2 grid grid-cols-3 gap-2 rounded-lg bg-slate-200 p-1 dark:bg-slate-900">
+                            <div>
+                                <input type="radio" id="tasmi-lang-ar" name="language" value="Arabic" className="sr-only peer" defaultChecked />
+                                <label htmlFor="tasmi-lang-ar" className="block w-full text-center py-1.5 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-slate-600 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow dark:text-slate-400 dark:peer-checked:bg-slate-700 dark:peer-checked:text-slate-100">
+                                    <span className="font-semibold">{t('langArabic')}</span>
+                                </label>
+                            </div>
+                            <div>
+                                <input type="radio" id="tasmi-lang-en" name="language" value="English" className="sr-only peer" />
+                                <label htmlFor="tasmi-lang-en" className="block w-full text-center py-1.5 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-slate-600 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow dark:text-slate-400 dark:peer-checked:bg-slate-700 dark:peer-checked:text-slate-100">
+                                    <span className="font-semibold">{t('langEnglish')}</span>
+                                </label>
+                            </div>
+                            <div>
+                                <input type="radio" id="tasmi-lang-id" name="language" value="Indonesian" className="sr-only peer" />
+                                <label htmlFor="tasmi-lang-id" className="block w-full text-center py-1.5 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-slate-600 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow dark:text-slate-400 dark:peer-checked:bg-slate-700 dark:peer-checked:text-slate-100">
+                                    <span className="font-semibold">{t('langIndonesian')}</span>
+                                </label>
+                            </div>
+                        </div>
                     </div>
                     <div>
                         <label htmlFor="tasmi-journey" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizJourneyLabel')}</label>

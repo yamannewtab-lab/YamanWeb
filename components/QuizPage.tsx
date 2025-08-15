@@ -27,6 +27,7 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                 sheikh: formData.get('sheikh') as string,
                 journey: formData.get('journey') as string,
                 preferredTime: formData.get('time') as string,
+                language: formData.get('language') as string,
             }
         }));
         navigateTo('payment');
@@ -92,6 +93,29 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                             </div>
                         </div>
                         <p className="text-center mt-2 text-xs text-slate-500 dark:text-slate-400">{t('timezoneNote')}</p>
+                    </div>
+                    <div>
+                        <span className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizLanguageLabel')}</span>
+                        <div className="mt-2 grid grid-cols-3 gap-2 rounded-lg bg-slate-200 p-1 dark:bg-slate-900">
+                            <div>
+                                <input type="radio" id="lang-ar" name="language" value="Arabic" className="sr-only peer" defaultChecked />
+                                <label htmlFor="lang-ar" className="block w-full text-center py-1.5 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-slate-600 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow dark:text-slate-400 dark:peer-checked:bg-slate-700 dark:peer-checked:text-slate-100">
+                                    <span className="font-semibold">{t('langArabic')}</span>
+                                </label>
+                            </div>
+                            <div>
+                                <input type="radio" id="lang-en" name="language" value="English" className="sr-only peer" />
+                                <label htmlFor="lang-en" className="block w-full text-center py-1.5 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-slate-600 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow dark:text-slate-400 dark:peer-checked:bg-slate-700 dark:peer-checked:text-slate-100">
+                                    <span className="font-semibold">{t('langEnglish')}</span>
+                                </label>
+                            </div>
+                            <div>
+                                <input type="radio" id="lang-id" name="language" value="Indonesian" className="sr-only peer" />
+                                <label htmlFor="lang-id" className="block w-full text-center py-1.5 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-slate-600 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow dark:text-slate-400 dark:peer-checked:bg-slate-700 dark:peer-checked:text-slate-100">
+                                    <span className="font-semibold">{t('langIndonesian')}</span>
+                                </label>
+                            </div>
+                        </div>
                     </div>
                     <div>
                         <span className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizSheikhLabel')}</span>

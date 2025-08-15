@@ -5,7 +5,6 @@ import ActionCard from './ActionCard';
 interface HomePageProps {
     navigateTo: (page: Page) => void;
     t: (key: string) => string;
-    onRegisterClick: () => void;
 }
 
 const HomePage: React.FC<HomePageProps> = ({ navigateTo, t }) => {

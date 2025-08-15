@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Page, IjazahApplication } from './types';
-import { LANGUAGE_DATA, LANGUAGES, LOCK_CHECK } from './constants';
+import { LANGUAGE_DATA, LANGUAGES } from './constants';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import HomePage from './components/HomePage';
@@ -14,7 +14,6 @@ import TasmiInfoPage from './components/TasmiInfoPage';
 import PaymentPage from './components/PaymentPage';
 import ThanksPage from './components/ThanksPage';
 import ImageModal from './components/ImageModal';
-import RegClosedModal from './components/RegClosedModal';
 
 const App: React.FC = () => {
     const [currentPage, setCurrentPage] = useState<Page>('home');
@@ -24,7 +23,6 @@ const App: React.FC = () => {
         daysPerWeek: 7,
         fullDetails: {}
     });
-    const [isRegClosedModalOpen, setRegClosedModalOpen] = useState(false);
     const [imageModalSrc, setImageModalSrc] = useState<string | null>(null);
     
     const currentLanguage = LANGUAGES[currentLanguageIndex];
@@ -48,18 +46,10 @@ const App: React.FC = () => {
         setCurrentLanguageIndex((prevIndex) => (prevIndex + 1) % LANGUAGES.length);
     };
 
-    const handleRegisterClick = () => {
-        if (LOCK_CHECK) {
-            navigateTo('register');
-        } else {
-            setRegClosedModalOpen(true);
-        }
-    };
-
     const renderPage = () => {
         switch (currentPage) {
             case 'home':
-                return <HomePage navigateTo={navigateTo} t={t} onRegisterClick={handleRegisterClick} />;
+                return <HomePage navigateTo={navigateTo} t={t} />;
             case 'register':
                 return <RegisterPage navigateTo={navigateTo} t={t} />;
             case 'courses':
@@ -79,7 +69,7 @@ const App: React.FC = () => {
             case 'thanks':
                 return <ThanksPage navigateTo={navigateTo} t={t} />;
             default:
-                return <HomePage navigateTo={navigateTo} t={t} onRegisterClick={handleRegisterClick} />;
+                return <HomePage navigateTo={navigateTo} t={t} />;
         }
     };
 
@@ -90,9 +80,7 @@ const App: React.FC = () => {
                     t={t}
                     onLanguageToggle={handleLanguageToggle}
                     onNavigateHome={() => navigateTo('home')}
-                    onRegisterClick={handleRegisterClick}
                     isHomePage={currentPage === 'home'}
-                    lockCheck={LOCK_CHECK}
                 />
                 <main className="p-6 sm:p-8 md:p-12 overflow-y-auto">
                     <div key={currentPage} className="page-transition">
@@ -102,7 +90,6 @@ const App: React.FC = () => {
                 <Footer t={t} />
             </div>
             {imageModalSrc && <ImageModal src={imageModalSrc} onClose={() => setImageModalSrc(null)} />}
-            {isRegClosedModalOpen && <RegClosedModal t={t} onClose={() => setRegClosedModalOpen(false)} />}
         </div>
     );
 };
