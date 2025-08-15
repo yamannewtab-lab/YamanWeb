@@ -16,6 +16,39 @@ import ThanksPage from './components/ThanksPage';
 import ImageModal from './components/ImageModal';
 import RegClosedModal from './components/RegClosedModal';
 
+/**
+ * A custom hook to manage the application's dark mode state.
+ * It persists the user's choice in localStorage and ensures the theme
+ * is controlled exclusively by the user, not by system preferences.
+ * @returns A tuple containing the current dark mode state (boolean) and a function to toggle it.
+ */
+const useDarkMode = (): [boolean, () => void] => {
+    const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+        // Initialize state from localStorage. This runs only once.
+        // Defaults to false (light mode) if no theme is set in storage.
+        return localStorage.getItem('theme') === 'dark';
+    });
+
+    useEffect(() => {
+        // Effect to update the DOM (<html> class) and localStorage when the theme changes.
+        const root = window.document.documentElement;
+        if (isDarkMode) {
+            root.classList.add('dark');
+            localStorage.setItem('theme', 'dark');
+        } else {
+            root.classList.remove('dark');
+            localStorage.setItem('theme', 'light');
+        }
+    }, [isDarkMode]);
+
+    const toggleDarkMode = () => {
+        setIsDarkMode(prevMode => !prevMode);
+    };
+
+    return [isDarkMode, toggleDarkMode];
+};
+
+
 const App: React.FC = () => {
     const [currentPage, setCurrentPage] = useState<Page>('home');
     const [currentLanguageIndex, setCurrentLanguageIndex] = useState(0);
@@ -26,10 +59,9 @@ const App: React.FC = () => {
     });
     const [isRegClosedModalOpen, setRegClosedModalOpen] = useState(false);
     const [imageModalSrc, setImageModalSrc] = useState<string | null>(null);
-    const [isDarkMode, setIsDarkMode] = useState(() => {
-        // Only check localStorage. Default to false (light mode) if not set.
-        return localStorage.getItem('theme') === 'dark';
-    });
+    
+    // Use the new, robust custom hook for dark mode management.
+    const [isDarkMode, toggleDarkMode] = useDarkMode();
 
     const currentLanguage = LANGUAGES[currentLanguageIndex];
 
@@ -38,16 +70,6 @@ const App: React.FC = () => {
         document.documentElement.lang = currentLanguage;
         document.documentElement.dir = currentLanguage === 'ar' ? 'rtl' : 'ltr';
     }, [currentLanguage]);
-
-    useEffect(() => {
-        if (isDarkMode) {
-            document.documentElement.classList.add('dark');
-            localStorage.setItem('theme', 'dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-            localStorage.setItem('theme', 'light');
-        }
-    }, [isDarkMode]);
 
     const t = useCallback((key: string): string => {
         return LANGUAGE_DATA[currentLanguage][key] || key;
@@ -68,10 +90,6 @@ const App: React.FC = () => {
         } else {
             setRegClosedModalOpen(true);
         }
-    };
-    
-    const handleToggleDarkMode = () => {
-        setIsDarkMode(prev => !prev);
     };
 
     const renderPage = () => {
@@ -112,7 +130,7 @@ const App: React.FC = () => {
                     isHomePage={currentPage === 'home'}
                     lockCheck={LOCK_CHECK}
                     isDarkMode={isDarkMode}
-                    onToggleDarkMode={handleToggleDarkMode}
+                    onToggleDarkMode={toggleDarkMode}
                 />
                 <main className="p-6 sm:p-8 md:p-12 overflow-y-auto">
                     <div key={currentPage} className="page-transition">
