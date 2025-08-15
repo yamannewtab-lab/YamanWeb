@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Page, IjazahApplication } from '../types';
 import { IJAZAH_PRICES, WHATSAPP_PHONE_NUMBER, PATH_TRANSLATION_KEYS } from '../constants';
 
@@ -9,6 +9,8 @@ interface PaymentPageProps {
 }
 
 const PaymentPage: React.FC<PaymentPageProps> = ({ navigateTo, t, ijazahApplication }) => {
+    const [showPaymentDetails, setShowPaymentDetails] = useState(false);
+
     const { path, daysPerWeek, fullDetails } = ijazahApplication;
     const price = IJAZAH_PRICES[path]?.[daysPerWeek] || 0;
     const priceString = `${price.toLocaleString()} IDR`;
@@ -38,31 +40,60 @@ ${fullDetails.journey}
     };
 
     return (
-        <div className="text-center py-16">
-            <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100">{t('paymentTitle')}</h2>
-            <p className="mt-2 text-slate-600 dark:text-slate-300">{t('paymentSubtitle')}</p>
-            <div className="mt-8 max-w-md mx-auto bg-slate-50 dark:bg-slate-700/50 p-6 rounded-lg text-left space-y-4">
-                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">{t('summaryTitle')}</h3>
-                <div>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">{t('summaryPath')}</p>
-                    <p className="font-semibold text-slate-800 dark:text-slate-200">{t(PATH_TRANSLATION_KEYS[path] || path)}</p>
+        <div className="py-10">
+            {!showPaymentDetails ? (
+                <div key="info" className="page-transition text-center">
+                    <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100">{t('paymentTitle')}</h2>
+                    <p className="mt-2 text-slate-600 dark:text-slate-300">{t('paymentSubtitle')}</p>
+                    
+                    <div className="mt-8 max-w-md mx-auto bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 p-6 rounded-lg text-left flex items-start gap-4">
+                        <div className="flex-shrink-0 pt-1">
+                            <svg className="w-5 h-5 text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </div>
+                        <div>
+                            <h3 className="text-md font-bold text-slate-800 dark:text-slate-100">{t('tasmiInfoSectionTitle')}</h3>
+                            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{t('tasmiInfoSectionText')}</p>
+                        </div>
+                    </div>
+                    <div className="mt-8">
+                        <button onClick={() => setShowPaymentDetails(true)} className="bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-indigo-700 transition-all text-lg">
+                            {t('continueButton')}
+                        </button>
+                    </div>
                 </div>
-                <div>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">{t('summaryCommitment')}</p>
-                    <p className="font-semibold text-slate-800 dark:text-slate-200">{t('daysPerWeek').replace('{count}', String(daysPerWeek))}</p>
+            ) : (
+                <div key="payment" className="page-transition text-center">
+                    <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100">{t('summaryTitle')}</h2>
+                    <p className="mt-2 text-slate-600 dark:text-slate-300">{t('paymentSubtitle')}</p>
+
+                    <div className="mt-6 max-w-md mx-auto bg-slate-50 dark:bg-slate-700/50 p-6 rounded-lg text-left space-y-4">
+                        <div>
+                            <p className="text-sm text-slate-500 dark:text-slate-400">{t('summaryPath')}</p>
+                            <p className="font-semibold text-slate-800 dark:text-slate-200">{t(PATH_TRANSLATION_KEYS[path] || path)}</p>
+                        </div>
+                        <div>
+                            <p className="text-sm text-slate-500 dark:text-slate-400">{t('summaryCommitment')}</p>
+                            <p className="font-semibold text-slate-800 dark:text-slate-200">{t('daysPerWeek').replace('{count}', String(daysPerWeek))}</p>
+                        </div>
+                        <div className="border-t border-slate-200 dark:border-slate-600 pt-4">
+                            <p className="text-sm text-slate-500 dark:text-slate-400">{t('summaryPrice')}</p>
+                            <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                                <span>{priceString}</span>
+                                <span className="text-base font-medium opacity-50 ml-1">{t('monthlyText')}</span>
+                            </p>
+                        </div>
+                    </div>
+                    <div className="mt-8">
+                        <button onClick={handlePay} className="bg-green-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-600 transition-all text-lg">{t('payButton')}</button>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">{t('bsiText')}</p>
+                    </div>
+                    <div className="mt-6">
+                        <button onClick={() => setShowPaymentDetails(false)} className="text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                            &larr; {t('backButton')}
+                        </button>
+                    </div>
                 </div>
-                <div className="border-t border-slate-200 dark:border-slate-600 pt-4">
-                    <p className="text-sm text-slate-500 dark:text-slate-400">{t('summaryPrice')}</p>
-                    <p className="text-2xl font-bold text-slate-900 dark:text-white">
-                        <span>{priceString}</span>
-                        <span className="text-base font-medium opacity-50 ml-1">{t('monthlyText')}</span>
-                    </p>
-                </div>
-            </div>
-            <div className="mt-8">
-                <button onClick={handlePay} className="bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition-all text-sm">{t('payButton')}</button>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">{t('bsiText')}</p>
-            </div>
+            )}
 
             <div className="mt-12 text-center">
                 <button

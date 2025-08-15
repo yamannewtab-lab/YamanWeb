@@ -26,6 +26,13 @@ const App: React.FC = () => {
     });
     const [isRegClosedModalOpen, setRegClosedModalOpen] = useState(false);
     const [imageModalSrc, setImageModalSrc] = useState<string | null>(null);
+    const [isDarkMode, setIsDarkMode] = useState(() => {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            return savedTheme === 'dark';
+        }
+        return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    });
 
     const currentLanguage = LANGUAGES[currentLanguageIndex];
 
@@ -34,6 +41,16 @@ const App: React.FC = () => {
         document.documentElement.lang = currentLanguage;
         document.documentElement.dir = currentLanguage === 'ar' ? 'rtl' : 'ltr';
     }, [currentLanguage]);
+
+    useEffect(() => {
+        if (isDarkMode) {
+            document.documentElement.classList.add('dark');
+            localStorage.setItem('theme', 'dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+            localStorage.setItem('theme', 'light');
+        }
+    }, [isDarkMode]);
 
     const t = useCallback((key: string): string => {
         return LANGUAGE_DATA[currentLanguage][key] || key;
@@ -54,6 +71,10 @@ const App: React.FC = () => {
         } else {
             setRegClosedModalOpen(true);
         }
+    };
+    
+    const handleToggleDarkMode = () => {
+        setIsDarkMode(prev => !prev);
     };
 
     const renderPage = () => {
@@ -93,9 +114,13 @@ const App: React.FC = () => {
                     onRegisterClick={handleRegisterClick}
                     isHomePage={currentPage === 'home'}
                     lockCheck={LOCK_CHECK}
+                    isDarkMode={isDarkMode}
+                    onToggleDarkMode={handleToggleDarkMode}
                 />
                 <main className="p-6 sm:p-8 md:p-12 overflow-y-auto">
-                    {renderPage()}
+                    <div key={currentPage} className="page-transition">
+                        {renderPage()}
+                    </div>
                 </main>
                 <Footer t={t} />
             </div>

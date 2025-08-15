@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -11,6 +11,19 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
+        }
+        @keyframes page-enter {
+            0% {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .page-transition {
+            animation: page-enter 0.5s ease-out;
         }
     </style>
   <script type="importmap">
