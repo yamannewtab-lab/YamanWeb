@@ -66,17 +66,17 @@ const TasmiQuizPage: React.FC<TasmiQuizPageProps> = ({ navigateTo, t }) => {
                     </div>
                     <div>
                         <span className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizTimeLabel')}</span>
-                        <div className="mt-2 grid grid-cols-2 gap-2 rounded-lg bg-slate-200 p-1 dark:bg-slate-900">
-                             <div>
+                        <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 rounded-lg bg-slate-200 p-1 dark:bg-slate-900">
+                            <div>
                                 <input type="radio" id="tasmi-time1" name="time" value={t('timeSlot1')} className="sr-only peer" defaultChecked />
-                                <label htmlFor="tasmi-time1" className="block w-full text-center py-1.5 px-2 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-slate-600 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow dark:text-slate-400 dark:peer-checked:bg-slate-700 dark:peer-checked:text-slate-100">
-                                    <span className="font-semibold text-sm">{t('timeSlot1')}</span>
+                                <label htmlFor="tasmi-time1" className="block w-full text-center py-1.5 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-slate-600 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow dark:text-slate-400 dark:peer-checked:bg-slate-700 dark:peer-checked:text-slate-100">
+                                    <span className="font-semibold">{t('timeSlot1')}</span>
                                 </label>
                             </div>
                             <div>
                                 <input type="radio" id="tasmi-time2" name="time" value={t('timeSlot2')} className="sr-only peer" />
-                                <label htmlFor="tasmi-time2" className="block w-full text-center py-1.5 px-2 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-slate-600 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow dark:text-slate-400 dark:peer-checked:bg-slate-700 dark:peer-checked:text-slate-100">
-                                    <span className="font-semibold text-sm">{t('timeSlot2')}</span>
+                                <label htmlFor="tasmi-time2" className="block w-full text-center py-1.5 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-slate-600 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow dark:text-slate-400 dark:peer-checked:bg-slate-700 dark:peer-checked:text-slate-100">
+                                    <span className="font-semibold">{t('timeSlot2')}</span>
                                 </label>
                             </div>
                         </div>
