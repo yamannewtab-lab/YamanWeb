@@ -20,6 +20,11 @@ const IjazahPreviewPage: React.FC<IjazahPreviewPageProps> = ({ navigateTo, t }) 
                     alt="Sample Ijazah Certificate" 
                     className="w-full h-auto rounded-md object-contain border-4 border-slate-200 dark:border-slate-600"
                 />
+                <div className="mt-6 text-center">
+                    <p className="text-slate-700 dark:text-slate-300 text-lg sm:text-xl font-serif italic leading-relaxed">
+                        "{t('ijazahSampleText')}"
+                    </p>
+                </div>
             </div>
             <div className="mt-12 text-center">
                 <button 

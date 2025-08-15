@@ -44,20 +44,20 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                 <div className="space-y-6">
                     <div>
                         <label htmlFor="quiz-name" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizNameLabel')}</label>
-                        <input type="text" id="quiz-name" name="name" required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:placeholder-slate-400" />
+                        <input type="text" id="quiz-name" name="name" required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm dark:bg-slate-200 dark:border-slate-500 dark:text-slate-900 dark:placeholder-slate-500" />
                     </div>
                     <div>
                         <label htmlFor="quiz-age" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizAgeLabel')}</label>
-                        <input type="number" id="quiz-age" name="age" required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:placeholder-slate-400" />
+                        <input type="number" id="quiz-age" name="age" required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm dark:bg-slate-200 dark:border-slate-500 dark:text-slate-900 dark:placeholder-slate-500" />
                     </div>
                     <div>
                         <label htmlFor="quiz-from" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizFromLabel')}</label>
-                        <input type="text" id="quiz-from" name="from" required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:placeholder-slate-400" />
+                        <input type="text" id="quiz-from" name="from" required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm dark:bg-slate-200 dark:border-slate-500 dark:text-slate-900 dark:placeholder-slate-500" />
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizWeeklyLabel')}</label>
                         <div className="mt-2 rounded-lg bg-slate-200 p-1 dark:bg-slate-900">
-                            <div className="flex items-center gap-1 overflow-x-auto p-1">
+                            <div className="flex items-center justify-center gap-1 overflow-x-auto p-1">
                                 {[1, 2, 3, 4, 5, 6, 7].map(day => (
                                     <div key={day} className="flex-shrink-0">
                                         <input
@@ -103,20 +103,20 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                     </div>
                     <div>
                         <span className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizLanguageLabel')}</span>
-                        <div className="mt-2 flex flex-wrap justify-center gap-1 rounded-lg bg-slate-200 p-1 dark:bg-slate-900">
-                           <div className="flex-1 min-w-[90px]">
+                         <div className="mt-2 grid grid-cols-2 gap-1 rounded-lg bg-slate-200 p-1 dark:bg-slate-900">
+                           <div className="col-span-1">
                                 <input type="radio" id="lang-ar" name="language" value="Arabic" className="sr-only peer" defaultChecked />
                                 <label htmlFor="lang-ar" className="block w-full text-center py-1.5 px-2 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-slate-600 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow dark:text-slate-400 dark:peer-checked:bg-slate-700 dark:peer-checked:text-slate-100">
                                     <span className="font-semibold">{t('langArabic')}</span>
                                 </label>
                             </div>
-                            <div className="flex-1 min-w-[90px]">
+                            <div className="col-span-1">
                                 <input type="radio" id="lang-en" name="language" value="English" className="sr-only peer" />
                                 <label htmlFor="lang-en" className="block w-full text-center py-1.5 px-2 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-slate-600 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow dark:text-slate-400 dark:peer-checked:bg-slate-700 dark:peer-checked:text-slate-100">
                                     <span className="font-semibold">{t('langEnglish')}</span>
                                 </label>
                             </div>
-                           <div className="flex-1 min-w-[90px]">
+                           <div className="col-span-2">
                                 <input type="radio" id="lang-id" name="language" value="Indonesian" className="sr-only peer" />
                                 <label htmlFor="lang-id" className="block w-full text-center py-1.5 px-2 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-slate-600 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow dark:text-slate-400 dark:peer-checked:bg-slate-700 dark:peer-checked:text-slate-100">
                                     <span className="font-semibold">{t('langIndonesian')}</span>
@@ -143,7 +143,7 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                     </div>
                     <div>
                         <label htmlFor="quiz-journey" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizJourneyLabel')}</label>
-                        <textarea id="quiz-journey" name="journey" rows={4} required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:placeholder-slate-400"></textarea>
+                        <textarea id="quiz-journey" name="journey" rows={4} required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm dark:bg-slate-200 dark:border-slate-500 dark:text-slate-900 dark:placeholder-slate-500"></textarea>
                     </div>
                 </div>
                 <div className="mt-8">
