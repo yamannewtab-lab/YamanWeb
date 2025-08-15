@@ -27,11 +27,8 @@ const App: React.FC = () => {
     const [isRegClosedModalOpen, setRegClosedModalOpen] = useState(false);
     const [imageModalSrc, setImageModalSrc] = useState<string | null>(null);
     const [isDarkMode, setIsDarkMode] = useState(() => {
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme) {
-            return savedTheme === 'dark';
-        }
-        return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        // Only check localStorage. Default to false (light mode) if not set.
+        return localStorage.getItem('theme') === 'dark';
     });
 
     const currentLanguage = LANGUAGES[currentLanguageIndex];

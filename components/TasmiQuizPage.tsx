@@ -64,16 +64,21 @@ const TasmiQuizPage: React.FC<TasmiQuizPageProps> = ({ navigateTo, t }) => {
                     </div>
                     <div>
                         <span className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizTimeLabel')}</span>
-                        <div className="mt-2 flex flex-col sm:flex-row gap-2 sm:gap-4">
-                            <label className="flex items-center p-3 border border-slate-300 dark:border-slate-600 rounded-md hover:bg-slate-50 dark:hover:bg-slate-700/50 flex-1">
-                                <input type="radio" name="time" value={t('timeSlot1')} defaultChecked className="mr-3" />
-                                <span>{t('timeSlot1')}</span>
-                            </label>
-                            <label className="flex items-center p-3 border border-slate-300 dark:border-slate-600 rounded-md hover:bg-slate-50 dark:hover:bg-slate-700/50 flex-1">
-                                <input type="radio" name="time" value={t('timeSlot2')} className="mr-3" />
-                                <span>{t('timeSlot2')}</span>
-                            </label>
+                        <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                             <div>
+                                <input type="radio" id="tasmi-time1" name="time" value={t('timeSlot1')} className="sr-only peer" defaultChecked />
+                                <label htmlFor="tasmi-time1" className="block w-full text-center p-3 rounded-lg border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 cursor-pointer transition-all peer-checked:border-indigo-600 peer-checked:bg-indigo-600 peer-checked:text-white text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">
+                                    <span className="font-semibold">{t('timeSlot1')}</span>
+                                </label>
+                            </div>
+                            <div>
+                                <input type="radio" id="tasmi-time2" name="time" value={t('timeSlot2')} className="sr-only peer" />
+                                <label htmlFor="tasmi-time2" className="block w-full text-center p-3 rounded-lg border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 cursor-pointer transition-all peer-checked:border-indigo-600 peer-checked:bg-indigo-600 peer-checked:text-white text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">
+                                    <span className="font-semibold">{t('timeSlot2')}</span>
+                                </label>
+                            </div>
                         </div>
+                        <p className="text-center mt-2 text-xs text-slate-500 dark:text-slate-400">{t('timezoneNote')}</p>
                     </div>
                     <div>
                         <label htmlFor="tasmi-journey" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizJourneyLabel')}</label>
