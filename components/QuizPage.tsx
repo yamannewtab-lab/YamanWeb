@@ -28,6 +28,7 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                 journey: formData.get('journey') as string,
                 preferredTime: formData.get('time') as string,
                 language: formData.get('language') as string,
+                qiraah: formData.get('qiraah') as string,
             }
         }));
         navigateTo('payment');
@@ -44,16 +45,24 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                 <div className="space-y-6">
                     <div>
                         <label htmlFor="quiz-name" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizNameLabel')}</label>
-                        <input type="text" id="quiz-name" name="name" required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm dark:bg-slate-200 dark:border-slate-500 dark:text-slate-900 dark:placeholder-slate-500" />
+                        <input type="text" id="quiz-name" name="name" required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm dark:bg-slate-200 dark:border-slate-500 text-black dark:placeholder-slate-500" />
                     </div>
                     <div>
                         <label htmlFor="quiz-age" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizAgeLabel')}</label>
-                        <input type="number" id="quiz-age" name="age" required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm dark:bg-slate-200 dark:border-slate-500 dark:text-slate-900 dark:placeholder-slate-500" />
+                        <input type="number" id="quiz-age" name="age" required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm dark:bg-slate-200 dark:border-slate-500 text-black dark:placeholder-slate-500" />
                     </div>
                     <div>
                         <label htmlFor="quiz-from" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizFromLabel')}</label>
-                        <input type="text" id="quiz-from" name="from" required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm dark:bg-slate-200 dark:border-slate-500 dark:text-slate-900 dark:placeholder-slate-500" />
+                        <input type="text" id="quiz-from" name="from" required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm dark:bg-slate-200 dark:border-slate-500 text-black dark:placeholder-slate-500" />
                     </div>
+
+                    {ijazahApplication.path === "Different Qira'ah" && (
+                        <div>
+                            <label htmlFor="quiz-qiraah" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizQiraahLabel')}</label>
+                            <input type="text" id="quiz-qiraah" name="qiraah" required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm dark:bg-slate-200 dark:border-slate-500 text-black dark:placeholder-slate-500" />
+                        </div>
+                    )}
+                    
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizWeeklyLabel')}</label>
                         <div className="mt-2 rounded-lg bg-slate-200 p-1 dark:bg-slate-900">
@@ -79,6 +88,7 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                                 ))}
                             </div>
                         </div>
+                        <p className="text-center mt-1 text-xs text-slate-500 dark:text-slate-400">{t('scrollNote')}</p>
                         <p className="text-center mt-2 text-sm text-slate-500 h-4 dark:text-slate-400">
                             {price ? `Price: ${price.toLocaleString()} IDR / month` : 'Custom Price'}
                         </p>
@@ -143,7 +153,7 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                     </div>
                     <div>
                         <label htmlFor="quiz-journey" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizJourneyLabel')}</label>
-                        <textarea id="quiz-journey" name="journey" rows={4} required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm dark:bg-slate-200 dark:border-slate-500 dark:text-slate-900 dark:placeholder-slate-500"></textarea>
+                        <textarea id="quiz-journey" name="journey" rows={4} required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm dark:bg-slate-200 dark:border-slate-500 text-black dark:placeholder-slate-500"></textarea>
                     </div>
                 </div>
                 <div className="mt-8">

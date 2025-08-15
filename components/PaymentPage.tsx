@@ -19,7 +19,7 @@ const PaymentPage: React.FC<PaymentPageProps> = ({ navigateTo, t, ijazahApplicat
         const message = `*New Ijazah Application & Payment*
 
 *Chosen Path:* ${path}
-*Weekly Commitment:* ${daysPerWeek} days
+${fullDetails.qiraah ? `*Preferred Qira'ah:* ${fullDetails.qiraah}\n` : ''}*Weekly Commitment:* ${daysPerWeek} days
 *Preferred Time:* ${fullDetails.preferredTime}
 *Calculated Price:* ${priceString}
 
@@ -73,6 +73,12 @@ ${fullDetails.journey}
                             <p className="text-sm text-slate-500 dark:text-slate-400">{t('summaryPath')}</p>
                             <p className="font-semibold text-slate-800 dark:text-slate-200">{t(PATH_TRANSLATION_KEYS[path] || path)}</p>
                         </div>
+                        {fullDetails.qiraah && (
+                            <div>
+                                <p className="text-sm text-slate-500 dark:text-slate-400">{t('summaryQiraah')}</p>
+                                <p className="font-semibold text-slate-800 dark:text-slate-200">{fullDetails.qiraah}</p>
+                            </div>
+                        )}
                         <div>
                             <p className="text-sm text-slate-500 dark:text-slate-400">{t('summaryCommitment')}</p>
                             <p className="font-semibold text-slate-800 dark:text-slate-200">{t('daysPerWeek').replace('{count}', String(daysPerWeek))}</p>

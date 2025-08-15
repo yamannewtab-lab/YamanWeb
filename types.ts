@@ -13,6 +13,7 @@ export interface IjazahApplication {
         journey?: string;
         preferredTime?: string;
         language?: string;
+        qiraah?: string;
     };
 }
 
