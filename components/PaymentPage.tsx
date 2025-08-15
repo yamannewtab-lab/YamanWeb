@@ -20,6 +20,7 @@ const PaymentPage: React.FC<PaymentPageProps> = ({ navigateTo, t, ijazahApplicat
 
 *Chosen Path:* ${path}
 *Weekly Commitment:* ${daysPerWeek} days
+*Preferred Time:* ${fullDetails.preferredTime}
 *Calculated Price:* ${priceString}
 
 ---
@@ -43,7 +44,7 @@ ${fullDetails.journey}
         <div className="py-10">
             {!showPaymentDetails ? (
                 <div key="info" className="page-transition text-center">
-                    <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100">{t('paymentTitle')}</h2>
+                    <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100">{t('ijazahInfoRequirementsTitle')}</h2>
                     <p className="mt-2 text-slate-600 dark:text-slate-300">{t('paymentSubtitle')}</p>
                     
                     <div className="mt-8 max-w-md mx-auto bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 p-6 rounded-lg text-left flex items-start gap-4">
@@ -51,8 +52,8 @@ ${fullDetails.journey}
                             <svg className="w-5 h-5 text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         </div>
                         <div>
-                            <h3 className="text-md font-bold text-slate-800 dark:text-slate-100">{t('tasmiInfoSectionTitle')}</h3>
-                            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{t('tasmiInfoSectionText')}</p>
+                            <h3 className="text-md font-bold text-slate-800 dark:text-slate-100">{t('ijazahInfoSectionTitle')}</h3>
+                            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{t('ijazahInfoSectionText')}</p>
                         </div>
                     </div>
                     <div className="mt-8">
@@ -75,6 +76,10 @@ ${fullDetails.journey}
                             <p className="text-sm text-slate-500 dark:text-slate-400">{t('summaryCommitment')}</p>
                             <p className="font-semibold text-slate-800 dark:text-slate-200">{t('daysPerWeek').replace('{count}', String(daysPerWeek))}</p>
                         </div>
+                        <div>
+                            <p className="text-sm text-slate-500 dark:text-slate-400">{t('summaryTime')}</p>
+                            <p className="font-semibold text-slate-800 dark:text-slate-200">{fullDetails.preferredTime}</p>
+                        </div>
                         <div className="border-t border-slate-200 dark:border-slate-600 pt-4">
                             <p className="text-sm text-slate-500 dark:text-slate-400">{t('summaryPrice')}</p>
                             <p className="text-2xl font-bold text-slate-900 dark:text-white">
@@ -87,22 +92,20 @@ ${fullDetails.journey}
                         <button onClick={handlePay} className="bg-green-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-600 transition-all text-lg">{t('payButton')}</button>
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">{t('bsiText')}</p>
                     </div>
-                    <div className="mt-6">
+                    <div className="mt-6 flex flex-col items-center gap-4">
+                        <button
+                            onClick={() => navigateTo('quiz')}
+                            className="w-full sm:w-1/2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold px-4 py-2 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+                        >
+                            {t('changeIjazahButton')}
+                        </button>
                         <button onClick={() => setShowPaymentDetails(false)} className="text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
                             &larr; {t('backButton')}
                         </button>
                     </div>
                 </div>
             )}
-
-            <div className="mt-12 text-center">
-                <button
-                    onClick={() => navigateTo('ijazah')}
-                    className="w-full sm:w-1/2 mx-auto bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold px-4 py-2 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
-                >
-                    {t('changeIjazahButton')}
-                </button>
-            </div>
+            
             <div className="mt-8 text-center">
                 <button onClick={() => navigateTo('home')} className="text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">{t('backToHome')}</button>
             </div>

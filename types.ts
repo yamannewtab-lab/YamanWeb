@@ -11,6 +11,7 @@ export interface IjazahApplication {
         from?: string;
         sheikh?: string;
         journey?: string;
+        preferredTime?: string;
     };
 }
 

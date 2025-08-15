@@ -26,6 +26,7 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                 from: formData.get('from') as string,
                 sheikh: formData.get('sheikh') as string,
                 journey: formData.get('journey') as string,
+                preferredTime: formData.get('time') as string,
             }
         }));
         navigateTo('payment');
@@ -73,6 +74,19 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                         <p className="text-center mt-2 text-sm text-slate-500 dark:text-slate-400 h-4">
                             {price ? `Price: ${price.toLocaleString()} IDR / month` : 'Custom Price'}
                         </p>
+                    </div>
+                    <div>
+                        <span className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizTimeLabel')}</span>
+                        <div className="mt-2 flex flex-col sm:flex-row gap-2 sm:gap-4">
+                            <label className="flex items-center p-3 border border-slate-300 dark:border-slate-600 rounded-md hover:bg-slate-50 dark:hover:bg-slate-700/50 flex-1">
+                                <input type="radio" name="time" value={t('timeSlot1')} defaultChecked className="mr-3" /> 
+                                <span>{t('timeSlot1')}</span>
+                            </label>
+                             <label className="flex items-center p-3 border border-slate-300 dark:border-slate-600 rounded-md hover:bg-slate-50 dark:hover:bg-slate-700/50 flex-1">
+                                <input type="radio" name="time" value={t('timeSlot2')} className="mr-3" />
+                                <span>{t('timeSlot2')}</span>
+                            </label>
+                        </div>
                     </div>
                     <div>
                         <span className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizSheikhLabel')}</span>
