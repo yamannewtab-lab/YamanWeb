@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 import { Page } from '../types';
 import { WHATSAPP_PHONE_NUMBER } from '../constants';
@@ -22,7 +20,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ navigateTo, t }) => {
         const url = `https://wa.me/${WHATSAPP_PHONE_NUMBER}?text=${encodeURIComponent(message)}`;
         window.open(url, "_blank");
         e.currentTarget.reset();
-        navigateTo('thanks');
+        setTimeout(() => navigateTo('thanks'), 100);
     };
 
     return (

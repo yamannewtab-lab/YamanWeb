@@ -1,10 +1,11 @@
-export type Page = 'home' | 'register' | 'courses' | 'ijazah' | 'quiz' | 'tasmiQuiz' | 'tasmiInfo' | 'payment' | 'thanks' | 'ijazahPreview' | 'about' | 'tajwidImprovement';
+export type Page = 'home' | 'register' | 'courses' | 'ijazah' | 'quiz' | 'tasmiQuiz' | 'tasmiInfo' | 'payment' | 'thanks' | 'ijazahPreview' | 'about' | 'tajwidImprovement' | 'teachers';
 
 export type Language = 'en' | 'ar' | 'id';
 
 export interface IjazahApplication {
     path: string;
     daysPerWeek: number;
+    memorization?: 'with' | 'without';
     fullDetails: {
         name?: string;
         age?: string;

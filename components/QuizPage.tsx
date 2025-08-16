@@ -49,6 +49,8 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
     };
 
     const price = IJAZAH_PRICES[ijazahApplication.path]?.[ijazahApplication.daysPerWeek];
+    const timeEstimationKey = `ijazahTime_${ijazahApplication.daysPerWeek}`;
+    const timeEstimationText = t(timeEstimationKey);
 
     return (
         <div>
@@ -79,30 +81,41 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                     
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizWeeklyLabel')}</label>
-                        <div className="mt-2 grid grid-cols-4 sm:grid-cols-7 gap-2 rounded-lg bg-slate-200 p-2 dark:bg-slate-900">
-                            {[1, 2, 3, 4, 5, 6, 7].map(day => (
-                                <div key={day}>
-                                    <input
-                                        type="radio"
-                                        id={`day-${day}`}
-                                        name="daysPerWeek"
-                                        value={day}
-                                        checked={ijazahApplication.daysPerWeek === day}
-                                        onChange={() => handleDaySelection(day)}
-                                        className="sr-only peer"
-                                    />
-                                    <label
-                                        htmlFor={`day-${day}`}
-                                        className={`block text-center py-1.5 px-3 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-slate-600 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow dark:text-slate-400 dark:peer-checked:bg-slate-700 dark:peer-checked:text-slate-100`}
-                                    >
-                                        <span className="font-semibold">{day}</span>
-                                    </label>
-                                </div>
-                            ))}
+                        <div className="mt-2 rounded-lg bg-slate-200 p-2 dark:bg-slate-900">
+                            <div className="flex items-center space-x-2 overflow-x-auto pb-2 -mb-2 custom-scrollbar">
+                                {[1, 2, 3, 4, 5, 6, 7].map(day => (
+                                    <div key={day} className="flex-shrink-0">
+                                        <input
+                                            type="radio"
+                                            id={`day-${day}`}
+                                            name="daysPerWeek"
+                                            value={day}
+                                            checked={ijazahApplication.daysPerWeek === day}
+                                            onChange={() => handleDaySelection(day)}
+                                            className="sr-only peer"
+                                        />
+                                        <label
+                                            htmlFor={`day-${day}`}
+                                            className={`block text-center py-1.5 px-5 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-slate-600 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow dark:text-slate-400 dark:peer-checked:bg-slate-700 dark:peer-checked:text-slate-100`}
+                                        >
+                                            <span className="font-semibold">{day}</span>
+                                        </label>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-                        <p className="text-center mt-2 text-sm text-slate-500 h-4 dark:text-slate-400">
-                            {price ? `Price: ${price.toLocaleString()} IDR / month` : 'Custom Price'}
-                        </p>
+                        <div className="text-center mt-2">
+                            <p className="text-sm text-slate-500 dark:text-slate-400">
+                                {price ? `Price: ${price.toLocaleString()} IDR / month` : 'Custom Price'}
+                            </p>
+                            <div className="mt-2 inline-block relative px-3 py-1.5">
+                                <div className="absolute inset-0 bg-slate-200 dark:bg-slate-700 opacity-50 rounded-md"></div>
+                                <div className="relative z-10 text-xs text-slate-600 dark:text-slate-300">
+                                    <p><span className="font-semibold">{t('ijazahTimeEstimationTitle')}</span> {timeEstimationText}</p>
+                                    <p className="italic">{t('ijazahTimeNoteSpeed')}</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div>
                         <span className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizTimeLabel')}</span>

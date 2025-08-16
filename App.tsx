@@ -16,6 +16,7 @@ import ThanksPage from './components/ThanksPage';
 import ImageModal from './components/ImageModal';
 import AboutPage from './components/AboutPage';
 import TajwidQuizPage from './components/TajwidQuizPage';
+import TeachersPage from './components/TeachersPage';
 
 const App: React.FC = () => {
     const [currentPage, setCurrentPage] = useState<Page>('home');
@@ -23,6 +24,7 @@ const App: React.FC = () => {
     const [ijazahApplication, setIjazahApplication] = useState<IjazahApplication>({
         path: '',
         daysPerWeek: 7,
+        memorization: undefined,
         fullDetails: {}
     });
     const [imageModalSrc, setImageModalSrc] = useState<string | null>(null);
@@ -80,6 +82,8 @@ const App: React.FC = () => {
                 return <ThanksPage navigateTo={navigateTo} t={t} registerAgainTarget={registerAgainTarget} />;
             case 'about':
                 return <AboutPage navigateTo={navigateTo} t={t} />;
+            case 'teachers':
+                return <TeachersPage navigateTo={navigateTo} t={t} />;
             default:
                 return <HomePage navigateTo={navigateTo} t={t} />;
         }

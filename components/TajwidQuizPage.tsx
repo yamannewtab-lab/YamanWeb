@@ -39,7 +39,7 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t }) => {
         const url = `https://wa.me/${WHATSAPP_PHONE_NUMBER}?text=${encodeURIComponent(message)}`;
         window.open(url, "_blank");
         e.currentTarget.reset();
-        navigateTo('thanks');
+        setTimeout(() => navigateTo('thanks'), 100);
     };
 
     const tajwidLevels = [

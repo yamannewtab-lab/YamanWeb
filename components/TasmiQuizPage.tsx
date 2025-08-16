@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Page } from '../types';
 import { WHATSAPP_PHONE_NUMBER } from '../constants';
 
@@ -8,6 +8,7 @@ interface TasmiQuizPageProps {
 }
 
 const TasmiQuizPage: React.FC<TasmiQuizPageProps> = ({ navigateTo, t }) => {
+    const [sessions, setSessions] = useState(1);
     
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -15,7 +16,6 @@ const TasmiQuizPage: React.FC<TasmiQuizPageProps> = ({ navigateTo, t }) => {
         const name = formData.get('name');
         const phone = formData.get('phone');
         const portion = formData.get('portion');
-        const sessions = formData.get('sessions');
         const time = formData.get('time');
         const journey = formData.get('journey');
         const language = formData.get('language');
@@ -25,7 +25,7 @@ const TasmiQuizPage: React.FC<TasmiQuizPageProps> = ({ navigateTo, t }) => {
 *Name:* ${name}
 *WhatsApp:* ${phone}
 *Portion to Recite:* ${portion}
-*Number of Sessions:* ${sessions}
+*Weekly Sessions:* ${sessions}
 *Preferred Time:* ${time}
 *Speaks:* ${language}
 *Journey with Qur'an:* ${journey}
@@ -34,7 +34,7 @@ const TasmiQuizPage: React.FC<TasmiQuizPageProps> = ({ navigateTo, t }) => {
         const url = `https://wa.me/${WHATSAPP_PHONE_NUMBER}?text=${encodeURIComponent(message)}`;
         window.open(url, "_blank");
         e.currentTarget.reset();
-        navigateTo('tasmiInfo');
+        setTimeout(() => navigateTo('tasmiInfo'), 100);
     };
     
     return (
@@ -60,9 +60,30 @@ const TasmiQuizPage: React.FC<TasmiQuizPageProps> = ({ navigateTo, t }) => {
                         </select>
                     </div>
                     <div>
-                        <label htmlFor="tasmi-sessions" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('tasmiSessionsLabel')}</label>
-                        <input type="number" id="tasmi-sessions" name="sessions" required placeholder="1-5" max="5" className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm dark:bg-slate-200 dark:border-slate-500 text-black dark:placeholder-slate-500" />
-                        <p className="text-xs text-slate-500 mt-1 dark:text-slate-400">{t('maxSessionsText')}</p>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('tasmiWeeklyLabel')}</label>
+                        <div className="mt-2 rounded-lg bg-slate-200 p-2 dark:bg-slate-900">
+                            <div className="flex items-center space-x-2 overflow-x-auto pb-2 -mb-2 custom-scrollbar">
+                                {[1, 2, 3, 4, 5, 6, 7].map(day => (
+                                    <div key={day} className="flex-shrink-0">
+                                        <input
+                                            type="radio"
+                                            id={`tasmi-day-${day}`}
+                                            name="sessionsPerWeek"
+                                            value={day}
+                                            checked={sessions === day}
+                                            onChange={() => setSessions(day)}
+                                            className="sr-only peer"
+                                        />
+                                        <label
+                                            htmlFor={`tasmi-day-${day}`}
+                                            className="block text-center py-1.5 px-5 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-slate-600 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow dark:text-slate-400 dark:peer-checked:bg-slate-700 dark:peer-checked:text-slate-100"
+                                        >
+                                            <span className="font-semibold">{day}</span>
+                                        </label>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                     <div>
                         <span className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizTimeLabel')}</span>
