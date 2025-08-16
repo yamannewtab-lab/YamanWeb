@@ -6,8 +6,8 @@ export const LANGUAGES: Language[] = ['en', 'ar', 'id'];
 
 export const IJAZAH_PRICES: IjazahPrices = {
     'Hafs \'an \'Asim':    { 1: 40000, 2: 80000, 3: 120000, 4: 160000, 5: 200000, 6: 240000, 7: 280000 },
-    'The Ten Recitations': { 1: 60000, 2: 120000, 3: 180000, 4: 240000, 5: 300000, 6: 360000, 7: 420000 },
-    'Different Qira\'ah': { 1: 60000, 2: 120000, 3: 180000, 4: 240000, 5: 300000, 6: 360000, 7: 420000 }
+    'The Ten Recitations': { 1: 48000, 2: 92000, 3: 140000, 4: 188000, 5: 232000, 6: 280000, 7: 328000 },
+    'Different Qira\'ah': { 1: 48000, 2: 92000, 3: 140000, 4: 188000, 5: 232000, 6: 280000, 7: 328000 }
 };
 
 export const TAJWID_IMPROVEMENT_PRICES: { [days: number]: number } = {
@@ -89,7 +89,7 @@ export const LANGUAGE_DATA: LanguageData = {
         submitButton: "Submit Request",
         tasmiFatihahOption: "Al-Fatihah",
         tasmiJuzAmmaOption: "Some of Juz Amma",
-        tasmiWeeklyLabel: "Weekly Sessions:",
+        tasmiWeeklyLabel: "How many sessions you want?",
         tasmiInfoTitle: "What's Next?",
         tasmiInfoText1: "The teacher will choose the time and the date available for him.",
         tasmiInfoText2: "We will try to answer you as fast as we can.",
@@ -238,7 +238,7 @@ export const LANGUAGE_DATA: LanguageData = {
         submitButton: "إرسال الطلب",
         tasmiFatihahOption: "الفاتحة",
         tasmiJuzAmmaOption: "بعض من جزء عم",
-        tasmiWeeklyLabel: "الجلسات الأسبوعية:",
+        tasmiWeeklyLabel: "كم جلسة تريد؟",
         tasmiInfoTitle: "ماذا بعد؟",
         tasmiInfoText1: "سيختار المعلم الوقت والتاريخ المتاح له.",
         tasmiInfoText2: "سنحاول الرد عليك في أسرع وقت ممكن.",
@@ -387,7 +387,7 @@ export const LANGUAGE_DATA: LanguageData = {
         submitButton: "Kirim Permintaan",
         tasmiFatihahOption: "Al-Fatihah",
         tasmiJuzAmmaOption: "Sebagian dari Juz Amma",
-        tasmiWeeklyLabel: "Sesi Mingguan:",
+        tasmiWeeklyLabel: "Berapa sesi yang Anda inginkan?",
         tasmiInfoTitle: "Apa Selanjutnya?",
         tasmiInfoText1: "Guru akan memilih waktu dan tanggal yang tersedia untuknya.",
         tasmiInfoText2: "Kami akan mencoba menjawab Anda secepat mungkin.",

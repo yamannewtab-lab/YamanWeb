@@ -24,8 +24,8 @@ const TasmiQuizPage: React.FC<TasmiQuizPageProps> = ({ navigateTo, t }) => {
 
 *Name:* ${name}
 *WhatsApp:* ${phone}
-*Portion to Recite:* ${portion}
 *Weekly Sessions:* ${sessions}
+*Portion to Recite:* ${portion}
 *Preferred Time:* ${time}
 *Speaks:* ${language}
 *Journey with Qur'an:* ${journey}
@@ -52,31 +52,25 @@ const TasmiQuizPage: React.FC<TasmiQuizPageProps> = ({ navigateTo, t }) => {
                         <label htmlFor="tasmi-phone" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('phoneLabel')}</label>
                         <input type="tel" id="tasmi-phone" name="phone" required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm dark:bg-slate-200 dark:border-slate-500 text-black dark:placeholder-slate-500" />
                     </div>
-                    <div>
-                        <label htmlFor="tasmi-portion" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('tasmiPortionLabel')}</label>
-                        <select id="tasmi-portion" name="portion" className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm text-black dark:bg-slate-200 dark:border-slate-500">
-                            <option>{t('tasmiFatihahOption')}</option>
-                            <option>{t('tasmiJuzAmmaOption')}</option>
-                        </select>
-                    </div>
+                    
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('tasmiWeeklyLabel')}</label>
                         <div className="mt-2 rounded-lg bg-slate-200 p-2 dark:bg-slate-900">
-                            <div className="grid grid-cols-12 gap-2">
-                                {[1, 2, 3, 4, 5, 6, 7].map(day => (
-                                    <div key={day} className={day <= 4 ? 'col-span-3' : 'col-span-4'}>
+                            <div className="grid grid-cols-6 gap-2">
+                                {[1, 2, 3, 4, 5].map(day => (
+                                    <div key={day} className={day <= 3 ? 'col-span-2' : 'col-span-3'}>
                                         <input
                                             type="radio"
-                                            id={`tasmi-day-${day}`}
-                                            name="sessionsPerWeek"
+                                            id={`session-${day}`}
+                                            name="sessions"
                                             value={day}
                                             checked={sessions === day}
                                             onChange={() => setSessions(day)}
                                             className="sr-only peer"
                                         />
                                         <label
-                                            htmlFor={`tasmi-day-${day}`}
-                                            className="block text-center py-1.5 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-slate-600 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow dark:text-slate-400 dark:peer-checked:bg-slate-700 dark:peer-checked:text-slate-100"
+                                            htmlFor={`session-${day}`}
+                                            className="block text-center py-2 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-slate-600 peer-checked:bg-white peer-checked:shadow dark:text-slate-400 dark:peer-checked:bg-slate-700 peer-checked:text-slate-900 dark:peer-checked:text-slate-100"
                                         >
                                             <span className="font-semibold">{day}</span>
                                         </label>
@@ -85,8 +79,17 @@ const TasmiQuizPage: React.FC<TasmiQuizPageProps> = ({ navigateTo, t }) => {
                             </div>
                         </div>
                     </div>
+
                     <div>
-                        <span className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizTimeLabel')}</span>
+                        <label htmlFor="tasmi-portion" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('tasmiPortionLabel')}</label>
+                        <select id="tasmi-portion" name="portion" className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm text-black dark:bg-slate-200 dark:border-slate-500">
+                            <option>{t('tasmiFatihahOption')}</option>
+                            <option>{t('tasmiJuzAmmaOption')}</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <span className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('tasmiTimeLabel')}</span>
                         <div className="mt-2 grid grid-cols-1 gap-2 rounded-lg bg-slate-200 p-1 dark:bg-slate-900">
                             <div>
                                 <input type="radio" id="tasmi-time1" name="time" value={t('timeSlot1')} className="sr-only peer" defaultChecked />
@@ -100,7 +103,7 @@ const TasmiQuizPage: React.FC<TasmiQuizPageProps> = ({ navigateTo, t }) => {
                                     <span className="font-semibold">{t('timeSlot2')}</span>
                                 </label>
                             </div>
-                            <div>
+                             <div>
                                 <input type="radio" id="tasmi-time3" name="time" value={t('timeSlot3')} className="sr-only peer" />
                                 <label htmlFor="tasmi-time3" className="block w-full text-center py-1.5 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-slate-600 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow dark:text-slate-400 dark:peer-checked:bg-slate-700 dark:peer-checked:text-slate-100">
                                     <span className="font-semibold">{t('timeSlot3')}</span>
@@ -109,9 +112,10 @@ const TasmiQuizPage: React.FC<TasmiQuizPageProps> = ({ navigateTo, t }) => {
                         </div>
                         <p className="text-center mt-2 text-xs text-slate-500 dark:text-slate-400">{t('timezoneNote')}</p>
                     </div>
+                    
                     <div>
                         <span className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizLanguageLabel')}</span>
-                        <div className="mt-2 grid grid-cols-2 gap-1 rounded-lg bg-slate-200 p-1 dark:bg-slate-900">
+                         <div className="mt-2 grid grid-cols-2 gap-1 rounded-lg bg-slate-200 p-1 dark:bg-slate-900">
                            <div className="col-span-1">
                                 <input type="radio" id="tasmi-lang-ar" name="language" value="Arabic" className="sr-only peer" defaultChecked />
                                 <label htmlFor="tasmi-lang-ar" className="block w-full text-center py-1.5 px-2 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-slate-600 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow dark:text-slate-400 dark:peer-checked:bg-slate-700 dark:peer-checked:text-slate-100">
@@ -124,7 +128,7 @@ const TasmiQuizPage: React.FC<TasmiQuizPageProps> = ({ navigateTo, t }) => {
                                     <span className="font-semibold">{t('langEnglish')}</span>
                                 </label>
                             </div>
-                            <div className="col-span-2">
+                           <div className="col-span-2">
                                 <input type="radio" id="tasmi-lang-id" name="language" value="Indonesian" className="sr-only peer" />
                                 <label htmlFor="tasmi-lang-id" className="block w-full text-center py-1.5 px-2 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-slate-600 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow dark:text-slate-400 dark:peer-checked:bg-slate-700 dark:peer-checked:text-slate-100">
                                     <span className="font-semibold">{t('langIndonesian')}</span>
@@ -132,6 +136,7 @@ const TasmiQuizPage: React.FC<TasmiQuizPageProps> = ({ navigateTo, t }) => {
                             </div>
                         </div>
                     </div>
+
                     <div>
                         <label htmlFor="tasmi-journey" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizJourneyLabel')}</label>
                         <textarea id="tasmi-journey" name="journey" rows={4} required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm dark:bg-slate-200 dark:border-slate-500 text-black dark:placeholder-slate-500"></textarea>
