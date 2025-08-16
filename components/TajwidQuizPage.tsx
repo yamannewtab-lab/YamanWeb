@@ -25,17 +25,16 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t }) => {
             5: 'subscriptionOption5Days'
         };
 
-        const subscription = t(dayToKeyMap[selectedSubscription]);
-        const price = TAJWID_IMPROVEMENT_PRICES[selectedSubscription].toLocaleString() + " IDR";
+        const subscriptionText = t(dayToKeyMap[selectedSubscription]);
+        const priceText = TAJWID_IMPROVEMENT_PRICES[selectedSubscription].toLocaleString() + " IDR";
 
-        const message = `*New Tajwid Improvement Request*
+        const message = `*Tajwid Improvement Request*
 
 *Name:* ${name}
 *Age:* ${age}
-*Preferred Time:* ${time}
-*Current Tajwid Level:* ${tajwidLevel}
-*Subscription:* ${subscription}
-*Price:* ${price}
+*Time:* ${time}
+*Level:* ${tajwidLevel}
+*Plan:* ${subscriptionText} (${priceText})
         `.trim().replace(/\n\s*\n/g, '\n\n');
 
         const url = `https://wa.me/${WHATSAPP_PHONE_NUMBER}?text=${encodeURIComponent(message)}`;
