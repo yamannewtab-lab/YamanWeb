@@ -17,6 +17,7 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t }) => {
         const name = formData.get('name');
         const age = formData.get('age');
         const tajwidLevel = formData.get('tajwidLevel');
+        const time = formData.get('time');
         
         const dayToKeyMap: {[key: number]: string} = {
             15: 'subscriptionOption15Days',
@@ -31,6 +32,7 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t }) => {
 
 *Name:* ${name}
 *Age:* ${age}
+*Preferred Time:* ${time}
 *Current Tajwid Level:* ${tajwidLevel}
 *Subscription:* ${subscription}
 *Price:* ${price}
@@ -66,6 +68,31 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t }) => {
                         <input type="text" inputMode="decimal" pattern="[0-9٠-٩]*" id="tajwid-age" name="age" required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm dark:bg-slate-200 dark:border-slate-500 text-black" />
                     </div>
                     
+                    <div>
+                        <span className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizTimeLabel')}</span>
+                        <div className="mt-2 grid grid-cols-1 gap-2 rounded-lg bg-slate-200 p-1 dark:bg-slate-900">
+                            <div>
+                                <input type="radio" id="tajwid-time1" name="time" value={t('timeSlot1')} className="sr-only peer" defaultChecked />
+                                <label htmlFor="tajwid-time1" className="block w-full text-center py-1.5 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-slate-600 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow dark:text-slate-400 dark:peer-checked:bg-slate-700 dark:peer-checked:text-slate-100">
+                                    <span className="font-semibold">{t('timeSlot1')}</span>
+                                </label>
+                            </div>
+                            <div>
+                                <input type="radio" id="tajwid-time2" name="time" value={t('timeSlot2')} className="sr-only peer" />
+                                <label htmlFor="tajwid-time2" className="block w-full text-center py-1.5 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-slate-600 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow dark:text-slate-400 dark:peer-checked:bg-slate-700 dark:peer-checked:text-slate-100">
+                                    <span className="font-semibold">{t('timeSlot2')}</span>
+                                </label>
+                            </div>
+                             <div>
+                                <input type="radio" id="tajwid-time3" name="time" value={t('timeSlot3')} className="sr-only peer" />
+                                <label htmlFor="tajwid-time3" className="block w-full text-center py-1.5 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-slate-600 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow dark:text-slate-400 dark:peer-checked:bg-slate-700 dark:peer-checked:text-slate-100">
+                                    <span className="font-semibold">{t('timeSlot3')}</span>
+                                </label>
+                            </div>
+                        </div>
+                        <p className="text-center mt-2 text-xs text-slate-500 dark:text-slate-400">{t('timezoneNote')}</p>
+                    </div>
+
                     <div>
                         <span className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('tajwidLevelLabel')}</span>
                         <div className="mt-2 space-y-2">
