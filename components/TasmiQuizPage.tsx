@@ -20,7 +20,7 @@ const TasmiQuizPage: React.FC<TasmiQuizPageProps> = ({ navigateTo, t }) => {
         const journey = formData.get('journey');
         const language = formData.get('language');
 
-        const message = `*New Free Tasmi' Request*
+        const message = `*New Opened Tasmi' Request*
 
 *Name:* ${name}
 *WhatsApp:* ${phone}
