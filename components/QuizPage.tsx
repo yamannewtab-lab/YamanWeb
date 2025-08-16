@@ -79,30 +79,27 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                     
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizWeeklyLabel')}</label>
-                        <div className="mt-2 rounded-lg bg-slate-200 p-1 dark:bg-slate-900">
-                            <div className="flex items-center justify-center gap-1 overflow-x-auto p-1">
-                                {[1, 2, 3, 4, 5, 6, 7].map(day => (
-                                    <div key={day} className="flex-shrink-0">
-                                        <input
-                                            type="radio"
-                                            id={`day-${day}`}
-                                            name="daysPerWeek"
-                                            value={day}
-                                            checked={ijazahApplication.daysPerWeek === day}
-                                            onChange={() => handleDaySelection(day)}
-                                            className="sr-only peer"
-                                        />
-                                        <label
-                                            htmlFor={`day-${day}`}
-                                            className={`min-w-[40px] block text-center py-1.5 px-3 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-slate-600 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow dark:text-slate-400 dark:peer-checked:bg-slate-700 dark:peer-checked:text-slate-100`}
-                                        >
-                                            <span className="font-semibold">{day}</span>
-                                        </label>
-                                    </div>
-                                ))}
-                            </div>
+                        <div className="mt-2 grid grid-cols-4 sm:grid-cols-7 gap-2 rounded-lg bg-slate-200 p-2 dark:bg-slate-900">
+                            {[1, 2, 3, 4, 5, 6, 7].map(day => (
+                                <div key={day}>
+                                    <input
+                                        type="radio"
+                                        id={`day-${day}`}
+                                        name="daysPerWeek"
+                                        value={day}
+                                        checked={ijazahApplication.daysPerWeek === day}
+                                        onChange={() => handleDaySelection(day)}
+                                        className="sr-only peer"
+                                    />
+                                    <label
+                                        htmlFor={`day-${day}`}
+                                        className={`block text-center py-1.5 px-3 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-slate-600 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow dark:text-slate-400 dark:peer-checked:bg-slate-700 dark:peer-checked:text-slate-100`}
+                                    >
+                                        <span className="font-semibold">{day}</span>
+                                    </label>
+                                </div>
+                            ))}
                         </div>
-                        <p className="text-center mt-1 text-xs text-slate-500 dark:text-slate-400">{t('scrollNote')}</p>
                         <p className="text-center mt-2 text-sm text-slate-500 h-4 dark:text-slate-400">
                             {price ? `Price: ${price.toLocaleString()} IDR / month` : 'Custom Price'}
                         </p>

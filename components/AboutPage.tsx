@@ -19,7 +19,7 @@ const AboutPage: React.FC<AboutPageProps> = ({ navigateTo, t }) => {
                     <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-32 h-32 rounded-full bg-sky-400 opacity-30"></div>
                     
                     <div className="relative z-10">
-                         <p className="text-lg leading-relaxed font-medium">
+                         <p className="text-lg leading-relaxed font-medium whitespace-pre-line">
                             {t('aboutUsPageText')}
                         </p>
                     </div>
