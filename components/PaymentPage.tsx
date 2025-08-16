@@ -45,6 +45,15 @@ ${fullDetails.journey}
         navigateTo('thanks');
     };
 
+    const handleContinue = () => {
+        setShowPaymentDetails(true);
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    };
+
+
     return (
         <div className="py-10">
             {!showPaymentDetails ? (
@@ -80,7 +89,7 @@ ${fullDetails.journey}
                     </div>
 
                     <div className="mt-8">
-                        <button onClick={() => setShowPaymentDetails(true)} className="bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-indigo-700 transition-all text-lg">
+                        <button onClick={handleContinue} className="bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-indigo-700 transition-all text-lg">
                             {t('continueButton')}
                         </button>
                     </div>

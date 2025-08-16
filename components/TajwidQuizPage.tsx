@@ -1,0 +1,127 @@
+import React, { useState } from 'react';
+import { Page } from '../types';
+import { WHATSAPP_PHONE_NUMBER, TAJWID_IMPROVEMENT_PRICES } from '../constants';
+
+interface TajwidQuizPageProps {
+    navigateTo: (page: Page) => void;
+    t: (key: string) => string;
+}
+
+const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t }) => {
+    const subscriptionOptions = Object.keys(TAJWID_IMPROVEMENT_PRICES).map(Number).sort((a, b) => b - a);
+    const [selectedSubscription, setSelectedSubscription] = useState<number>(subscriptionOptions[0]);
+
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+        const name = formData.get('name');
+        const age = formData.get('age');
+        const tajwidLevel = formData.get('tajwidLevel');
+        
+        const dayToKeyMap: {[key: number]: string} = {
+            15: 'subscriptionOption15Days',
+            10: 'subscriptionOption10Days',
+            5: 'subscriptionOption5Days'
+        };
+
+        const subscription = t(dayToKeyMap[selectedSubscription]);
+        const price = TAJWID_IMPROVEMENT_PRICES[selectedSubscription].toLocaleString() + " IDR";
+
+        const message = `*New Tajwid Improvement Request*
+
+*Name:* ${name}
+*Age:* ${age}
+*Current Tajwid Level:* ${tajwidLevel}
+*Subscription:* ${subscription}
+*Price:* ${price}
+        `.trim().replace(/\n\s*\n/g, '\n\n');
+
+        const url = `https://wa.me/${WHATSAPP_PHONE_NUMBER}?text=${encodeURIComponent(message)}`;
+        window.open(url, "_blank");
+        e.currentTarget.reset();
+        navigateTo('thanks');
+    };
+
+    const tajwidLevels = [
+        { key: 'tajwidLevelGood', value: 'Good' },
+        { key: 'tajwidLevelNormal', value: 'Normal' },
+        { key: 'tajwidLevelNotTooGood', value: 'Not too good' },
+        { key: 'tajwidLevelBad', value: 'Bad' },
+        { key: 'tajwidLevelReallyBad', value: 'Really bad' },
+    ];
+    
+    return (
+        <div>
+            <div className="text-center mb-8">
+                <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100">{t('tajwidQuizTitle')}</h2>
+            </div>
+            <form onSubmit={handleSubmit} className="max-w-xl mx-auto">
+                <div className="space-y-6">
+                    <div>
+                        <label htmlFor="tajwid-name" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizNameLabel')}</label>
+                        <input type="text" id="tajwid-name" name="name" required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm dark:bg-slate-200 dark:border-slate-500 text-black" />
+                    </div>
+                     <div>
+                        <label htmlFor="tajwid-age" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizAgeLabel')}</label>
+                        <input type="text" inputMode="decimal" pattern="[0-9٠-٩]*" id="tajwid-age" name="age" required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm dark:bg-slate-200 dark:border-slate-500 text-black" />
+                    </div>
+                    
+                    <div>
+                        <span className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('tajwidLevelLabel')}</span>
+                        <div className="mt-2 space-y-2">
+                            {tajwidLevels.map((level, index) => (
+                                <div key={level.key}>
+                                    <input type="radio" id={level.key} name="tajwidLevel" value={t(level.key)} className="sr-only peer" defaultChecked={index === 0} />
+                                    <label htmlFor={level.key} className="block w-full text-center py-2 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out bg-slate-200 dark:bg-slate-900 text-slate-600 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow dark:text-slate-400 dark:peer-checked:bg-slate-700 dark:peer-checked:text-slate-100">
+                                        <span className="font-semibold">{t(level.key)}</span>
+                                    </label>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div>
+                        <span className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('subscriptionLengthLabel')}</span>
+                        <div className="mt-2 grid grid-cols-3 gap-2 rounded-lg bg-slate-200 p-1 dark:bg-slate-900">
+                            {subscriptionOptions.map(days => {
+                                const dayToKeyMap: {[key: number]: string} = {
+                                    15: 'subscriptionOption15Days',
+                                    10: 'subscriptionOption10Days',
+                                    5: 'subscriptionOption5Days'
+                                };
+                                return (
+                                    <div key={days}>
+                                        <input 
+                                            type="radio" 
+                                            id={`sub-${days}`} 
+                                            name="subscription" 
+                                            value={days} 
+                                            className="sr-only peer" 
+                                            checked={selectedSubscription === days}
+                                            onChange={() => setSelectedSubscription(days)}
+                                        />
+                                        <label htmlFor={`sub-${days}`} className="block w-full text-center py-2 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-slate-600 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow dark:text-slate-400 dark:peer-checked:bg-slate-700 dark:peer-checked:text-slate-100">
+                                            <span className="font-semibold">{t(dayToKeyMap[days])}</span>
+                                        </label>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        <p className="text-center mt-2 text-sm text-slate-500 h-4 dark:text-slate-400">
+                           {t('priceDisplay').replace('{price}', TAJWID_IMPROVEMENT_PRICES[selectedSubscription].toLocaleString())}
+                        </p>
+                    </div>
+
+                </div>
+                <div className="mt-8">
+                    <button type="submit" className="w-full bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-indigo-700 transition-all text-lg">{t('submitButton')}</button>
+                </div>
+            </form>
+            <div className="mt-12 text-center">
+                <button onClick={() => navigateTo('home')} className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors dark:text-slate-400 dark:hover:text-indigo-400">{t('backToHome')}</button>
+            </div>
+        </div>
+    );
+};
+
+export default TajwidQuizPage;

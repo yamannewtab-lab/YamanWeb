@@ -30,6 +30,13 @@ const HomePage: React.FC<HomePageProps> = ({ navigateTo, t }) => {
                     buttonClassName="bg-green-500 hover:bg-green-600"
                 />
                 <ActionCard
+                    title={t('tajwidSectionTitle')}
+                    description={t('tajwidSectionDesc')}
+                    buttonText={t('tajwidButtonText')}
+                    onButtonClick={() => navigateTo('tajwidImprovement')}
+                    buttonClassName="bg-rose-500 hover:bg-rose-600"
+                />
+                <ActionCard
                     title={t('coursesSectionTitle')}
                     description={t('coursesSectionDesc')}
                     buttonText={t('previousCoursesBtnHomepage')}
@@ -43,15 +50,13 @@ const HomePage: React.FC<HomePageProps> = ({ navigateTo, t }) => {
                     onButtonClick={() => navigateTo('ijazahPreview')}
                     buttonClassName="bg-purple-600 hover:bg-purple-700"
                 />
-                <div className="md:col-span-2">
-                    <ActionCard
-                        title={t('aboutUsSectionTitle')}
-                        description={t('aboutUsSectionDesc')}
-                        buttonText={t('aboutUsButtonText')}
-                        onButtonClick={() => navigateTo('about')}
-                        buttonClassName="bg-orange-500 hover:bg-orange-600"
-                    />
-                </div>
+                <ActionCard
+                    title={t('aboutUsSectionTitle')}
+                    description={t('aboutUsSectionDesc')}
+                    buttonText={t('aboutUsButtonText')}
+                    onButtonClick={() => navigateTo('about')}
+                    buttonClassName="bg-orange-500 hover:bg-orange-600"
+                />
             </div>
         </div>
     );

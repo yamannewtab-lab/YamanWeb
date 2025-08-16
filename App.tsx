@@ -15,6 +15,7 @@ import PaymentPage from './components/PaymentPage';
 import ThanksPage from './components/ThanksPage';
 import ImageModal from './components/ImageModal';
 import AboutPage from './components/AboutPage';
+import TajwidQuizPage from './components/TajwidQuizPage';
 
 const App: React.FC = () => {
     const [currentPage, setCurrentPage] = useState<Page>('home');
@@ -25,6 +26,7 @@ const App: React.FC = () => {
         fullDetails: {}
     });
     const [imageModalSrc, setImageModalSrc] = useState<string | null>(null);
+    const [registerAgainTarget, setRegisterAgainTarget] = useState<Page>('ijazah');
     
     const currentLanguage = LANGUAGES[currentLanguageIndex];
 
@@ -39,6 +41,11 @@ const App: React.FC = () => {
     }, [currentLanguage]);
 
     const navigateTo = (page: Page) => {
+        if (page === 'tajwidImprovement') {
+            setRegisterAgainTarget('tajwidImprovement');
+        } else if (page === 'ijazah') {
+            setRegisterAgainTarget('ijazah');
+        }
         setCurrentPage(page);
         window.scrollTo(0, 0);
     };
@@ -63,12 +70,14 @@ const App: React.FC = () => {
                 return <QuizPage navigateTo={navigateTo} t={t} ijazahApplication={ijazahApplication} setIjazahApplication={setIjazahApplication} />;
             case 'tasmiQuiz':
                 return <TasmiQuizPage navigateTo={navigateTo} t={t} />;
+            case 'tajwidImprovement':
+                return <TajwidQuizPage navigateTo={navigateTo} t={t} />;
             case 'tasmiInfo':
                 return <TasmiInfoPage navigateTo={navigateTo} t={t} />;
             case 'payment':
                 return <PaymentPage navigateTo={navigateTo} t={t} ijazahApplication={ijazahApplication} />;
             case 'thanks':
-                return <ThanksPage navigateTo={navigateTo} t={t} />;
+                return <ThanksPage navigateTo={navigateTo} t={t} registerAgainTarget={registerAgainTarget} />;
             case 'about':
                 return <AboutPage navigateTo={navigateTo} t={t} />;
             default:

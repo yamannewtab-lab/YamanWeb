@@ -10,7 +10,10 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ t, onLanguageToggle, onNavigateHome, isHomePage }) => {
     return (
         <header className="p-4 sm:p-6 border-b border-slate-200 flex items-center dark:border-slate-700" dir="ltr">
-            <h1 className="font-bold text-xl text-slate-800 flex-grow dark:text-slate-200">{t('headerTitle')}</h1>
+            <div className="flex-grow">
+                <h1 className="font-bold text-xl text-slate-800 dark:text-slate-200">{t('headerTitle')}</h1>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{t('headerSubtitle')}</p>
+            </div>
             <div className="flex items-center gap-2 sm:gap-4">
                 {!isHomePage && (
                     <button onClick={onNavigateHome} className="bg-slate-200 text-slate-700 font-semibold px-4 py-2 rounded-lg hover:bg-slate-300 transition-colors dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600">

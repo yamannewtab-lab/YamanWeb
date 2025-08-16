@@ -1,4 +1,4 @@
-export type Page = 'home' | 'register' | 'courses' | 'ijazah' | 'quiz' | 'tasmiQuiz' | 'tasmiInfo' | 'payment' | 'thanks' | 'ijazahPreview' | 'about';
+export type Page = 'home' | 'register' | 'courses' | 'ijazah' | 'quiz' | 'tasmiQuiz' | 'tasmiInfo' | 'payment' | 'thanks' | 'ijazahPreview' | 'about' | 'tajwidImprovement';
 
 export type Language = 'en' | 'ar' | 'id';
 
