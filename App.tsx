@@ -14,6 +14,7 @@ import TasmiInfoPage from './components/TasmiInfoPage';
 import PaymentPage from './components/PaymentPage';
 import ThanksPage from './components/ThanksPage';
 import ImageModal from './components/ImageModal';
+import AboutPage from './components/AboutPage';
 
 const App: React.FC = () => {
     const [currentPage, setCurrentPage] = useState<Page>('home');
@@ -57,7 +58,7 @@ const App: React.FC = () => {
             case 'ijazah':
                 return <IjazahPage navigateTo={navigateTo} t={t} setIjazahApplication={setIjazahApplication} />;
             case 'ijazahPreview':
-                return <IjazahPreviewPage navigateTo={navigateTo} t={t} />;
+                return <IjazahPreviewPage navigateTo={navigateTo} t={t} onImageClick={setImageModalSrc} />;
             case 'quiz':
                 return <QuizPage navigateTo={navigateTo} t={t} ijazahApplication={ijazahApplication} setIjazahApplication={setIjazahApplication} />;
             case 'tasmiQuiz':
@@ -68,6 +69,8 @@ const App: React.FC = () => {
                 return <PaymentPage navigateTo={navigateTo} t={t} ijazahApplication={ijazahApplication} />;
             case 'thanks':
                 return <ThanksPage navigateTo={navigateTo} t={t} />;
+            case 'about':
+                return <AboutPage navigateTo={navigateTo} t={t} />;
             default:
                 return <HomePage navigateTo={navigateTo} t={t} />;
         }

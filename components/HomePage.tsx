@@ -43,6 +43,15 @@ const HomePage: React.FC<HomePageProps> = ({ navigateTo, t }) => {
                     onButtonClick={() => navigateTo('ijazahPreview')}
                     buttonClassName="bg-purple-600 hover:bg-purple-700"
                 />
+                <div className="md:col-span-2">
+                    <ActionCard
+                        title={t('aboutUsSectionTitle')}
+                        description={t('aboutUsSectionDesc')}
+                        buttonText={t('aboutUsButtonText')}
+                        onButtonClick={() => navigateTo('about')}
+                        buttonClassName="bg-orange-500 hover:bg-orange-600"
+                    />
+                </div>
             </div>
         </div>
     );

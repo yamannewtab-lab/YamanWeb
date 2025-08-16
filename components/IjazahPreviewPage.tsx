@@ -4,10 +4,11 @@ import { Page } from '../types';
 interface IjazahPreviewPageProps {
     navigateTo: (page: Page) => void;
     t: (key: string) => string;
+    onImageClick: (src: string) => void;
 }
 
-const IjazahPreviewPage: React.FC<IjazahPreviewPageProps> = ({ navigateTo, t }) => {
-    const ijazahImageUrl = 'https://placehold.co/800x1131/1e293b/a5b4fc.png?text=Ijazah+Certificate%5Cn(Sample)&font=serif';
+const IjazahPreviewPage: React.FC<IjazahPreviewPageProps> = ({ navigateTo, t, onImageClick }) => {
+    const ijazahImageUrl = 'https://i.imgur.com/7iRNrr7.png';
 
     return (
         <div>
@@ -18,13 +19,21 @@ const IjazahPreviewPage: React.FC<IjazahPreviewPageProps> = ({ navigateTo, t }) 
                 <img 
                     src={ijazahImageUrl} 
                     alt="Sample Ijazah Certificate" 
-                    className="w-full h-auto rounded-md object-contain border-4 border-slate-200 dark:border-slate-600"
+                    className="w-full h-auto rounded-md object-contain border-4 border-slate-200 dark:border-slate-600 cursor-pointer transition-transform duration-200 hover:scale-105"
+                    onClick={() => onImageClick(ijazahImageUrl)}
                 />
                 <div className="mt-6 text-center">
                     <p className="text-slate-700 dark:text-slate-300 text-lg sm:text-xl font-serif italic leading-relaxed">
                         "{t('ijazahSampleText')}"
                     </p>
                 </div>
+
+                <div className="mt-8 border-t border-slate-200 dark:border-slate-600 pt-6 text-center">
+                    <p className="text-slate-800 dark:text-slate-200 text-lg whitespace-pre-line leading-loose font-serif">
+                        {t('ijazahGrantText')}
+                    </p>
+                </div>
+
             </div>
             <div className="mt-12 text-center">
                 <button 

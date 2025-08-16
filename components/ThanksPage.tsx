@@ -17,7 +17,7 @@ const ThanksPage: React.FC<ThanksPageProps> = ({ navigateTo, t }) => {
             <h2 className="mt-6 text-3xl font-bold text-slate-800 dark:text-slate-100">{t('thanksMessage')}</h2>
             <p className="mt-2 text-slate-600 dark:text-slate-400">{t('thanksText')}</p>
             <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-                <button onClick={() => navigateTo('register')} className="bg-slate-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-slate-700 transition-all">{t('registerAnotherBtn')}</button>
+                <button onClick={() => navigateTo('ijazah')} className="bg-slate-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-slate-700 transition-all">{t('registerAnotherBtn')}</button>
                 <button onClick={() => navigateTo('home')} className="bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-indigo-700 transition-all">{t('backToHome')}</button>
             </div>
         </div>
