@@ -43,6 +43,8 @@ const HomePage: React.FC<HomePageProps> = ({ navigateTo, t }) => {
                     onButtonClick={() => navigateTo('courses')}
                     buttonClassName="bg-indigo-600 hover:bg-indigo-700"
                 />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center mt-6">
                  <ActionCard
                     title={t('ijazahPreviewCardTitle')}
                     description={t('ijazahPreviewDesc')}

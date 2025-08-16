@@ -114,9 +114,9 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizWeeklyLabel')}</label>
                         <div className="mt-2 rounded-lg bg-slate-200 p-2 dark:bg-slate-900">
-                            <div className="flex items-center space-x-2 overflow-x-auto pb-2 -mb-2 custom-scrollbar">
+                            <div className="grid grid-cols-12 gap-2">
                                 {[1, 2, 3, 4, 5, 6, 7].map(day => (
-                                    <div key={day} className="flex-shrink-0">
+                                    <div key={day} className={day <= 4 ? 'col-span-3' : 'col-span-4'}>
                                         <input
                                             type="radio"
                                             id={`day-${day}`}
@@ -128,7 +128,7 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                                         />
                                         <label
                                             htmlFor={`day-${day}`}
-                                            className={`block text-center py-1.5 px-5 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-slate-600 peer-checked:shadow dark:text-slate-400 ${getDayButtonColors(day)}`}
+                                            className={`block text-center py-1.5 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-slate-600 peer-checked:shadow dark:text-slate-400 ${getDayButtonColors(day)}`}
                                         >
                                             <span className="font-semibold">{day}</span>
                                         </label>
