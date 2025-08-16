@@ -28,8 +28,11 @@ const IjazahPage: React.FC<IjazahPageProps> = ({ navigateTo, t, setIjazahApplica
                     <p className="mt-2 text-slate-600 dark:text-slate-400">{t('ijazahMemorizationSubtitle')}</p>
                 </div>
                 <div className="mt-8 flex flex-col items-center gap-4">
-                    <button onClick={() => handleMemorizationClick('with')} className="bg-sky-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-sky-600 transition-all w-full sm:w-auto text-lg">{t('withMemorizationButton')}</button>
-                    <button onClick={() => handleMemorizationClick('without')} className="bg-sky-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-sky-600 transition-all w-full sm:w-auto text-lg">{t('withoutMemorizationButton')}</button>
+                    <div className="flex flex-col items-center w-full sm:w-auto">
+                        <button onClick={() => handleMemorizationClick('with')} className="bg-sky-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-sky-600 transition-all w-full text-lg">{t('withMemorizationButton')}</button>
+                        <span className="mt-2 text-xs bg-slate-200 text-slate-600 font-semibold px-2 py-0.5 rounded-full dark:bg-slate-600 dark:text-slate-300">Recommended</span>
+                    </div>
+                    <button onClick={() => handleMemorizationClick('without')} className="bg-slate-400 text-white font-bold py-3 px-6 rounded-lg hover:bg-slate-500 transition-all w-full sm:w-auto text-lg">{t('withoutMemorizationButton')}</button>
                 </div>
                 <div className="mt-12 text-center">
                     <button onClick={() => navigateTo('home')} className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors dark:text-slate-400 dark:hover:text-indigo-400">{t('backToHome')}</button>

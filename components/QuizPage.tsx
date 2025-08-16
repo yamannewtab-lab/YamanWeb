@@ -15,6 +15,26 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
         setIjazahApplication(prev => ({ ...prev, daysPerWeek: days }));
     };
 
+    const getDayButtonColors = (day: number): string => {
+        const colors = [
+            // Day 1
+            'peer-checked:bg-red-500 dark:peer-checked:bg-red-600 peer-checked:text-white',
+            // Day 2
+            'peer-checked:bg-orange-400 dark:peer-checked:bg-orange-500 peer-checked:text-white',
+            // Day 3
+            'peer-checked:bg-amber-400 dark:peer-checked:bg-amber-500 peer-checked:text-slate-800',
+            // Day 4
+            'peer-checked:bg-yellow-400 dark:peer-checked:bg-yellow-500 peer-checked:text-slate-800',
+            // Day 5
+            'peer-checked:bg-lime-500 dark:peer-checked:bg-lime-600 peer-checked:text-white',
+            // Day 6
+            'peer-checked:bg-green-500 dark:peer-checked:bg-green-600 peer-checked:text-white',
+            // Day 7
+            'peer-checked:bg-teal-500 dark:peer-checked:bg-teal-600 peer-checked:text-white',
+        ];
+        return colors[day - 1] || 'peer-checked:bg-white dark:peer-checked:bg-slate-700';
+    };
+
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
@@ -49,8 +69,20 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
     };
 
     const price = IJAZAH_PRICES[ijazahApplication.path]?.[ijazahApplication.daysPerWeek];
-    const timeEstimationKey = `ijazahTime_${ijazahApplication.daysPerWeek}`;
-    const timeEstimationText = t(timeEstimationKey);
+    
+    let timeEstimationText: string;
+    let showSpeedNote = false;
+
+    if (ijazahApplication.path === 'The Ten Recitations') {
+        timeEstimationText = t('tenRecitationsTime');
+        showSpeedNote = false;
+    } else {
+        // Hafs and Different Qira'ah share the same time estimation
+        const timeEstimationKey = `hafsTime_${ijazahApplication.daysPerWeek}`;
+        timeEstimationText = t(timeEstimationKey);
+        showSpeedNote = true;
+    }
+
 
     return (
         <div>
@@ -96,7 +128,7 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                                         />
                                         <label
                                             htmlFor={`day-${day}`}
-                                            className={`block text-center py-1.5 px-5 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-slate-600 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow dark:text-slate-400 dark:peer-checked:bg-slate-700 dark:peer-checked:text-slate-100`}
+                                            className={`block text-center py-1.5 px-5 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-slate-600 peer-checked:shadow dark:text-slate-400 ${getDayButtonColors(day)}`}
                                         >
                                             <span className="font-semibold">{day}</span>
                                         </label>
@@ -112,7 +144,7 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                                 <div className="absolute inset-0 bg-slate-200 dark:bg-slate-700 opacity-50 rounded-md"></div>
                                 <div className="relative z-10 text-xs text-slate-600 dark:text-slate-300">
                                     <p><span className="font-semibold">{t('ijazahTimeEstimationTitle')}</span> {timeEstimationText}</p>
-                                    <p className="italic">{t('ijazahTimeNoteSpeed')}</p>
+                                    {showSpeedNote && <p className="italic">{t('ijazahTimeNoteSpeed')}</p>}
                                 </div>
                             </div>
                         </div>
