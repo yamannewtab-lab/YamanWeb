@@ -1,6 +1,7 @@
 import React from 'react';
 import { Page } from '../types';
 import ActionCard from './ActionCard';
+import Recommendation from './Recommendation';
 
 interface HomePageProps {
     navigateTo: (page: Page) => void;
@@ -13,6 +14,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigateTo, t }) => {
             <div className="text-center mb-10">
                 <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-800 dark:text-slate-100">{t('homePageTitle')}</h2>
                 <p className="mt-4 text-lg text-slate-600 dark:text-slate-400">{t('homePageSubtitle')}</p>
+                <Recommendation />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-center">
                 <ActionCard
