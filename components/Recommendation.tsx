@@ -46,12 +46,12 @@ const Recommendation: React.FC = () => {
     }
 
     return (
-        <div className="flex items-center justify-center gap-3 mt-6 text-sm">
+        <div className="flex items-center justify-center gap-3 mt-4 text-sm">
             <span className="relative flex h-3 w-3">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
             </span>
-            <span className="font-semibold text-slate-800 dark:text-slate-200">Live Visitors</span>
+            <span className="font-semibold text-slate-800 dark:text-slate-200">Visitors</span>
             <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                     <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />

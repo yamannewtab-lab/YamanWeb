@@ -1,4 +1,5 @@
 import React from 'react';
+import Recommendation from './Recommendation';
 
 interface FooterProps {
     t: (key: string) => string;
@@ -18,6 +19,7 @@ const Footer: React.FC<FooterProps> = ({ t }) => {
             <p className="mt-4 text-xs text-slate-500">
                 {t('moderatorText')}
             </p>
+            <Recommendation />
         </footer>
     );
 };
