@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 
-const Recommendation: React.FC = () => {
+interface RecommendationProps {
+    onOpenAdminPanel: () => void;
+}
+
+const Recommendation: React.FC<RecommendationProps> = ({ onOpenAdminPanel }) => {
     const [viewers, setViewers] = useState<number | null>(null);
 
     const fetchVisitorCount = async () => {
-        // We will get the total row count from a 'views' table to determine the number of visitors.
         const { count, error } = await supabase
-            .from('views')
+            .from('visitors')
             .select('*', { count: 'exact', head: true });
 
         if (error) {
             console.error("Error fetching visitor count:", error.message);
-            // If the table doesn't exist or another error occurs,
-            // we'll hide the component instead of showing an error or fake data.
             setViewers(null); 
         } else {
             setViewers(count);
@@ -21,26 +22,49 @@ const Recommendation: React.FC = () => {
     };
     
     useEffect(() => {
-        // This function will run once when the component is first loaded.
-        const logAndFetch = async () => {
-            // First, log a new view by inserting a row with the current timestamp.
-            // This assumes user_id is nullable for anonymous views.
-            await supabase.from('views').insert([{ started_at: new Date().toISOString() }]);
-            
-            // After attempting to log the view, fetch the latest count.
+        const getVisitorInfo = async () => {
+          try {
+            const res = await fetch("https://ipapi.co/json/");
+            if (!res.ok) throw new Error('Failed to fetch IP info');
+            const data = await res.json();
+            return {
+              ip_address: data.ip,
+              country: data.country_name,
+              city: data.city,
+              region: data.region,
+              isp: data.org
+            };
+          } catch (e: any) {
+            console.error("Could not get visitor info:", e.message);
+            return null;
+          }
+        }
+
+        const logVisitorAndFetchCount = async () => {
+            const visitorKey = 'visitor_logged_session';
+            const hasLogged = sessionStorage.getItem(visitorKey);
+
+            if (!hasLogged) {
+                const visitor = await getVisitorInfo();
+                if (visitor) {
+                  const { error } = await supabase.from("visitors").insert([visitor]);
+                  if (error) {
+                    console.error("Error logging visitor:", error.message);
+                  } else {
+                    sessionStorage.setItem(visitorKey, 'true');
+                  }
+                }
+            }
             fetchVisitorCount();
         };
+        
+        logVisitorAndFetchCount();
 
-        logAndFetch();
-
-        // To make it "live", we'll poll for new counts every 10 seconds.
         const interval = setInterval(fetchVisitorCount, 10000); 
 
-        // Cleanup interval on component unmount.
         return () => clearInterval(interval);
     }, []);
 
-    // Don't render anything if we don't have a valid count.
     if (viewers === null || viewers <= 0) {
         return null;
     }
@@ -51,7 +75,9 @@ const Recommendation: React.FC = () => {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
             </span>
-            <span className="font-semibold text-slate-800 dark:text-slate-200">Visitors</span>
+            <button onClick={onOpenAdminPanel} className="font-semibold text-slate-800 dark:text-slate-200 hover:text-indigo-500 dark:hover:text-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 rounded transition-colors">
+                Visitors
+            </button>
             <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                     <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />

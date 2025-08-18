@@ -3,9 +3,10 @@ import Recommendation from './Recommendation';
 
 interface FooterProps {
     t: (key: string) => string;
+    onOpenAdminPanel: () => void;
 }
 
-const Footer: React.FC<FooterProps> = ({ t }) => {
+const Footer: React.FC<FooterProps> = ({ t, onOpenAdminPanel }) => {
     return (
         <footer className="text-center p-4 border-t border-slate-200 dark:border-slate-700">
             <div className="flex justify-center items-center gap-6">
@@ -19,7 +20,7 @@ const Footer: React.FC<FooterProps> = ({ t }) => {
             <p className="mt-4 text-xs text-slate-500">
                 {t('moderatorText')}
             </p>
-            <Recommendation />
+            <Recommendation onOpenAdminPanel={onOpenAdminPanel} />
         </footer>
     );
 };

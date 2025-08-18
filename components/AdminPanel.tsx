@@ -1,0 +1,175 @@
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../supabaseClient';
+
+interface Visitor {
+    country: string;
+    city: string | null;
+}
+
+interface GroupedVisitors {
+    [country: string]: {
+        cities: (string | null)[];
+        count: number;
+    };
+}
+
+interface AdminPanelProps {
+    onClose: () => void;
+}
+
+const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [password, setPassword] = useState('');
+    const [authError, setAuthError] = useState<string | null>(null);
+
+    const [visitors, setVisitors] = useState<GroupedVisitors>({});
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!isAuthenticated) return;
+
+        const fetchVisitors = async () => {
+            setLoading(true);
+            setError(null);
+            const { data, error } = await supabase
+                .from('visitors')
+                .select('country, city');
+
+            if (error) {
+                console.error("Error fetching visitors:", error);
+                setError("Failed to fetch visitor data.");
+                setLoading(false);
+                return;
+            }
+
+            if (data) {
+                const grouped = data.reduce((acc: GroupedVisitors, visitor: Visitor) => {
+                    const country = visitor.country || "Unknown";
+                    if (!acc[country]) {
+                        acc[country] = { cities: [], count: 0 };
+                    }
+                    if (visitor.city) {
+                        acc[country].cities.push(visitor.city);
+                    }
+                    acc[country].count += 1;
+                    return acc;
+                }, {});
+                
+                Object.keys(grouped).forEach(country => {
+                    grouped[country].cities = [...new Set(grouped[country].cities)];
+                });
+
+                setVisitors(grouped);
+            }
+            setLoading(false);
+        };
+
+        fetchVisitors();
+    }, [isAuthenticated]);
+    
+    useEffect(() => {
+        const handleEsc = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                onClose();
+            }
+        };
+        window.addEventListener('keydown', handleEsc);
+        return () => {
+            window.removeEventListener('keydown', handleEsc);
+        };
+    }, [onClose]);
+
+    const handlePasswordSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (password === 'yaman321') {
+            setIsAuthenticated(true);
+            setAuthError(null);
+        } else {
+            setAuthError('Incorrect password. Please try again.');
+            setPassword('');
+        }
+    };
+
+    return (
+        <div 
+            className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50"
+            onClick={onClose}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="admin-panel-title"
+        >
+            <div 
+                className="bg-slate-800 rounded-lg shadow-xl p-6 max-w-2xl w-full text-slate-200 max-h-[80vh] flex flex-col"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="flex justify-between items-center mb-4 pb-4 border-b border-slate-600">
+                    <h2 id="admin-panel-title" className="text-2xl font-bold">Admin Panel - Visitors</h2>
+                    <button onClick={onClose} className="p-1 rounded-full hover:bg-slate-700 transition-colors" aria-label="Close admin panel">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+
+                {!isAuthenticated ? (
+                    <div className="p-4">
+                        <h3 className="text-lg font-semibold mb-4 text-center">Authentication Required</h3>
+                        <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                            <div>
+                                <label htmlFor="password-input" className="block text-sm font-medium text-slate-300 sr-only">Password</label>
+                                <input
+                                    id="password-input"
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="Enter password"
+                                    autoFocus
+                                    className="mt-1 block w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-slate-200"
+                                />
+                            </div>
+                            {authError && <p className="text-red-400 text-sm text-center">{authError}</p>}
+                            <button 
+                                type="submit" 
+                                className="w-full bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700 transition-all disabled:bg-indigo-800 disabled:cursor-not-allowed"
+                                disabled={!password}
+                            >
+                                Unlock
+                            </button>
+                        </form>
+                    </div>
+                ) : (
+                    <div className="overflow-y-auto custom-scrollbar pr-2">
+                        {loading && <p>Loading visitors...</p>}
+                        {error && <p className="text-red-400">{error}</p>}
+                        {!loading && !error && Object.keys(visitors).length === 0 && <p>No visitor data available.</p>}
+                        
+                        {!loading && !error && (
+                            <ul className="space-y-2">
+                                {Object.entries(visitors).sort((a,b) => b[1].count - a[1].count).map(([country, data]) => (
+                                    <li key={country} className="bg-slate-700 rounded-md">
+                                        <details>
+                                            <summary className="p-3 cursor-pointer flex justify-between items-center font-semibold list-none">
+                                                <span>{country}</span>
+                                                <span className="text-sm bg-slate-600 px-2 py-0.5 rounded-full">{data.count}</span>
+                                            </summary>
+                                            <div className="p-3 border-t border-slate-600">
+                                                {data.cities.length > 0 ? (
+                                                    <ul className="list-disc list-inside pl-2 space-y-1 text-slate-300">
+                                                        {data.cities.sort().map((city, index) => city && <li key={index}>{city}</li>)}
+                                                    </ul>
+                                                ) : (
+                                                    <p className="text-slate-400 italic">No city data available for this country.</p>
+                                                )}
+                                            </div>
+                                        </details>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+export default AdminPanel;

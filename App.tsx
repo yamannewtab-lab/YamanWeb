@@ -17,6 +17,7 @@ import ImageModal from './components/ImageModal';
 import AboutPage from './components/AboutPage';
 import TajwidQuizPage from './components/TajwidQuizPage';
 import TeachersPage from './components/TeachersPage';
+import AdminPanel from './components/AdminPanel';
 
 const App: React.FC = () => {
     const [currentPage, setCurrentPage] = useState<Page>('home');
@@ -29,6 +30,7 @@ const App: React.FC = () => {
     });
     const [imageModalSrc, setImageModalSrc] = useState<string | null>(null);
     const [registerAgainTarget, setRegisterAgainTarget] = useState<Page>('ijazah');
+    const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
     
     const currentLanguage = LANGUAGES[currentLanguageIndex];
 
@@ -37,6 +39,21 @@ const App: React.FC = () => {
         document.documentElement.lang = currentLanguage;
         document.documentElement.dir = currentLanguage === 'ar' ? 'rtl' : 'ltr';
     }, [currentLanguage]);
+
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.ctrlKey && event.key === 'k') {
+                event.preventDefault();
+                setIsAdminPanelOpen(prev => !prev);
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, []);
 
     const t = useCallback((key: string): string => {
         return LANGUAGE_DATA[currentLanguage][key] || key;
@@ -103,9 +120,10 @@ const App: React.FC = () => {
                         {renderPage()}
                     </div>
                 </main>
-                <Footer t={t} />
+                <Footer t={t} onOpenAdminPanel={() => setIsAdminPanelOpen(true)} />
             </div>
             {imageModalSrc && <ImageModal src={imageModalSrc} onClose={() => setImageModalSrc(null)} />}
+            {isAdminPanelOpen && <AdminPanel onClose={() => setIsAdminPanelOpen(false)} />}
         </div>
     );
 };
