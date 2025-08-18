@@ -67,6 +67,17 @@ const HomePage: React.FC<HomePageProps> = ({ navigateTo, t }) => {
                     buttonClassName="bg-cyan-500 hover:bg-cyan-600"
                 />
             </div>
+            <div className="mt-6 flex justify-center">
+                 <div className="w-full md:w-1/3">
+                    <ActionCard
+                        title={t('feedbackSectionTitle')}
+                        description={t('feedbackSectionDesc')}
+                        buttonText={t('feedbackButtonText')}
+                        onButtonClick={() => navigateTo('feedback')}
+                        buttonClassName="bg-pink-500 hover:bg-pink-600"
+                    />
+                 </div>
+            </div>
         </div>
     );
 };

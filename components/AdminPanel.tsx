@@ -13,6 +13,11 @@ interface GroupedVisitors {
     };
 }
 
+interface Feedback {
+    message: string;
+    created_at: string;
+}
+
 interface AdminPanelProps {
     onClose: () => void;
 }
@@ -21,25 +26,32 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [password, setPassword] = useState('');
     const [authError, setAuthError] = useState<string | null>(null);
+    const [activeTab, setActiveTab] = useState<'visitors' | 'feedbacks'>('visitors');
 
+    // Visitor states
     const [visitors, setVisitors] = useState<GroupedVisitors>({});
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const [visitorsLoading, setVisitorsLoading] = useState(true);
+    const [visitorsError, setVisitorsError] = useState<string | null>(null);
+
+    // Feedback states
+    const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
+    const [feedbacksLoading, setFeedbacksLoading] = useState(true);
+    const [feedbacksError, setFeedbacksError] = useState<string | null>(null);
 
     useEffect(() => {
         if (!isAuthenticated) return;
 
         const fetchVisitors = async () => {
-            setLoading(true);
-            setError(null);
+            setVisitorsLoading(true);
+            setVisitorsError(null);
             const { data, error } = await supabase
                 .from('visitors')
                 .select('country, city');
 
             if (error) {
-                console.error("Error fetching visitors:", error);
-                setError("Failed to fetch visitor data.");
-                setLoading(false);
+                console.error("Error fetching visitors:", error.message);
+                setVisitorsError("Failed to fetch visitor data.");
+                setVisitorsLoading(false);
                 return;
             }
 
@@ -62,10 +74,28 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
 
                 setVisitors(grouped);
             }
-            setLoading(false);
+            setVisitorsLoading(false);
+        };
+
+        const fetchFeedbacks = async () => {
+            setFeedbacksLoading(true);
+            setFeedbacksError(null);
+            const { data, error } = await supabase
+                .from('feedbacks')
+                .select('message, created_at')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error("Error fetching feedbacks:", error.message);
+                setFeedbacksError("Failed to fetch feedback data.");
+            } else if (data) {
+                setFeedbacks(data as Feedback[]);
+            }
+            setFeedbacksLoading(false);
         };
 
         fetchVisitors();
+        fetchFeedbacks();
     }, [isAuthenticated]);
     
     useEffect(() => {
@@ -90,6 +120,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
             setPassword('');
         }
     };
+    
+    const getTabClassName = (tabName: 'visitors' | 'feedbacks') => {
+        return `px-4 py-2 text-sm font-medium rounded-t-md transition-colors focus:outline-none ${
+            activeTab === tabName
+                ? 'bg-slate-700 text-white'
+                : 'text-slate-400 hover:bg-slate-700/50 hover:text-slate-200'
+        }`;
+    };
 
     return (
         <div 
@@ -104,7 +142,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex justify-between items-center mb-4 pb-4 border-b border-slate-600">
-                    <h2 id="admin-panel-title" className="text-2xl font-bold">Admin Panel - Visitors</h2>
+                    <h2 id="admin-panel-title" className="text-2xl font-bold">Admin Panel</h2>
                     <button onClick={onClose} className="p-1 rounded-full hover:bg-slate-700 transition-colors" aria-label="Close admin panel">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
@@ -137,35 +175,63 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                         </form>
                     </div>
                 ) : (
-                    <div className="overflow-y-auto custom-scrollbar pr-2">
-                        {loading && <p>Loading visitors...</p>}
-                        {error && <p className="text-red-400">{error}</p>}
-                        {!loading && !error && Object.keys(visitors).length === 0 && <p>No visitor data available.</p>}
-                        
-                        {!loading && !error && (
-                            <ul className="space-y-2">
-                                {Object.entries(visitors).sort((a,b) => b[1].count - a[1].count).map(([country, data]) => (
-                                    <li key={country} className="bg-slate-700 rounded-md">
-                                        <details>
-                                            <summary className="p-3 cursor-pointer flex justify-between items-center font-semibold list-none">
-                                                <span>{country}</span>
-                                                <span className="text-sm bg-slate-600 px-2 py-0.5 rounded-full">{data.count}</span>
-                                            </summary>
-                                            <div className="p-3 border-t border-slate-600">
-                                                {data.cities.length > 0 ? (
-                                                    <ul className="list-disc list-inside pl-2 space-y-1 text-slate-300">
-                                                        {data.cities.sort().map((city, index) => city && <li key={index}>{city}</li>)}
-                                                    </ul>
-                                                ) : (
-                                                    <p className="text-slate-400 italic">No city data available for this country.</p>
-                                                )}
-                                            </div>
-                                        </details>
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                    </div>
+                    <>
+                        <div className="flex border-b border-slate-600 -mt-4 -mx-6 px-6">
+                            <button onClick={() => setActiveTab('visitors')} className={getTabClassName('visitors')}>Visitors</button>
+                            <button onClick={() => setActiveTab('feedbacks')} className={getTabClassName('feedbacks')}>Feedbacks</button>
+                        </div>
+                        <div className="overflow-y-auto custom-scrollbar pr-2 mt-4 flex-grow">
+                            {activeTab === 'visitors' && (
+                                <div>
+                                    {visitorsLoading && <p>Loading visitors...</p>}
+                                    {visitorsError && <p className="text-red-400">{visitorsError}</p>}
+                                    {!visitorsLoading && !visitorsError && Object.keys(visitors).length === 0 && <p>No visitor data available.</p>}
+                                    
+                                    {!visitorsLoading && !visitorsError && (
+                                        <ul className="space-y-2">
+                                            {Object.entries(visitors).sort((a,b) => b[1].count - a[1].count).map(([country, data]) => (
+                                                <li key={country} className="bg-slate-700 rounded-md">
+                                                    <details>
+                                                        <summary className="p-3 cursor-pointer flex justify-between items-center font-semibold list-none">
+                                                            <span>{country}</span>
+                                                            <span className="text-sm bg-slate-600 px-2 py-0.5 rounded-full">{data.count}</span>
+                                                        </summary>
+                                                        <div className="p-3 border-t border-slate-600">
+                                                            {data.cities.length > 0 ? (
+                                                                <ul className="list-disc list-inside pl-2 space-y-1 text-slate-300">
+                                                                    {data.cities.sort().map((city, index) => city && <li key={index}>{city}</li>)}
+                                                                </ul>
+                                                            ) : (
+                                                                <p className="text-slate-400 italic">No city data available for this country.</p>
+                                                            )}
+                                                        </div>
+                                                    </details>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                </div>
+                            )}
+                             {activeTab === 'feedbacks' && (
+                                <div>
+                                    {feedbacksLoading && <p>Loading feedbacks...</p>}
+                                    {feedbacksError && <p className="text-red-400">{feedbacksError}</p>}
+                                    {!feedbacksLoading && !feedbacksError && feedbacks.length === 0 && <p>No feedback available.</p>}
+
+                                    {!feedbacksLoading && !feedbacksError && (
+                                        <ul className="space-y-3">
+                                            {feedbacks.map((feedback, index) => (
+                                                <li key={index} className="bg-slate-700 p-4 rounded-md shadow">
+                                                    <p className="text-slate-300 whitespace-pre-wrap">{feedback.message}</p>
+                                                    <p className="text-xs text-slate-500 mt-2 text-right">{new Date(feedback.created_at).toLocaleString()}</p>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </>
                 )}
             </div>
         </div>

@@ -14,7 +14,7 @@ const Recommendation: React.FC<RecommendationProps> = ({ onOpenAdminPanel }) => 
             .select('*', { count: 'exact', head: true });
 
         if (error) {
-            console.error("Error fetching visitor count:", error);
+            console.error("Error fetching visitor count:", error.message);
             setViewers(null); 
         } else {
             setViewers(count);
