@@ -14,7 +14,7 @@ const Recommendation: React.FC<RecommendationProps> = ({ onOpenAdminPanel }) => 
             .select('*', { count: 'exact', head: true });
 
         if (error) {
-            console.error("Error fetching visitor count:", error.message);
+            console.error("Error fetching visitor count:", error);
             setViewers(null); 
         } else {
             setViewers(count);
@@ -47,7 +47,9 @@ const Recommendation: React.FC<RecommendationProps> = ({ onOpenAdminPanel }) => 
             if (!hasLogged) {
                 const visitor = await getVisitorInfo();
                 if (visitor) {
-                  const { error } = await supabase.from("visitors").insert([visitor]);
+                  // Use upsert to prevent "duplicate key" errors for returning visitors.
+                  // This will insert a new record or update the existing one based on the ip_address.
+                  const { error } = await supabase.from("visitors").upsert([visitor], { onConflict: 'ip_address' });
                   if (error) {
                     console.error("Error logging visitor:", error.message);
                   } else {
