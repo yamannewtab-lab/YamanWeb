@@ -121,7 +121,7 @@ const App: React.FC = () => {
                     onNavigateHome={() => navigateTo('home')}
                     isHomePage={currentPage === 'home'}
                 />
-                <main className="p-6 sm:p-8 md:p-12 overflow-y-auto">
+                <main className={`overflow-y-auto ${currentPage === 'home' ? '' : 'p-6 sm:p-8 md:p-12'}`}>
                     <div key={currentPage} className="page-transition">
                         {renderPage()}
                     </div>

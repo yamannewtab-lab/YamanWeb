@@ -60,17 +60,44 @@ const HomePage: React.FC<HomePageProps> = ({ navigateTo, t }) => {
     const sectionsRef = useRef<HTMLDivElement>(null);
 
     const handleScrollToSections = () => {
-        sectionsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (!sectionsRef.current) return;
+
+        const targetElement = sectionsRef.current;
+        const headerOffset = 0; 
+        const elementPosition = targetElement.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+        const startPosition = window.pageYOffset;
+        const distance = offsetPosition - startPosition;
+        const duration = 1000; // Duration in milliseconds
+        let startTime: number | null = null;
+
+        const easeInOutCubic = (t: number) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+        const animation = (currentTime: number) => {
+            if (startTime === null) startTime = currentTime;
+            const timeElapsed = currentTime - startTime;
+            const progress = Math.min(timeElapsed / duration, 1);
+            const easedProgress = easeInOutCubic(progress);
+            
+            window.scrollTo(0, startPosition + distance * easedProgress);
+
+            if (timeElapsed < duration) {
+                requestAnimationFrame(animation);
+            }
+        };
+
+        requestAnimationFrame(animation);
     };
 
     return (
-        <div className="-m-6 sm:-m-8 md:-m-12">
+        <div>
             <div 
-                className="relative h-[60vh] min-h-[400px] flex items-center justify-center text-center bg-cover bg-center" 
+                className="relative h-[65vh] min-h-[500px] flex items-center justify-center text-center bg-cover bg-center" 
                 style={{ backgroundImage: "url('https://i.imgur.com/K9c7R6l.jpeg')" }}
             >
-                <div className="absolute inset-0 bg-slate-900 bg-opacity-60"></div>
-                <div className="relative z-10 p-4">
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-slate-900/40"></div>
+                <div className="relative z-10 px-4 py-8 sm:py-16">
                     <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white drop-shadow-lg">{t('heroTitle')}</h1>
                     <p className="mt-4 max-w-3xl mx-auto text-lg text-slate-200 drop-shadow-md">
                         {t('heroSubtitle')}
@@ -80,6 +107,13 @@ const HomePage: React.FC<HomePageProps> = ({ navigateTo, t }) => {
                         className="mt-8 px-8 py-4 bg-gradient-to-r from-sky-500 to-indigo-600 text-white font-bold text-lg rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 ease-in-out focus:outline-none focus:ring-4 focus:ring-sky-300 dark:focus:ring-sky-800"
                     >
                         {t('heroButton')}
+                    </button>
+                </div>
+                 <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10">
+                    <button onClick={handleScrollToSections} className="animate-bounce p-2 group" aria-label="Scroll down">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white opacity-70 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
                     </button>
                 </div>
             </div>
