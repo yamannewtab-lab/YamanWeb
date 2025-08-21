@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Page, IjazahApplication } from '../types';
-import { IJAZAH_PRICES, WHATSAPP_PHONE_NUMBER, PATH_TRANSLATION_KEYS } from '../constants';
+import { IJAZAH_PRICES, PATH_TRANSLATION_KEYS } from '../constants';
+import { sendIjazahApplicationToDiscord } from '../discordService';
 
 interface PaymentPageProps {
     navigateTo: (page: Page) => void;
@@ -15,31 +16,14 @@ const PaymentPage: React.FC<PaymentPageProps> = ({ navigateTo, t, ijazahApplicat
     const price = IJAZAH_PRICES[path]?.[daysPerWeek] || 0;
     const priceString = `${price.toLocaleString()} IDR`;
 
-    const handlePay = () => {
-        const message = `*New Ijazah Application & Payment*
-
-*Chosen Path:* ${path}
-*Memorization:* ${memorization === 'with' ? t('summaryWithMemorization') : t('summaryWithoutMemorization')}
-${fullDetails.qiraah ? `*Preferred Qira'ah:* ${fullDetails.qiraah}\n` : ''}*Weekly Commitment:* ${daysPerWeek} days
-*Preferred Time:* ${fullDetails.preferredTime}
-*Calculated Price:* ${priceString}
-
----
-
-*Applicant Details*
-*Name:* ${fullDetails.name}
-*Age:* ${fullDetails.age}
-*Country:* ${fullDetails.from}
-*Speaks:* ${fullDetails.language}
-*Studied with a Sheikh before?:* ${fullDetails.sheikh}
-
-*Journey with the Qur'an:*
-${fullDetails.journey}
-        `.trim().replace(/\n\s*\n/g, '\n\n');
-
-        const url = `https://wa.me/${WHATSAPP_PHONE_NUMBER}?text=${encodeURIComponent(message)}`;
-        window.open(url, "_blank");
-        setTimeout(() => navigateTo('thanks'), 100);
+    const handlePay = async () => {
+        try {
+            await sendIjazahApplicationToDiscord(ijazahApplication, priceString, t);
+        } catch (error) {
+            console.error("Failed to send Discord notification:", error);
+            // Log the error, but don't block the user from seeing the confirmation page.
+        }
+        navigateTo('thanks');
     };
 
     const handleContinue = () => {
@@ -117,7 +101,6 @@ ${fullDetails.journey}
                     </div>
                     <div className="mt-8">
                         <button onClick={handlePay} className="bg-green-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-600 transition-all text-lg">{t('payButton')}</button>
-                        <p className="text-xs text-slate-500 mt-2 dark:text-slate-400">{t('bsiText')}</p>
                     </div>
                     <div className="mt-6 flex flex-col items-center gap-4">
                         <button

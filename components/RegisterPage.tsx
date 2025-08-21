@@ -1,6 +1,6 @@
 import React from 'react';
 import { Page } from '../types';
-import { WHATSAPP_PHONE_NUMBER } from '../constants';
+import { sendCourseRegistrationToDiscord } from '../discordService';
 
 interface RegisterPageProps {
     navigateTo: (page: Page) => void;
@@ -9,18 +9,23 @@ interface RegisterPageProps {
 
 const RegisterPage: React.FC<RegisterPageProps> = ({ navigateTo, t }) => {
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
-        const name = formData.get('name');
-        const source = formData.get('source');
-        const about = formData.get('about');
-        const phone = formData.get('phone');
-        const message = `*New Course Registration*\n\n*Name:* ${name}\n*How they heard about us:* ${source}\n*About them:* ${about}\n*WhatsApp:* ${phone}\n\nyoutube.com`.trim();
-        const url = `https://wa.me/${WHATSAPP_PHONE_NUMBER}?text=${encodeURIComponent(message)}`;
-        window.open(url, "_blank");
+        const name = formData.get('name') as string;
+        const source = formData.get('source') as string;
+        const about = formData.get('about') as string;
+        const phone = formData.get('phone') as string;
+
+        try {
+            await sendCourseRegistrationToDiscord({ name, source, about, phone }, t);
+        } catch (error) {
+            console.error("Failed to send course registration to Discord:", error);
+            // We can decide to show an error to the user here, but for now we'll proceed
+        }
+
         e.currentTarget.reset();
-        setTimeout(() => navigateTo('thanks'), 100);
+        navigateTo('thanks');
     };
 
     return (

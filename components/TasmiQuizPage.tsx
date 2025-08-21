@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Page } from '../types';
-import { WHATSAPP_PHONE_NUMBER } from '../constants';
+import { sendTasmiRequestToDiscord } from '../discordService';
 
 interface TasmiQuizPageProps {
     navigateTo: (page: Page) => void;
@@ -10,31 +10,32 @@ interface TasmiQuizPageProps {
 const TasmiQuizPage: React.FC<TasmiQuizPageProps> = ({ navigateTo, t }) => {
     const [sessions, setSessions] = useState(1);
     
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
-        const name = formData.get('name');
-        const phone = formData.get('phone');
-        const portion = formData.get('portion');
-        const time = formData.get('time');
-        const journey = formData.get('journey');
-        const language = formData.get('language');
+        const name = formData.get('name') as string;
+        const phone = formData.get('phone') as string;
+        const portion = formData.get('portion') as string;
+        const time = formData.get('time') as string;
+        const journey = formData.get('journey') as string;
+        const language = formData.get('language') as string;
 
-        const message = `*New Opened Tasmi' Request*
+        try {
+            await sendTasmiRequestToDiscord({
+                name,
+                phone,
+                sessions,
+                portion,
+                time,
+                language,
+                journey,
+            }, t);
+        } catch (error) {
+            console.error("Failed to send Tasmi' request to Discord:", error);
+        }
 
-*Name:* ${name}
-*WhatsApp:* ${phone}
-*Weekly Sessions:* ${sessions}
-*Portion to Recite:* ${portion}
-*Preferred Time:* ${time}
-*Speaks:* ${language}
-*Journey with Qur'an:* ${journey}
-        `.trim().replace(/\n\s*\n/g, '\n\n');
-
-        const url = `https://wa.me/${WHATSAPP_PHONE_NUMBER}?text=${encodeURIComponent(message)}`;
-        window.open(url, "_blank");
         e.currentTarget.reset();
-        setTimeout(() => navigateTo('tasmiInfo'), 100);
+        navigateTo('tasmiInfo');
     };
     
     return (

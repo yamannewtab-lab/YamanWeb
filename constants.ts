@@ -1,7 +1,6 @@
 import { Language, LanguageData, IjazahPrices } from './types';
 
 export const LOCK_CHECK = true;
-export const WHATSAPP_PHONE_NUMBER = "6289516841713";
 export const LANGUAGES: Language[] = ['en', 'ar', 'id'];
 
 export const IJAZAH_PRICES: IjazahPrices = {
@@ -33,7 +32,7 @@ export const LANGUAGE_DATA: LanguageData = {
         sourceLabel: "How did you hear about us?",
         aboutLabel: "Tell us about yourself",
         phoneLabel: "WhatsApp Number",
-        buttonText: "Register via WhatsApp",
+        buttonText: "Submit Registration",
         homeButtonText: "Home",
         registerButtonText: "Register",
         langButtonText: "AR",
@@ -94,7 +93,7 @@ export const LANGUAGE_DATA: LanguageData = {
         tasmiInfoText1: "The teacher will choose the time and the date available for him.",
         tasmiInfoText2: "We will try to answer you as fast as we can.",
         paymentPriceText: "This will be:",
-        payButton: "Send Your Request",
+        payButton: "Submit Application",
         bsiText: "You're one step away from starting your journey",
         summaryTitle: "Application Summary",
         summaryPath: "Ijazah Path",
@@ -191,7 +190,7 @@ export const LANGUAGE_DATA: LanguageData = {
         sourceLabel: "كيف سمعت عنا؟",
         aboutLabel: "أخبرنا عن نفسك",
         phoneLabel: "رقم الواتساب",
-        buttonText: "التسجيل عبر الواتساب",
+        buttonText: "إرسال التسجيل",
         homeButtonText: "الرئيسية",
         registerButtonText: "تسجيل",
         langButtonText: "ID",
@@ -252,7 +251,7 @@ export const LANGUAGE_DATA: LanguageData = {
         tasmiInfoText1: "سيختار المعلم الوقت والتاريخ المتاح له.",
         tasmiInfoText2: "سنحاول الرد عليك في أسرع وقت ممكن.",
         paymentPriceText: "السعر سيكون:",
-        payButton: "إرسال طلبك",
+        payButton: "إرسال الطلب",
         bsiText: "أنت على بعد خطوة واحدة من بدء رحلتك",
         summaryTitle: "ملخص الطلب",
         summaryPath: "مسار الإجازة",
@@ -349,7 +348,7 @@ export const LANGUAGE_DATA: LanguageData = {
         sourceLabel: "Dari mana Anda mengetahui tentang kami?",
         aboutLabel: "Ceritakan tentang diri Anda",
         phoneLabel: "Nomor WhatsApp",
-        buttonText: "Daftar melalui WhatsApp",
+        buttonText: "Kirim Pendaftaran",
         homeButtonText: "Beranda",
         registerButtonText: "Daftar",
         langButtonText: "EN",
@@ -410,7 +409,7 @@ export const LANGUAGE_DATA: LanguageData = {
         tasmiInfoText1: "Guru akan memilih waktu dan tanggal yang tersedia untuknya.",
         tasmiInfoText2: "Kami akan mencoba menjawab Anda secepat mungkin.",
         paymentPriceText: "Totalnya:",
-        payButton: "Kirim Permintaan Anda",
+        payButton: "Kirim Aplikasi",
         bsiText: "Anda selangkah lagi untuk memulai perjalanan Anda",
         summaryTitle: "Ringkasan Pendaftaran",
         summaryPath: "Jalur Ijazah",

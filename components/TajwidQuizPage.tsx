@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Page } from '../types';
-import { WHATSAPP_PHONE_NUMBER, TAJWID_IMPROVEMENT_PRICES } from '../constants';
+import { TAJWID_IMPROVEMENT_PRICES } from '../constants';
+import { sendTajwidRequestToDiscord } from '../discordService';
 
 interface TajwidQuizPageProps {
     navigateTo: (page: Page) => void;
@@ -11,13 +12,13 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t }) => {
     const subscriptionOptions = Object.keys(TAJWID_IMPROVEMENT_PRICES).map(Number).sort((a, b) => b - a);
     const [selectedSubscription, setSelectedSubscription] = useState<number>(subscriptionOptions[0]);
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
-        const name = formData.get('name');
-        const age = formData.get('age');
-        const tajwidLevel = formData.get('tajwidLevel');
-        const time = formData.get('time');
+        const name = formData.get('name') as string;
+        const age = formData.get('age') as string;
+        const tajwidLevel = formData.get('tajwidLevel') as string;
+        const time = formData.get('time') as string;
         
         const dayToKeyMap: {[key: number]: string} = {
             15: 'subscriptionOption15Days',
@@ -28,19 +29,21 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t }) => {
         const subscriptionText = t(dayToKeyMap[selectedSubscription]);
         const priceText = TAJWID_IMPROVEMENT_PRICES[selectedSubscription].toLocaleString() + " IDR";
 
-        const message = `*Tajwid Improvement Request*
-
-*Name:* ${name}
-*Age:* ${age}
-*Time:* ${time}
-*Level:* ${tajwidLevel}
-*Plan:* ${subscriptionText} (${priceText})
-        `.trim().replace(/\n\s*\n/g, '\n\n');
-
-        const url = `https://wa.me/${WHATSAPP_PHONE_NUMBER}?text=${encodeURIComponent(message)}`;
-        window.open(url, "_blank");
+        try {
+            await sendTajwidRequestToDiscord({
+                name,
+                age,
+                time,
+                tajwidLevel,
+                subscriptionText,
+                priceText
+            }, t);
+        } catch (error) {
+            console.error("Failed to send Tajwid request to Discord:", error);
+        }
+        
         e.currentTarget.reset();
-        setTimeout(() => navigateTo('thanks'), 100);
+        navigateTo('thanks');
     };
 
     const tajwidLevels = [
