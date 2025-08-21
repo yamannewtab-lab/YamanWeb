@@ -57,6 +57,7 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
             fullDetails: {
                 name: formData.get('name') as string,
                 age: convertedAge,
+                whatsapp: formData.get('whatsapp') as string,
                 from: formData.get('from') as string,
                 sheikh: formData.get('sheikh') as string,
                 journey: formData.get('journey') as string,
@@ -98,6 +99,10 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                     <div>
                         <label htmlFor="quiz-age" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizAgeLabel')}</label>
                         <input type="text" inputMode="decimal" pattern="[0-9٠-٩]*" id="quiz-age" name="age" required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm dark:bg-slate-200 dark:border-slate-500 text-black dark:placeholder-slate-500" />
+                    </div>
+                     <div>
+                        <label htmlFor="quiz-whatsapp" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('whatsappLabel')}</label>
+                        <input type="tel" id="quiz-whatsapp" name="whatsapp" required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm dark:bg-slate-200 dark:border-slate-500 text-black dark:placeholder-slate-500" />
                     </div>
                     <div>
                         <label htmlFor="quiz-from" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizFromLabel')}</label>

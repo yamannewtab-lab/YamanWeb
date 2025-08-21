@@ -30,6 +30,7 @@ const FeedbackPage: React.FC<FeedbackPageProps> = ({ navigateTo, t }) => {
             console.error("Error submitting feedback:", error.message);
             setError(`Submission failed: ${error.message}. Please try again.`);
         } else {
+            setFeedback('');
             navigateTo('feedbackThanks');
         }
     };

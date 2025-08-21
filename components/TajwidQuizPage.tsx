@@ -14,9 +14,11 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t }) => {
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        const formData = new FormData(e.currentTarget);
+        const form = e.currentTarget;
+        const formData = new FormData(form);
         const name = formData.get('name') as string;
         const age = formData.get('age') as string;
+        const whatsapp = formData.get('whatsapp') as string;
         const tajwidLevel = formData.get('tajwidLevel') as string;
         const time = formData.get('time') as string;
         
@@ -33,6 +35,7 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t }) => {
             await sendTajwidRequestToDiscord({
                 name,
                 age,
+                whatsapp,
                 time,
                 tajwidLevel,
                 subscriptionText,
@@ -42,7 +45,6 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t }) => {
             console.error("Failed to send Tajwid request to Discord:", error);
         }
         
-        e.currentTarget.reset();
         navigateTo('thanks');
     };
 
@@ -68,6 +70,10 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t }) => {
                      <div>
                         <label htmlFor="tajwid-age" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizAgeLabel')}</label>
                         <input type="text" inputMode="decimal" pattern="[0-9٠-٩]*" id="tajwid-age" name="age" required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm dark:bg-slate-200 dark:border-slate-500 text-black" />
+                    </div>
+                    <div>
+                        <label htmlFor="tajwid-whatsapp" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('whatsappLabel')}</label>
+                        <input type="tel" id="tajwid-whatsapp" name="whatsapp" required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm dark:bg-slate-200 dark:border-slate-500 text-black" />
                     </div>
                     
                     <div>

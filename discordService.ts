@@ -15,7 +15,8 @@ const WEBHOOK_URLS = {
 // Define interfaces for the request types for better type safety
 interface TasmiRequest {
     name: string;
-    phone: string;
+    age: string;
+    whatsapp: string;
     sessions: number;
     portion: string;
     time: string;
@@ -26,6 +27,7 @@ interface TasmiRequest {
 interface TajwidRequest {
     name: string;
     age: string;
+    whatsapp: string;
     time: string;
     tajwidLevel: string;
     subscriptionText: string;
@@ -34,9 +36,10 @@ interface TajwidRequest {
 
 interface CourseRegistration {
     name: string;
+    age: string;
+    whatsapp: string;
     source: string;
     about: string;
-    phone: string;
 }
 
 const getIjazahWebhookUrl = (path: string): string => {
@@ -69,21 +72,22 @@ export async function sendIjazahApplicationToDiscord(
     const webhookUrl = getIjazahWebhookUrl(path);
 
     const fields = [
+        { name: t('quizNameLabel'), value: fullDetails.name || 'N/A', inline: true },
+        { name: t('quizAgeLabel'), value: fullDetails.age || 'N/A', inline: true },
+        { name: t('whatsappLabel'), value: fullDetails.whatsapp || 'N/A', inline: true },
         { name: t('summaryPath'), value: t(PATH_TRANSLATION_KEYS[path] || path), inline: true },
         { name: t('summaryCommitment'), value: t('daysPerWeek').replace('{count}', String(daysPerWeek)), inline: true },
         { name: t('summaryPrice'), value: `${priceString} / ${t('monthlyText')}`, inline: true },
         { name: t('summaryMemorization'), value: memorization === 'with' ? t('summaryWithMemorization') : t('summaryWithoutMemorization'), inline: true },
         { name: t('summaryTime'), value: fullDetails.preferredTime || 'N/A', inline: true },
         { name: t('summaryLanguage'), value: fullDetails.language || 'N/A', inline: true },
-        { name: t('quizNameLabel'), value: fullDetails.name || 'N/A', inline: true },
-        { name: t('quizAgeLabel'), value: fullDetails.age || 'N/A', inline: true },
         { name: t('quizFromLabel'), value: fullDetails.from || 'N/A', inline: true },
         { name: t('quizSheikhLabel'), value: fullDetails.sheikh ? t(fullDetails.sheikh) : 'N/A', inline: true },
     ];
     
     // Add Qira'ah field only if it exists
     if (fullDetails.qiraah) {
-        fields.splice(1, 0, { name: t('summaryQiraah'), value: fullDetails.qiraah, inline: true });
+        fields.splice(4, 0, { name: t('summaryQiraah'), value: fullDetails.qiraah, inline: true });
     }
 
     const embed = {
@@ -127,7 +131,8 @@ export async function sendTasmiRequestToDiscord(request: TasmiRequest, t: (key: 
         color: 5763719, // Green
         fields: [
             { name: t('quizNameLabel'), value: request.name, inline: true },
-            { name: t('phoneLabel'), value: request.phone || 'N/A', inline: true },
+            { name: t('quizAgeLabel'), value: request.age || 'N/A', inline: true },
+            { name: t('whatsappLabel'), value: request.whatsapp || 'N/A', inline: true },
             { name: t('tasmiWeeklyLabel'), value: String(request.sessions), inline: true },
             { name: t('tasmiPortionLabel'), value: request.portion, inline: true },
             { name: t('tasmiTimeLabel'), value: request.time, inline: true },
@@ -169,6 +174,7 @@ export async function sendTajwidRequestToDiscord(request: TajwidRequest, t: (key
         fields: [
             { name: t('quizNameLabel'), value: request.name, inline: true },
             { name: t('quizAgeLabel'), value: request.age, inline: true },
+            { name: t('whatsappLabel'), value: request.whatsapp || 'N/A', inline: true },
             { name: t('quizTimeLabel'), value: request.time, inline: true },
             { name: t('tajwidLevelLabel'), value: request.tajwidLevel, inline: true },
             { name: "Subscription Plan", value: `${request.subscriptionText} (${request.priceText})`, inline: false },
@@ -207,7 +213,8 @@ export async function sendCourseRegistrationToDiscord(request: CourseRegistratio
         color: 4886754, // Indigo
         fields: [
             { name: t('nameLabel'), value: request.name, inline: true },
-            { name: t('phoneLabel'), value: request.phone, inline: true },
+            { name: t('quizAgeLabel'), value: request.age, inline: true },
+            { name: t('whatsappLabel'), value: request.whatsapp, inline: true },
             { name: t('sourceLabel'), value: request.source, inline: false },
             { name: t('aboutLabel'), value: request.about, inline: false },
         ],

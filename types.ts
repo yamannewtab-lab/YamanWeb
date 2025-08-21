@@ -9,6 +9,7 @@ export interface IjazahApplication {
     fullDetails: {
         name?: string;
         age?: string;
+        whatsapp?: string;
         from?: string;
         sheikh?: string;
         journey?: string;
