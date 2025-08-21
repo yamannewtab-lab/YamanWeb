@@ -77,10 +77,10 @@ const Recommendation: React.FC<RecommendationProps> = ({ onOpenAdminPanel }) => 
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
             </span>
-            <button onClick={onOpenAdminPanel} className="font-semibold text-slate-800 dark:text-slate-200 hover:text-indigo-500 dark:hover:text-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 rounded transition-colors">
+            <button onClick={onOpenAdminPanel} className="font-semibold text-stone-800 dark:text-gray-200 hover:text-amber-500 dark:hover:text-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-opacity-50 rounded transition-colors">
                 Visitors
             </button>
-            <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
+            <span className="flex items-center gap-1.5 text-stone-600 dark:text-gray-400">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                     <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
                     <path fillRule="evenodd" d="M.458 10C3.732 4.943 7.523 3 10 3s6.268 1.943 9.542 7c-3.274 5.057-7.03 7-9.542 7S3.732 15.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />

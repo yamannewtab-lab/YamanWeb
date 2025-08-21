@@ -20,22 +20,25 @@ const IjazahPage: React.FC<IjazahPageProps> = ({ navigateTo, t, setIjazahApplica
         navigateTo('quiz');
     };
 
+    const primaryButtonClasses = "w-full sm:w-auto bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300";
+    const secondaryButtonClasses = "w-full sm:w-auto bg-stone-200 text-stone-700 font-bold py-3 px-6 rounded-lg shadow-sm hover:shadow-md hover:bg-stone-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 transform hover:-translate-y-0.5 transition-all duration-300";
+
     if (step === 'memorization') {
         return (
             <div>
                 <div className="text-center mb-8">
-                    <h2 className="text-3xl font-bold text-stone-800 dark:text-stone-100">{t('ijazahMemorizationTitle')}</h2>
-                    <p className="mt-2 text-stone-600 dark:text-stone-400">{t('ijazahMemorizationSubtitle')}</p>
+                    <h2 className="text-3xl font-bold text-stone-800 dark:text-gray-100">{t('ijazahMemorizationTitle')}</h2>
+                    <p className="mt-2 text-stone-600 dark:text-gray-400">{t('ijazahMemorizationSubtitle')}</p>
                 </div>
                 <div className="mt-8 flex flex-col items-center gap-4">
                     <div className="flex flex-col items-center w-full sm:w-auto">
-                        <button onClick={() => handleMemorizationClick('with')} className="bg-amber-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-amber-600 transition-all w-full text-lg">{t('withMemorizationButton')}</button>
-                        <span className="mt-2 text-xs bg-stone-200 text-stone-600 font-semibold px-2 py-0.5 rounded-full dark:bg-stone-600 dark:text-stone-300">Recommended</span>
+                        <button onClick={() => handleMemorizationClick('with')} className={`${primaryButtonClasses} text-lg`}>{t('withMemorizationButton')}</button>
+                        <span className="mt-2 text-xs bg-stone-200 text-stone-600 font-semibold px-2 py-0.5 rounded-full dark:bg-gray-600 dark:text-gray-300">Recommended</span>
                     </div>
-                    <button onClick={() => handleMemorizationClick('without')} className="bg-stone-400 text-white font-bold py-3 px-6 rounded-lg hover:bg-stone-500 transition-all w-full sm:w-auto text-lg">{t('withoutMemorizationButton')}</button>
+                    <button onClick={() => handleMemorizationClick('without')} className={`${secondaryButtonClasses} text-lg`}>{t('withoutMemorizationButton')}</button>
                 </div>
                 <div className="mt-12 text-center">
-                    <button onClick={() => navigateTo('home')} className="text-sm font-semibold text-stone-600 hover:text-amber-600 transition-colors dark:text-stone-400 dark:hover:text-amber-400">{t('backToHome')}</button>
+                    <button onClick={() => navigateTo('home')} className="text-sm font-semibold text-stone-600 hover:text-amber-600 transition-colors dark:text-gray-400 dark:hover:text-amber-400">{t('backToHome')}</button>
                 </div>
             </div>
         );
@@ -44,21 +47,21 @@ const IjazahPage: React.FC<IjazahPageProps> = ({ navigateTo, t, setIjazahApplica
     return (
         <div>
             <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold text-stone-800 dark:text-stone-100">{t('ijazahTitle')}</h2>
-                <p className="mt-2 text-stone-600 dark:text-stone-400">{t('ijazahSubtitle')}</p>
+                <h2 className="text-3xl font-bold text-stone-800 dark:text-gray-100">{t('ijazahTitle')}</h2>
+                <p className="mt-2 text-stone-600 dark:text-gray-400">{t('ijazahSubtitle')}</p>
             </div>
             <div className="mt-8 flex flex-col items-center gap-4">
-                <button onClick={() => handleOptionClick("Hafs 'an 'Asim")} className="bg-teal-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-teal-600 transition-all w-full sm:w-auto">{t('hafsButton')}</button>
-                <button onClick={() => handleOptionClick("The Ten Recitations")} className="bg-teal-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-teal-600 transition-all w-full sm:w-auto">{t('tenRecitationsButton')}</button>
-                <button onClick={() => handleOptionClick("Different Qira'ah")} className="bg-teal-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-teal-600 transition-all w-full sm:w-auto">{t('differentQiraahButton')}</button>
+                <button onClick={() => handleOptionClick("Hafs 'an 'Asim")} className={primaryButtonClasses}>{t('hafsButton')}</button>
+                <button onClick={() => handleOptionClick("The Ten Recitations")} className={primaryButtonClasses}>{t('tenRecitationsButton')}</button>
+                <button onClick={() => handleOptionClick("Different Qira'ah")} className={primaryButtonClasses}>{t('differentQiraahButton')}</button>
             </div>
-             <div className="mt-8 flex justify-center">
-                 <button onClick={() => setStep('memorization')} className="text-sm font-semibold text-stone-600 hover:text-amber-600 transition-colors dark:text-stone-400 dark:hover:text-amber-400">
+            <div className="mt-8 text-center">
+                <button onClick={() => setStep('memorization')} className="text-sm font-semibold text-stone-600 hover:text-amber-600 transition-colors dark:text-gray-400 dark:hover:text-amber-400">
                     &larr; {t('backButton')}
                 </button>
             </div>
             <div className="mt-4 text-center">
-                <button onClick={() => navigateTo('home')} className="text-sm font-semibold text-stone-600 hover:text-amber-600 transition-colors dark:text-stone-400 dark:hover:text-amber-400">{t('backToHome')}</button>
+                <button onClick={() => navigateTo('home')} className="text-sm font-semibold text-stone-600 hover:text-amber-600 transition-colors dark:text-gray-400 dark:hover:text-amber-400">{t('backToHome')}</button>
             </div>
         </div>
     );

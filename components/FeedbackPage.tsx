@@ -40,8 +40,8 @@ const FeedbackPage: React.FC<FeedbackPageProps> = ({ navigateTo, t }) => {
             {/* Form Section */}
             <div className="order-2 md:order-1">
                  <div className="text-center md:text-left mb-8">
-                    <h2 className="text-3xl font-bold text-stone-800 dark:text-stone-100">{t('feedbackPageTitle')}</h2>
-                    <p className="mt-2 text-stone-600 dark:text-stone-400">{t('feedbackPageSubtitle')}</p>
+                    <h2 className="text-3xl font-bold text-stone-800 dark:text-gray-100">{t('feedbackPageTitle')}</h2>
+                    <p className="mt-2 text-stone-600 dark:text-gray-400">{t('feedbackPageSubtitle')}</p>
                 </div>
                 <form onSubmit={handleSubmit}>
                     <div className="relative">
@@ -54,10 +54,10 @@ const FeedbackPage: React.FC<FeedbackPageProps> = ({ navigateTo, t }) => {
                             placeholder={t('feedbackPlaceholder')}
                             maxLength={maxChars}
                             required
-                            className="mt-1 block w-full px-4 py-3 bg-white border border-stone-300 rounded-lg shadow-sm placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 dark:bg-stone-700 dark:border-stone-600 text-stone-800 dark:text-stone-200 dark:placeholder-stone-400 transition"
+                            className="mt-1 block w-full px-4 py-3 bg-white border border-stone-300 rounded-lg shadow-sm placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 dark:bg-gray-700 dark:border-gray-600 text-stone-800 dark:text-gray-200 dark:placeholder-gray-400 transition"
                             aria-describedby="char-count"
                         />
-                        <div id="char-count" className="absolute bottom-3 right-3 text-xs text-stone-500 dark:text-stone-400">
+                        <div id="char-count" className="absolute bottom-3 right-3 text-xs text-stone-500 dark:text-gray-400">
                             {feedback.length} / {maxChars}
                         </div>
                     </div>
@@ -66,7 +66,7 @@ const FeedbackPage: React.FC<FeedbackPageProps> = ({ navigateTo, t }) => {
                         <button
                             type="submit"
                             disabled={isSubmitting || !feedback.trim()}
-                            className="w-full flex justify-center items-center bg-pink-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-pink-600 transition-all text-lg disabled:bg-pink-400 disabled:cursor-not-allowed dark:disabled:bg-pink-700 dark:disabled:opacity-60"
+                            className="w-full flex justify-center items-center bg-gradient-to-r from-pink-500 to-rose-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300 ease-in-out text-lg disabled:from-pink-400 disabled:to-rose-400 disabled:cursor-not-allowed dark:disabled:opacity-60"
                         >
                             {isSubmitting ? (
                                 <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -78,15 +78,15 @@ const FeedbackPage: React.FC<FeedbackPageProps> = ({ navigateTo, t }) => {
                     </div>
                 </form>
                  <div className="mt-8 text-center md:text-left">
-                    <button onClick={() => navigateTo('home')} className="text-sm font-semibold text-stone-600 hover:text-amber-600 transition-colors dark:text-stone-400 dark:hover:text-amber-400">{t('backToHome')}</button>
+                    <button onClick={() => navigateTo('home')} className="text-sm font-semibold text-stone-600 hover:text-amber-600 transition-colors dark:text-gray-400 dark:hover:text-amber-400">{t('backToHome')}</button>
                 </div>
             </div>
             
             {/* Decorative Panel */}
             <div className="order-1 md:order-2">
-                <div className="bg-gradient-to-br from-stone-700 to-stone-800 p-8 rounded-lg border border-stone-600 h-full flex flex-col justify-center text-center">
+                <div className="bg-gradient-to-br from-gray-700 to-gray-800 p-8 rounded-lg border border-gray-600 h-full flex flex-col justify-center text-center">
                     <svg className="w-16 h-16 text-pink-400 mx-auto mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
-                    <p className="text-xl italic text-stone-300 leading-relaxed">
+                    <p className="text-xl italic text-gray-300 leading-relaxed">
                         "Your feedback is the compass that guides our improvement. We appreciate you taking the time to help us get better."
                     </p>
                 </div>

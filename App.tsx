@@ -114,7 +114,7 @@ const App: React.FC = () => {
 
     return (
         <div className="flex items-center justify-center min-h-screen p-4">
-            <div className="w-full max-w-4xl bg-stone-100 rounded-2xl shadow-lg overflow-hidden transition-colors duration-300 flex flex-col dark:bg-stone-800">
+            <div className="w-full max-w-4xl bg-stone-100 rounded-2xl shadow-lg overflow-hidden transition-colors duration-300 flex flex-col dark:bg-black">
                 <Header
                     t={t}
                     onLanguageToggle={handleLanguageToggle}

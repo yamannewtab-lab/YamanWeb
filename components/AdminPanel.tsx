@@ -124,8 +124,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
     const getTabClassName = (tabName: 'visitors' | 'feedbacks') => {
         return `px-4 py-2 text-sm font-medium rounded-t-md transition-colors focus:outline-none ${
             activeTab === tabName
-                ? 'bg-stone-700 text-white'
-                : 'text-stone-400 hover:bg-stone-700/50 hover:text-stone-200'
+                ? 'bg-gray-700 text-white'
+                : 'text-gray-400 hover:bg-gray-700/50 hover:text-gray-200'
         }`;
     };
 
@@ -138,12 +138,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
             aria-labelledby="admin-panel-title"
         >
             <div 
-                className="bg-stone-800 rounded-lg shadow-xl p-6 max-w-2xl w-full text-stone-200 max-h-[80vh] flex flex-col"
+                className="bg-gray-800 rounded-lg shadow-xl p-6 max-w-2xl w-full text-gray-200 max-h-[80vh] flex flex-col"
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="flex justify-between items-center mb-4 pb-4 border-b border-stone-600">
+                <div className="flex justify-between items-center mb-4 pb-4 border-b border-gray-600">
                     <h2 id="admin-panel-title" className="text-2xl font-bold">Admin Panel</h2>
-                    <button onClick={onClose} className="p-1 rounded-full hover:bg-stone-700 transition-colors" aria-label="Close admin panel">
+                    <button onClick={onClose} className="p-1 rounded-full hover:bg-gray-700 transition-colors" aria-label="Close admin panel">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
@@ -153,7 +153,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                         <h3 className="text-lg font-semibold mb-4 text-center">Authentication Required</h3>
                         <form onSubmit={handlePasswordSubmit} className="space-y-4">
                             <div>
-                                <label htmlFor="password-input" className="block text-sm font-medium text-stone-300 sr-only">Password</label>
+                                <label htmlFor="password-input" className="block text-sm font-medium text-gray-300 sr-only">Password</label>
                                 <input
                                     id="password-input"
                                     type="password"
@@ -161,13 +161,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                                     onChange={(e) => setPassword(e.target.value)}
                                     placeholder="Enter password"
                                     autoFocus
-                                    className="mt-1 block w-full px-3 py-2 bg-stone-700 border border-stone-600 rounded-md shadow-sm placeholder-stone-400 focus:outline-none focus:ring-amber-500 focus:border-amber-500 text-stone-200"
+                                    className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-amber-500 focus:border-amber-500 text-gray-200"
                                 />
                             </div>
                             {authError && <p className="text-red-400 text-sm text-center">{authError}</p>}
                             <button 
                                 type="submit" 
-                                className="w-full bg-amber-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-amber-700 transition-all disabled:bg-amber-800 disabled:cursor-not-allowed"
+                                className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300 disabled:from-amber-600 disabled:to-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
                                 disabled={!password}
                             >
                                 Unlock
@@ -176,7 +176,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                     </div>
                 ) : (
                     <>
-                        <div className="flex border-b border-stone-600 -mt-4 -mx-6 px-6">
+                        <div className="flex border-b border-gray-600 -mt-4 -mx-6 px-6">
                             <button onClick={() => setActiveTab('visitors')} className={getTabClassName('visitors')}>Visitors</button>
                             <button onClick={() => setActiveTab('feedbacks')} className={getTabClassName('feedbacks')}>Feedbacks</button>
                         </div>
@@ -190,19 +190,19 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                                     {!visitorsLoading && !visitorsError && (
                                         <ul className="space-y-2">
                                             {Object.entries(visitors).sort((a,b) => b[1].count - a[1].count).map(([country, data]) => (
-                                                <li key={country} className="bg-stone-700 rounded-md">
+                                                <li key={country} className="bg-gray-700 rounded-md">
                                                     <details>
                                                         <summary className="p-3 cursor-pointer flex justify-between items-center font-semibold list-none">
                                                             <span>{country}</span>
-                                                            <span className="text-sm bg-stone-600 px-2 py-0.5 rounded-full">{data.count}</span>
+                                                            <span className="text-sm bg-gray-600 px-2 py-0.5 rounded-full">{data.count}</span>
                                                         </summary>
-                                                        <div className="p-3 border-t border-stone-600">
+                                                        <div className="p-3 border-t border-gray-600">
                                                             {data.cities.length > 0 ? (
-                                                                <ul className="list-disc list-inside pl-2 space-y-1 text-stone-300">
+                                                                <ul className="list-disc list-inside pl-2 space-y-1 text-gray-300">
                                                                     {data.cities.sort().map((city, index) => city && <li key={index}>{city}</li>)}
                                                                 </ul>
                                                             ) : (
-                                                                <p className="text-stone-400 italic">No city data available for this country.</p>
+                                                                <p className="text-gray-400 italic">No city data available for this country.</p>
                                                             )}
                                                         </div>
                                                     </details>
@@ -221,9 +221,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                                     {!feedbacksLoading && !feedbacksError && (
                                         <ul className="space-y-3">
                                             {feedbacks.map((feedback, index) => (
-                                                <li key={index} className="bg-stone-700 p-4 rounded-md shadow">
-                                                    <p className="text-stone-300 whitespace-pre-wrap">{feedback.message}</p>
-                                                    <p className="text-xs text-stone-500 mt-2 text-right">{new Date(feedback.created_at).toLocaleString()}</p>
+                                                <li key={index} className="bg-gray-700 p-4 rounded-md shadow">
+                                                    <p className="text-gray-300 whitespace-pre-wrap">{feedback.message}</p>
+                                                    <p className="text-xs text-gray-500 mt-2 text-right">{new Date(feedback.created_at).toLocaleString()}</p>
                                                 </li>
                                             ))}
                                         </ul>
