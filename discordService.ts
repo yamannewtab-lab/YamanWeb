@@ -92,7 +92,7 @@ export async function sendIjazahApplicationToDiscord(
 
     const embed = {
         title: "New Ijazah Application",
-        color: 38399, // Teal
+        color: 16753920, // Amber
         fields,
         description: `**${t('quizJourneyLabel')}**\n${fullDetails.journey || 'Not provided.'}`,
         footer: {
@@ -210,7 +210,7 @@ export async function sendTajwidRequestToDiscord(request: TajwidRequest, t: (key
 export async function sendCourseRegistrationToDiscord(request: CourseRegistration, t: (key: string) => string) {
      const embed = {
         title: "New Course Registration",
-        color: 4886754, // Indigo
+        color: 16753920, // Amber
         fields: [
             { name: t('nameLabel'), value: request.name, inline: true },
             { name: t('quizAgeLabel'), value: request.age, inline: true },

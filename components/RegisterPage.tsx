@@ -32,38 +32,38 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ navigateTo, t }) => {
     return (
         <div>
             <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100">{t('title')}</h2>
-                <p className="mt-2 text-slate-600 dark:text-slate-400">{t('subtitle')}</p>
+                <h2 className="text-3xl font-bold text-stone-800 dark:text-stone-100">{t('title')}</h2>
+                <p className="mt-2 text-stone-600 dark:text-stone-400">{t('subtitle')}</p>
             </div>
             <form onSubmit={handleSubmit} className="max-w-xl mx-auto">
                 <div className="space-y-6">
                     <div>
-                        <label htmlFor="name" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('nameLabel')}</label>
-                        <input type="text" id="name" name="name" required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-slate-200 dark:border-slate-500 text-black dark:placeholder-slate-500" />
+                        <label htmlFor="name" className="block text-sm font-medium text-stone-700 dark:text-stone-300">{t('nameLabel')}</label>
+                        <input type="text" id="name" name="name" required className="mt-1 block w-full px-3 py-2 bg-white border border-stone-300 rounded-md shadow-sm placeholder-stone-400 focus:outline-none focus:ring-amber-500 focus:border-amber-500 dark:bg-stone-200 dark:border-stone-500 text-black dark:placeholder-stone-500" />
                     </div>
                      <div>
-                        <label htmlFor="quiz-age" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizAgeLabel')}</label>
-                        <input type="text" inputMode="decimal" pattern="[0-9٠-٩]*" id="quiz-age" name="age" required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm dark:bg-slate-200 dark:border-slate-500 text-black dark:placeholder-slate-500" />
+                        <label htmlFor="quiz-age" className="block text-sm font-medium text-stone-700 dark:text-stone-300">{t('quizAgeLabel')}</label>
+                        <input type="text" inputMode="decimal" pattern="[0-9٠-٩]*" id="quiz-age" name="age" required className="mt-1 block w-full px-3 py-2 bg-white border border-stone-300 rounded-md shadow-sm dark:bg-stone-200 dark:border-stone-500 text-black dark:placeholder-stone-500" />
                     </div>
                     <div>
-                        <label htmlFor="whatsapp" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('whatsappLabel')}</label>
-                        <input type="tel" id="whatsapp" name="whatsapp" required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-slate-200 dark:border-slate-500 text-black dark:placeholder-slate-500" />
+                        <label htmlFor="whatsapp" className="block text-sm font-medium text-stone-700 dark:text-stone-300">{t('whatsappLabel')}</label>
+                        <input type="tel" id="whatsapp" name="whatsapp" required className="mt-1 block w-full px-3 py-2 bg-white border border-stone-300 rounded-md shadow-sm placeholder-stone-400 focus:outline-none focus:ring-amber-500 focus:border-amber-500 dark:bg-stone-200 dark:border-stone-500 text-black dark:placeholder-stone-500" />
                     </div>
                     <div>
-                        <label htmlFor="source" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('sourceLabel')}</label>
-                        <input type="text" id="source" name="source" required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-slate-200 dark:border-slate-500 text-black dark:placeholder-slate-500" />
+                        <label htmlFor="source" className="block text-sm font-medium text-stone-700 dark:text-stone-300">{t('sourceLabel')}</label>
+                        <input type="text" id="source" name="source" required className="mt-1 block w-full px-3 py-2 bg-white border border-stone-300 rounded-md shadow-sm placeholder-stone-400 focus:outline-none focus:ring-amber-500 focus:border-amber-500 dark:bg-stone-200 dark:border-stone-500 text-black dark:placeholder-stone-500" />
                     </div>
                     <div>
-                        <label htmlFor="about" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('aboutLabel')}</label>
-                        <textarea id="about" name="about" rows={4} required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-slate-200 dark:border-slate-500 text-black dark:placeholder-slate-500"></textarea>
+                        <label htmlFor="about" className="block text-sm font-medium text-stone-700 dark:text-stone-300">{t('aboutLabel')}</label>
+                        <textarea id="about" name="about" rows={4} required className="mt-1 block w-full px-3 py-2 bg-white border border-stone-300 rounded-md shadow-sm placeholder-stone-400 focus:outline-none focus:ring-amber-500 focus:border-amber-500 dark:bg-stone-200 dark:border-stone-500 text-black dark:placeholder-stone-500"></textarea>
                     </div>
                 </div>
                 <div className="mt-8">
-                    <button type="submit" className="w-full bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-indigo-700 transition-all text-lg">{t('buttonText')}</button>
+                    <button type="submit" className="w-full bg-amber-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-amber-700 transition-all text-lg">{t('buttonText')}</button>
                 </div>
             </form>
             <div className="mt-12 text-center">
-                <button onClick={() => navigateTo('home')} className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors dark:text-slate-400 dark:hover:text-indigo-400">{t('backToHome')}</button>
+                <button onClick={() => navigateTo('home')} className="text-sm font-semibold text-stone-600 hover:text-amber-600 transition-colors dark:text-stone-400 dark:hover:text-amber-400">{t('backToHome')}</button>
             </div>
         </div>
     );

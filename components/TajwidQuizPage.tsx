@@ -59,55 +59,55 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t }) => {
     return (
         <div>
             <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100">{t('tajwidQuizTitle')}</h2>
+                <h2 className="text-3xl font-bold text-stone-800 dark:text-stone-100">{t('tajwidQuizTitle')}</h2>
             </div>
             <form onSubmit={handleSubmit} className="max-w-xl mx-auto">
                 <div className="space-y-6">
                     <div>
-                        <label htmlFor="tajwid-name" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizNameLabel')}</label>
-                        <input type="text" id="tajwid-name" name="name" required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm dark:bg-slate-200 dark:border-slate-500 text-black" />
+                        <label htmlFor="tajwid-name" className="block text-sm font-medium text-stone-700 dark:text-stone-300">{t('quizNameLabel')}</label>
+                        <input type="text" id="tajwid-name" name="name" required className="mt-1 block w-full px-3 py-2 bg-white border border-stone-300 rounded-md shadow-sm dark:bg-stone-200 dark:border-stone-500 text-black" />
                     </div>
                      <div>
-                        <label htmlFor="tajwid-age" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizAgeLabel')}</label>
-                        <input type="text" inputMode="decimal" pattern="[0-9٠-٩]*" id="tajwid-age" name="age" required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm dark:bg-slate-200 dark:border-slate-500 text-black" />
+                        <label htmlFor="tajwid-age" className="block text-sm font-medium text-stone-700 dark:text-stone-300">{t('quizAgeLabel')}</label>
+                        <input type="text" inputMode="decimal" pattern="[0-9٠-٩]*" id="tajwid-age" name="age" required className="mt-1 block w-full px-3 py-2 bg-white border border-stone-300 rounded-md shadow-sm dark:bg-stone-200 dark:border-stone-500 text-black" />
                     </div>
                     <div>
-                        <label htmlFor="tajwid-whatsapp" className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('whatsappLabel')}</label>
-                        <input type="tel" id="tajwid-whatsapp" name="whatsapp" required className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm dark:bg-slate-200 dark:border-slate-500 text-black" />
+                        <label htmlFor="tajwid-whatsapp" className="block text-sm font-medium text-stone-700 dark:text-stone-300">{t('whatsappLabel')}</label>
+                        <input type="tel" id="tajwid-whatsapp" name="whatsapp" required className="mt-1 block w-full px-3 py-2 bg-white border border-stone-300 rounded-md shadow-sm dark:bg-stone-200 dark:border-stone-500 text-black" />
                     </div>
                     
                     <div>
-                        <span className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('quizTimeLabel')}</span>
-                        <div className="mt-2 grid grid-cols-1 gap-2 rounded-lg bg-slate-200 p-1 dark:bg-slate-900">
+                        <span className="block text-sm font-medium text-stone-700 dark:text-stone-300">{t('quizTimeLabel')}</span>
+                        <div className="mt-2 grid grid-cols-1 gap-2 rounded-lg bg-stone-200 p-1 dark:bg-stone-900">
                             <div>
                                 <input type="radio" id="tajwid-time1" name="time" value={t('timeSlot1')} className="sr-only peer" defaultChecked />
-                                <label htmlFor="tajwid-time1" className="block w-full text-center py-1.5 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-slate-600 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow dark:text-slate-400 dark:peer-checked:bg-slate-700 dark:peer-checked:text-slate-100">
+                                <label htmlFor="tajwid-time1" className="block w-full text-center py-1.5 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-stone-600 peer-checked:bg-white peer-checked:text-stone-900 peer-checked:shadow dark:text-stone-400 dark:peer-checked:bg-stone-700 dark:peer-checked:text-stone-100">
                                     <span className="font-semibold">{t('timeSlot1')}</span>
                                 </label>
                             </div>
                             <div>
                                 <input type="radio" id="tajwid-time2" name="time" value={t('timeSlot2')} className="sr-only peer" />
-                                <label htmlFor="tajwid-time2" className="block w-full text-center py-1.5 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-slate-600 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow dark:text-slate-400 dark:peer-checked:bg-slate-700 dark:peer-checked:text-slate-100">
+                                <label htmlFor="tajwid-time2" className="block w-full text-center py-1.5 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-stone-600 peer-checked:bg-white peer-checked:text-stone-900 peer-checked:shadow dark:text-stone-400 dark:peer-checked:bg-stone-700 dark:peer-checked:text-stone-100">
                                     <span className="font-semibold">{t('timeSlot2')}</span>
                                 </label>
                             </div>
                              <div>
                                 <input type="radio" id="tajwid-time3" name="time" value={t('timeSlot3')} className="sr-only peer" />
-                                <label htmlFor="tajwid-time3" className="block w-full text-center py-1.5 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-slate-600 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow dark:text-slate-400 dark:peer-checked:bg-slate-700 dark:peer-checked:text-slate-100">
+                                <label htmlFor="tajwid-time3" className="block w-full text-center py-1.5 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-stone-600 peer-checked:bg-white peer-checked:text-stone-900 peer-checked:shadow dark:text-stone-400 dark:peer-checked:bg-stone-700 dark:peer-checked:text-stone-100">
                                     <span className="font-semibold">{t('timeSlot3')}</span>
                                 </label>
                             </div>
                         </div>
-                        <p className="text-center mt-2 text-xs text-slate-500 dark:text-slate-400">{t('timezoneNote')}</p>
+                        <p className="text-center mt-2 text-xs text-stone-500 dark:text-stone-400">{t('timezoneNote')}</p>
                     </div>
 
                     <div>
-                        <span className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('tajwidLevelLabel')}</span>
+                        <span className="block text-sm font-medium text-stone-700 dark:text-stone-300">{t('tajwidLevelLabel')}</span>
                         <div className="mt-2 space-y-2">
                             {tajwidLevels.map((level, index) => (
                                 <div key={level.key}>
                                     <input type="radio" id={level.key} name="tajwidLevel" value={t(level.key)} className="sr-only peer" defaultChecked={index === 0} />
-                                    <label htmlFor={level.key} className="block w-full text-center py-2 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out bg-slate-200 dark:bg-slate-900 text-slate-600 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow dark:text-slate-400 dark:peer-checked:bg-slate-700 dark:peer-checked:text-slate-100">
+                                    <label htmlFor={level.key} className="block w-full text-center py-2 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out bg-stone-200 dark:bg-stone-900 text-stone-600 peer-checked:bg-white peer-checked:text-stone-900 peer-checked:shadow dark:text-stone-400 dark:peer-checked:bg-stone-700 dark:peer-checked:text-stone-100">
                                         <span className="font-semibold">{t(level.key)}</span>
                                     </label>
                                 </div>
@@ -116,8 +116,8 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t }) => {
                     </div>
 
                     <div>
-                        <span className="block text-sm font-medium text-slate-700 dark:text-slate-300">{t('subscriptionLengthLabel')}</span>
-                        <div className="mt-2 grid grid-cols-3 gap-2 rounded-lg bg-slate-200 p-1 dark:bg-slate-900">
+                        <span className="block text-sm font-medium text-stone-700 dark:text-stone-300">{t('subscriptionLengthLabel')}</span>
+                        <div className="mt-2 grid grid-cols-3 gap-2 rounded-lg bg-stone-200 p-1 dark:bg-stone-900">
                             {subscriptionOptions.map(days => {
                                 const dayToKeyMap: {[key: number]: string} = {
                                     15: 'subscriptionOption15Days',
@@ -135,25 +135,25 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t }) => {
                                             checked={selectedSubscription === days}
                                             onChange={() => setSelectedSubscription(days)}
                                         />
-                                        <label htmlFor={`sub-${days}`} className="block w-full text-center py-2 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-slate-600 peer-checked:bg-white peer-checked:text-slate-900 peer-checked:shadow dark:text-slate-400 dark:peer-checked:bg-slate-700 dark:peer-checked:text-slate-100">
+                                        <label htmlFor={`sub-${days}`} className="block w-full text-center py-2 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-stone-600 peer-checked:bg-white peer-checked:text-stone-900 peer-checked:shadow dark:text-stone-400 dark:peer-checked:bg-stone-700 dark:peer-checked:text-stone-100">
                                             <span className="font-semibold">{t(dayToKeyMap[days])}</span>
                                         </label>
                                     </div>
                                 );
                             })}
                         </div>
-                        <p className="text-center mt-2 text-sm text-slate-500 h-4 dark:text-slate-400">
+                        <p className="text-center mt-2 text-sm text-stone-500 h-4 dark:text-stone-400">
                            {t('priceDisplay').replace('{price}', TAJWID_IMPROVEMENT_PRICES[selectedSubscription].toLocaleString())}
                         </p>
                     </div>
 
                 </div>
                 <div className="mt-8">
-                    <button type="submit" className="w-full bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-indigo-700 transition-all text-lg">{t('submitButton')}</button>
+                    <button type="submit" className="w-full bg-amber-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-amber-700 transition-all text-lg">{t('submitButton')}</button>
                 </div>
             </form>
             <div className="mt-12 text-center">
-                <button onClick={() => navigateTo('home')} className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors dark:text-slate-400 dark:hover:text-indigo-400">{t('backToHome')}</button>
+                <button onClick={() => navigateTo('home')} className="text-sm font-semibold text-stone-600 hover:text-amber-600 transition-colors dark:text-stone-400 dark:hover:text-amber-400">{t('backToHome')}</button>
             </div>
         </div>
     );

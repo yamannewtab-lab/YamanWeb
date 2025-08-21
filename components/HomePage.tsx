@@ -8,7 +8,7 @@ interface HomePageProps {
 }
 
 const IconBookOpen = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-sky-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
     </svg>
 );
@@ -26,13 +26,13 @@ const IconSparkles = () => (
 );
 
 const IconCollection = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-stone-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
     </svg>
 );
 
 const IconBadgeCheck = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-stone-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
     </svg>
 );
@@ -44,7 +44,7 @@ const IconInformationCircle = () => (
 );
 
 const IconUsers = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-cyan-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-stone-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M15 21v-1a6 6 0 00-1.78-4.125a6 6 0 00-6.44-1.746" />
     </svg>
 );
@@ -96,15 +96,15 @@ const HomePage: React.FC<HomePageProps> = ({ navigateTo, t }) => {
                 className="relative h-[65vh] min-h-[500px] flex items-center justify-center text-center bg-cover bg-center" 
                 style={{ backgroundImage: "url('https://i.imgur.com/K9c7R6l.jpeg')" }}
             >
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-slate-900/40"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-stone-900/80 to-stone-900/40"></div>
                 <div className="relative z-10 px-4 py-8 sm:py-16">
                     <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white drop-shadow-lg">{t('heroTitle')}</h1>
-                    <p className="mt-4 max-w-3xl mx-auto text-lg text-slate-200 drop-shadow-md">
+                    <p className="mt-4 max-w-3xl mx-auto text-lg text-stone-200 drop-shadow-md">
                         {t('heroSubtitle')}
                     </p>
                     <button 
                         onClick={handleScrollToSections}
-                        className="mt-8 px-8 py-4 bg-gradient-to-r from-sky-500 to-indigo-600 text-white font-bold text-lg rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 ease-in-out focus:outline-none focus:ring-4 focus:ring-sky-300 dark:focus:ring-sky-800"
+                        className="mt-8 px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold text-lg rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 ease-in-out focus:outline-none focus:ring-4 focus:ring-amber-300 dark:focus:ring-amber-800"
                     >
                         {t('heroButton')}
                     </button>
@@ -120,8 +120,8 @@ const HomePage: React.FC<HomePageProps> = ({ navigateTo, t }) => {
             
             <div ref={sectionsRef} className="p-6 sm:p-8 md:p-12" id="journey-sections">
                  <div className="text-center mb-10">
-                    <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-800 dark:text-slate-100">{t('homePageTitle')}</h2>
-                    <p className="mt-4 text-lg text-slate-600 dark:text-slate-400">{t('homePageSubtitle')}</p>
+                    <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-stone-800 dark:text-stone-100">{t('homePageTitle')}</h2>
+                    <p className="mt-4 text-lg text-stone-600 dark:text-stone-400">{t('homePageSubtitle')}</p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <ActionCard
@@ -129,7 +129,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigateTo, t }) => {
                         description={t('ijazahSectionDesc')}
                         buttonText={t('ijazahButtonText')}
                         onButtonClick={() => navigateTo('ijazah')}
-                        buttonClassName="bg-sky-500 hover:bg-sky-600"
+                        buttonClassName="bg-amber-500 hover:bg-amber-600"
                         icon={<IconBookOpen />}
                     />
                     <ActionCard
@@ -153,7 +153,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigateTo, t }) => {
                         description={t('coursesSectionDesc')}
                         buttonText={t('previousCoursesBtnHomepage')}
                         onButtonClick={() => navigateTo('courses')}
-                        buttonClassName="bg-indigo-600 hover:bg-indigo-700"
+                        buttonClassName="bg-stone-600 hover:bg-stone-700"
                         icon={<IconCollection />}
                     />
                 </div>
@@ -163,7 +163,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigateTo, t }) => {
                         description={t('ijazahPreviewDesc')}
                         buttonText={t('ijazahPreviewButtonText')}
                         onButtonClick={() => navigateTo('ijazahPreview')}
-                        buttonClassName="bg-purple-600 hover:bg-purple-700"
+                        buttonClassName="bg-stone-600 hover:bg-stone-700"
                         icon={<IconBadgeCheck />}
                     />
                     <ActionCard
@@ -179,7 +179,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigateTo, t }) => {
                         description={t('teachersSectionDesc')}
                         buttonText={t('teachersButtonText')}
                         onButtonClick={() => navigateTo('teachers')}
-                        buttonClassName="bg-cyan-500 hover:bg-cyan-600"
+                        buttonClassName="bg-stone-600 hover:bg-stone-700"
                         icon={<IconUsers />}
                     />
                     <ActionCard
