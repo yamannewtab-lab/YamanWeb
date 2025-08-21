@@ -26,6 +26,9 @@ export const LANGUAGE_DATA: LanguageData = {
     'en': {
         headerTitle: "Maqra'at Al-Huda",
         headerSubtitle: "By Qari Yaman Darwish",
+        heroTitle: "Embark on Your Qur'anic Journey",
+        heroSubtitle: "Master the sacred art of recitation and connect your lineage to the Prophet (ﷺ) through certified Ijazah programs, guided by Qari Yaman Darwish.",
+        heroButton: "Start Your Journey",
         title: "Course Registration",
         subtitle: "Secure your spot and start your learning journey.",
         nameLabel: "Full Name",
@@ -185,6 +188,9 @@ export const LANGUAGE_DATA: LanguageData = {
     'ar': {
         headerTitle: "مقرأة الهدى",
         headerSubtitle: "للمقرئ يمان درويش",
+        heroTitle: "ابدأ رحلتك القرآنية",
+        heroSubtitle: "أتقن فن التلاوة المقدس وصل سندك بالنبي (ﷺ) من خلال برامج الإجازة المعتمدة، بإشراف القارئ يمان درويش.",
+        heroButton: "ابدأ رحلتك",
         title: "التسجيل في الدورة",
         subtitle: "احجز مكانك وابدأ رحلتك التعليمية.",
         nameLabel: "الاسم الكامل",
@@ -344,6 +350,9 @@ export const LANGUAGE_DATA: LanguageData = {
     'id': {
         headerTitle: "Maqra'at Al-Huda",
         headerSubtitle: "Oleh Qari Yaman Darwish",
+        heroTitle: "Mulailah Perjalanan Al-Qur'an Anda",
+        heroSubtitle: "Kuasai seni suci tilawah dan hubungkan sanad Anda dengan Nabi (ﷺ) melalui program Ijazah bersertifikat, dibimbing oleh Qari Yaman Darwish.",
+        heroButton: "Mulai Perjalanan Anda",
         title: "Pendaftaran Kursus",
         subtitle: "Amankan tempat Anda dan mulailah perjalanan belajar Anda.",
         nameLabel: "Nama Lengkap",
