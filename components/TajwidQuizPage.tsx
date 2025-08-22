@@ -83,19 +83,19 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t, setLastS
                         <div className="mt-2 grid grid-cols-1 gap-2 rounded-lg bg-stone-200 p-1 dark:bg-gray-900">
                             <div>
                                 <input type="radio" id="tajwid-time1" name="time" value={t('timeSlot1')} className="sr-only peer" defaultChecked />
-                                <label htmlFor="tajwid-time1" className="block w-full text-center py-1.5 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-stone-600 peer-checked:bg-white peer-checked:text-stone-900 peer-checked:shadow dark:text-gray-400 dark:peer-checked:bg-gray-700 dark:peer-checked:text-gray-100">
+                                <label htmlFor="tajwid-time1" className="block w-full text-center py-2 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-stone-600 peer-checked:bg-white peer-checked:text-stone-900 peer-checked:shadow dark:text-gray-400 dark:peer-checked:bg-gray-700 dark:peer-checked:text-gray-100">
                                     <span className="font-semibold">{t('timeSlot1')}</span>
                                 </label>
                             </div>
                             <div>
                                 <input type="radio" id="tajwid-time2" name="time" value={t('timeSlot2')} className="sr-only peer" />
-                                <label htmlFor="tajwid-time2" className="block w-full text-center py-1.5 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-stone-600 peer-checked:bg-white peer-checked:text-stone-900 peer-checked:shadow dark:text-gray-400 dark:peer-checked:bg-gray-700 dark:peer-checked:text-gray-100">
+                                <label htmlFor="tajwid-time2" className="block w-full text-center py-2 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-stone-600 peer-checked:bg-white peer-checked:text-stone-900 peer-checked:shadow dark:text-gray-400 dark:peer-checked:bg-gray-700 dark:peer-checked:text-gray-100">
                                     <span className="font-semibold">{t('timeSlot2')}</span>
                                 </label>
                             </div>
                              <div>
                                 <input type="radio" id="tajwid-time3" name="time" value={t('timeSlot3')} className="sr-only peer" />
-                                <label htmlFor="tajwid-time3" className="block w-full text-center py-1.5 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-stone-600 peer-checked:bg-white peer-checked:text-stone-900 peer-checked:shadow dark:text-gray-400 dark:peer-checked:bg-gray-700 dark:peer-checked:text-gray-100">
+                                <label htmlFor="tajwid-time3" className="block w-full text-center py-2 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-stone-600 peer-checked:bg-white peer-checked:text-stone-900 peer-checked:shadow dark:text-gray-400 dark:peer-checked:bg-gray-700 dark:peer-checked:text-gray-100">
                                     <span className="font-semibold">{t('timeSlot3')}</span>
                                 </label>
                             </div>

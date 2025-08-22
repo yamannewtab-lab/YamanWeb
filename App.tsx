@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Page, IjazahApplication, SubmissionType } from './types';
 import { LANGUAGE_DATA, LANGUAGES } from './constants';
@@ -116,25 +117,34 @@ const App: React.FC = () => {
     };
 
     return (
-        <div className="flex items-center justify-center min-h-screen p-4">
-            <div className="w-full max-w-4xl bg-gradient-to-b from-stone-100 to-white rounded-2xl shadow-lg overflow-hidden transition-colors duration-300 flex flex-col dark:from-gray-900 dark:to-slate-800">
-                <Header
-                    t={t}
-                    onLanguageToggle={handleLanguageToggle}
-                    onNavigateHome={() => navigateTo('home')}
-                    isHomePage={currentPage === 'home'}
-                />
-                <main className={`overflow-y-auto ${currentPage === 'home' ? '' : 'p-6 sm:p-8 md:p-12'}`}>
-                    <div key={currentPage} className="page-transition">
-                        {renderPage()}
+        <>
+            {/* Main Application Content */}
+            <div id="app-main-content">
+                <div className="flex items-center justify-center min-h-screen p-4">
+                    <div className="w-full max-w-4xl bg-gradient-to-b from-stone-100 to-white rounded-2xl shadow-lg overflow-hidden transition-colors duration-300 flex flex-col dark:from-gray-900 dark:to-slate-800">
+                        <Header
+                            t={t}
+                            onLanguageToggle={handleLanguageToggle}
+                            onNavigateHome={() => navigateTo('home')}
+                            isHomePage={currentPage === 'home'}
+                        />
+                        <main className={`overflow-y-auto ${currentPage === 'home' ? '' : 'p-6 sm:p-8 md:p-12'}`}>
+                            <div key={currentPage} className="page-transition">
+                                {renderPage()}
+                            </div>
+                        </main>
+                        <Footer t={t} onOpenAdminPanel={() => setIsAdminPanelOpen(true)} />
                     </div>
-                </main>
-                <Footer t={t} onOpenAdminPanel={() => setIsAdminPanelOpen(true)} />
+                </div>
             </div>
-            {imageModalSrc && <ImageModal src={imageModalSrc} onClose={() => setImageModalSrc(null)} />}
-            {isAdminPanelOpen && <AdminPanel onClose={() => setIsAdminPanelOpen(false)} />}
-            <AiChatWidget isOpen={isAiChatOpen} setIsOpen={setIsAiChatOpen} t={t} />
-        </div>
+            
+            {/* Overlays */}
+            <div id="app-overlays">
+                {imageModalSrc && <ImageModal src={imageModalSrc} onClose={() => setImageModalSrc(null)} />}
+                {isAdminPanelOpen && <AdminPanel onClose={() => setIsAdminPanelOpen(false)} />}
+                <AiChatWidget isOpen={isAiChatOpen} setIsOpen={setIsAiChatOpen} t={t} />
+            </div>
+        </>
     );
 };
 

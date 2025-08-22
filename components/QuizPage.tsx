@@ -133,7 +133,7 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                                         />
                                         <label
                                             htmlFor={`day-${day}`}
-                                            className={`block text-center py-1.5 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-stone-600 peer-checked:shadow dark:text-gray-400 ${getDayButtonColors(day)}`}
+                                            className={`block text-center py-2 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-stone-600 peer-checked:shadow dark:text-gray-400 ${getDayButtonColors(day)}`}
                                         >
                                             <span className="font-semibold">{day}</span>
                                         </label>
@@ -159,19 +159,19 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                         <div className="mt-2 grid grid-cols-1 gap-2 rounded-lg bg-stone-200 p-1 dark:bg-gray-900">
                             <div>
                                 <input type="radio" id="time1" name="time" value={t('timeSlot1')} className="sr-only peer" defaultChecked />
-                                <label htmlFor="time1" className="block w-full text-center py-1.5 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-stone-600 peer-checked:bg-white peer-checked:text-stone-900 peer-checked:shadow dark:text-gray-400 dark:peer-checked:bg-gray-700 dark:peer-checked:text-gray-100">
+                                <label htmlFor="time1" className="block w-full text-center py-2 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-stone-600 peer-checked:bg-white peer-checked:text-stone-900 peer-checked:shadow dark:text-gray-400 dark:peer-checked:bg-gray-700 dark:peer-checked:text-gray-100">
                                     <span className="font-semibold">{t('timeSlot1')}</span>
                                 </label>
                             </div>
                             <div>
                                 <input type="radio" id="time2" name="time" value={t('timeSlot2')} className="sr-only peer" />
-                                <label htmlFor="time2" className="block w-full text-center py-1.5 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-stone-600 peer-checked:bg-white peer-checked:text-stone-900 peer-checked:shadow dark:text-gray-400 dark:peer-checked:bg-gray-700 dark:peer-checked:text-gray-100">
+                                <label htmlFor="time2" className="block w-full text-center py-2 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-stone-600 peer-checked:bg-white peer-checked:text-stone-900 peer-checked:shadow dark:text-gray-400 dark:peer-checked:bg-gray-700 dark:peer-checked:text-gray-100">
                                     <span className="font-semibold">{t('timeSlot2')}</span>
                                 </label>
                             </div>
                              <div>
                                 <input type="radio" id="time3" name="time" value={t('timeSlot3')} className="sr-only peer" />
-                                <label htmlFor="time3" className="block w-full text-center py-1.5 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-stone-600 peer-checked:bg-white peer-checked:text-stone-900 peer-checked:shadow dark:text-gray-400 dark:peer-checked:bg-gray-700 dark:peer-checked:text-gray-100">
+                                <label htmlFor="time3" className="block w-full text-center py-2 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-stone-600 peer-checked:bg-white peer-checked:text-stone-900 peer-checked:shadow dark:text-gray-400 dark:peer-checked:bg-gray-700 dark:peer-checked:text-gray-100">
                                     <span className="font-semibold">{t('timeSlot3')}</span>
                                 </label>
                             </div>
@@ -183,19 +183,19 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                          <div className="mt-2 grid grid-cols-2 gap-1 rounded-lg bg-stone-200 p-1 dark:bg-gray-900">
                            <div className="col-span-1">
                                 <input type="radio" id="lang-ar" name="language" value="Arabic" className="sr-only peer" defaultChecked />
-                                <label htmlFor="lang-ar" className="block w-full text-center py-1.5 px-2 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-stone-600 peer-checked:bg-white peer-checked:text-stone-900 peer-checked:shadow dark:text-gray-400 dark:peer-checked:bg-gray-700 dark:peer-checked:text-gray-100">
+                                <label htmlFor="lang-ar" className="block w-full text-center py-2 px-2 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-stone-600 peer-checked:bg-white peer-checked:text-stone-900 peer-checked:shadow dark:text-gray-400 dark:peer-checked:bg-gray-700 dark:peer-checked:text-gray-100">
                                     <span className="font-semibold">{t('langArabic')}</span>
                                 </label>
                             </div>
                             <div className="col-span-1">
                                 <input type="radio" id="lang-en" name="language" value="English" className="sr-only peer" />
-                                <label htmlFor="lang-en" className="block w-full text-center py-1.5 px-2 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-stone-600 peer-checked:bg-white peer-checked:text-stone-900 peer-checked:shadow dark:text-gray-400 dark:peer-checked:bg-gray-700 dark:peer-checked:text-gray-100">
+                                <label htmlFor="lang-en" className="block w-full text-center py-2 px-2 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-stone-600 peer-checked:bg-white peer-checked:text-stone-900 peer-checked:shadow dark:text-gray-400 dark:peer-checked:bg-gray-700 dark:peer-checked:text-gray-100">
                                     <span className="font-semibold">{t('langEnglish')}</span>
                                 </label>
                             </div>
                            <div className="col-span-2">
                                 <input type="radio" id="lang-id" name="language" value="Indonesian" className="sr-only peer" />
-                                <label htmlFor="lang-id" className="block w-full text-center py-1.5 px-2 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-stone-600 peer-checked:bg-white peer-checked:text-stone-900 peer-checked:shadow dark:text-gray-400 dark:peer-checked:bg-gray-700 dark:peer-checked:text-gray-100">
+                                <label htmlFor="lang-id" className="block w-full text-center py-2 px-2 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-stone-600 peer-checked:bg-white peer-checked:text-stone-900 peer-checked:shadow dark:text-gray-400 dark:peer-checked:bg-gray-700 dark:peer-checked:text-gray-100">
                                     <span className="font-semibold">{t('langIndonesian')}</span>
                                 </label>
                             </div>
@@ -206,13 +206,13 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                         <div className="mt-2 grid grid-cols-2 gap-2 rounded-lg bg-stone-200 p-1 dark:bg-gray-900">
                             <div>
                                 <input type="radio" id="sheikh-yes" name="sheikh" value="yes" className="sr-only peer" />
-                                <label htmlFor="sheikh-yes" className="block w-full text-center py-1.5 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-stone-600 peer-checked:bg-white peer-checked:text-stone-900 peer-checked:shadow dark:text-gray-400 dark:peer-checked:bg-gray-700 dark:peer-checked:text-gray-100">
+                                <label htmlFor="sheikh-yes" className="block w-full text-center py-2 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-stone-600 peer-checked:bg-white peer-checked:text-stone-900 peer-checked:shadow dark:text-gray-400 dark:peer-checked:bg-gray-700 dark:peer-checked:text-gray-100">
                                     <span className="font-semibold">{t('yes')}</span>
                                 </label>
                             </div>
                             <div>
                                 <input type="radio" id="sheikh-no" name="sheikh" value="no" className="sr-only peer" defaultChecked />
-                                <label htmlFor="sheikh-no" className="block w-full text-center py-1.5 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-stone-600 peer-checked:bg-white peer-checked:text-stone-900 peer-checked:shadow dark:text-gray-400 dark:peer-checked:bg-gray-700 dark:peer-checked:text-gray-100">
+                                <label htmlFor="sheikh-no" className="block w-full text-center py-2 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-stone-600 peer-checked:bg-white peer-checked:text-stone-900 peer-checked:shadow dark:text-gray-400 dark:peer-checked:bg-gray-700 dark:peer-checked:text-gray-100">
                                     <span className="font-semibold">{t('no')}</span>
                                 </label>
                             </div>

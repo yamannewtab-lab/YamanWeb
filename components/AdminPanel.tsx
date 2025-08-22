@@ -147,7 +147,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
             >
                 <div className="flex justify-between items-center mb-4 pb-4 border-b border-gray-600">
                     <h2 id="admin-panel-title" className="text-2xl font-bold">Admin Panel</h2>
-                    <button onClick={onClose} className="p-1 rounded-full hover:bg-gray-700 transition-colors" aria-label="Close admin panel">
+                    <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-700 transition-colors -m-2" aria-label="Close admin panel">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>

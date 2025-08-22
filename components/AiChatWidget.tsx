@@ -125,13 +125,13 @@ const AiChatWidget: React.FC<AiChatWidgetProps> = ({ isOpen, setIsOpen, t }) => 
     );
 
     return (
-        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50">
+        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 pointer-events-none">
             <div 
                 className={`
                     w-[calc(100vw-2rem)] max-w-sm h-[70vh] max-h-[550px] bg-stone-50 dark:bg-slate-900 
                     rounded-2xl shadow-2xl flex flex-col border border-stone-200 dark:border-gray-700
                     origin-bottom-right transition-all duration-300 ease-in-out
-                    ${isOpen ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95 pointer-events-none'}
+                    ${isOpen ? 'opacity-100 translate-y-0 scale-100 pointer-events-auto' : 'opacity-0 translate-y-8 scale-95 pointer-events-none'}
                 `}
                 aria-hidden={!isOpen}
             >
@@ -198,7 +198,7 @@ const AiChatWidget: React.FC<AiChatWidgetProps> = ({ isOpen, setIsOpen, t }) => 
                     flex items-center justify-center
                     transform hover:scale-110 transition-all duration-300 ease-in-out
                     focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:focus:ring-indigo-800
-                    ${isOpen ? 'opacity-0 scale-75 pointer-events-none' : 'opacity-100 scale-100'}
+                    ${isOpen ? 'opacity-0 scale-75 pointer-events-none' : 'opacity-100 scale-100 pointer-events-auto'}
                 `}
                 aria-label="Open AI Assistant"
             >
