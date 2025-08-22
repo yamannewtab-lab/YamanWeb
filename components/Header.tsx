@@ -26,13 +26,17 @@ const Header: React.FC<HeaderProps> = ({ t, onLanguageToggle, onNavigateHome, is
                 <h1 className="font-bold text-xl bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">{t('headerTitle')}</h1>
                 <p className="text-xs text-amber-400">{t('headerSubtitle')}</p>
             </div>
-            <div className="flex items-center gap-2 sm:gap-4">
-                {!isHomePage && (
-                    <button onClick={onNavigateHome} className="bg-white/10 text-gray-200 font-semibold px-4 py-2 rounded-lg hover:bg-white/20 transition-colors">
-                        {t('homeButtonText')}
-                    </button>
-                )}
-                <ShareButton t={t} className="bg-white/10 text-gray-200 hover:bg-white/20 text-sm" />
+            
+            {/* Responsive button container */}
+            <div className="flex items-start sm:items-center gap-2">
+                <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center">
+                    {!isHomePage && (
+                        <button onClick={onNavigateHome} className="bg-white/10 text-gray-200 font-semibold px-4 py-2 rounded-lg hover:bg-white/20 transition-colors whitespace-nowrap">
+                            {t('homeButtonText')}
+                        </button>
+                    )}
+                    <ShareButton t={t} iconOnly className="bg-white/10 text-gray-200 hover:bg-white/20" />
+                </div>
                 <button onClick={onLanguageToggle} className="text-sm font-semibold text-gray-300 hover:text-amber-400 transition-colors px-2 py-2">
                     {t('langButtonText')}
                 </button>
