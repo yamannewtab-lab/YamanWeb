@@ -12,7 +12,8 @@
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "@supabase/supabase-js": "2",
-    "@google/generative-ai": "latest"
+    "@google/generative-ai": "latest",
+    "@google/genai": "^1.15.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
