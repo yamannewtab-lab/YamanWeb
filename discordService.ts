@@ -2,14 +2,30 @@ import { IjazahApplication } from './types';
 import { PATH_TRANSLATION_KEYS } from './constants';
 import { supabase } from './supabaseClient';
 
+const TEST_WEBHOOK_URL = 'https://discord.com/api/webhooks/1408380291806138459/YpjqWWyp8TnsjFHFuHf_w6wZJHRMYaGEgoQ3HxNHQspv4Q2rJiI1c_VYXmOtjcw4T4hp';
+
 const WEBHOOK_URLS = {
     IJAZAH_HAFS: 'https://discord.com/api/webhooks/1407931017729146941/c7MgVod-fi3_kTB9ofFXj8to9tZLGkY1cZ77rDmebPG-WGpBvR96Wcz2hDAFy3vZV8J4',
     IJAZAH_TEN_QIRAAT: 'https://discord.com/api/webhooks/1407929481943060521/ptt6k-9KH-ZoNsxdj6x1N0rUbIprbTYYiOwTl59gE9k6nFL93ZhYOlBJlljLXDXAKw5t',
     IJAZAH_DIFFERENT_QIRAAH: 'https://discord.com/api/webhooks/1407931861325582346/hbuNqi4OaSwQD3FtiqSCOhvkkNFf5SxyajAllRN07trmUJpowtQ3zK_fRI0MAJWbKXcU',
     TASMI: 'https://discord.com/api/webhooks/1407932037901586443/C6eyEdHaNSXffiV6OLREm-gVqQ59nO6nWHRslfCJauc0Tpumbjg6zGVQNtG5y093vR8k',
     TAJWID: 'https://discord.com/api/webhooks/1407932319620137031/gYkAY-HsdOymfN5UH5Xg0szhESYwwtb-iOTs3G61dcVNKOaz90MfaZ20-kG1lxdcJpal',
-    // Fallback for general course registration, using the Ten Qiraat one as it was the original default
     COURSE_REGISTRATION: 'https://discord.com/api/webhooks/1407929481943060521/ptt6k-9KH-ZoNsxdj6x1N0rUbIprbTYYiOwTl59gE9k6nFL93ZhYOlBJlljLXDXAKw5t',
+    AI_QUESTIONS: 'https://discord.com/api/webhooks/1408380025983602688/9wlOyBOt0RYed0ftJVXjRhNelhcIjECYzKSOnIaa0JyxnSrCQYQ-W3geQrKcivpjsqfL',
+};
+
+type WebhookType = keyof typeof WEBHOOK_URLS;
+
+const isTestModeEnabled = (): boolean => {
+    // Read directly from a global variable. This resets on every page refresh.
+    return (window as any).maqraatIsTestMode === true;
+};
+
+const getWebhookUrl = (type: WebhookType): string => {
+    if (isTestModeEnabled()) {
+        return TEST_WEBHOOK_URL;
+    }
+    return WEBHOOK_URLS[type];
 };
 
 async function logRegistrationAsFeedback(message: string) {
@@ -52,20 +68,18 @@ interface CourseRegistration {
     about: string;
 }
 
-const getIjazahWebhookUrl = (path: string): string => {
+const getIjazahWebhookType = (path: string): WebhookType => {
     switch (path) {
         case "Hafs 'an 'Asim":
-            return WEBHOOK_URLS.IJAZAH_HAFS;
+            return 'IJAZAH_HAFS';
         case "The Ten Recitations":
-            return WEBHOOK_URLS.IJAZAH_TEN_QIRAAT;
+            return 'IJAZAH_TEN_QIRAAT';
         case "Different Qira'ah":
-            return WEBHOOK_URLS.IJAZAH_DIFFERENT_QIRAAH;
+            return 'IJAZAH_DIFFERENT_QIRAAH';
         default:
-            // Fallback to a default if path is somehow unknown
-            return WEBHOOK_URLS.IJAZAH_TEN_QIRAAT;
+            return 'IJAZAH_TEN_QIRAAT';
     }
 };
-
 
 /**
  * Sends the Ijazah application data to a Discord channel via a webhook.
@@ -79,7 +93,7 @@ export async function sendIjazahApplicationToDiscord(
     t: (key: string) => string
 ) {
     const { path, daysPerWeek, fullDetails, memorization } = application;
-    const webhookUrl = getIjazahWebhookUrl(path);
+    const webhookUrl = getWebhookUrl(getIjazahWebhookType(path));
 
     // Log a summary to the feedback table
     const feedbackMessage = `New Ijazah Application: ${t(PATH_TRANSLATION_KEYS[path] || path)} for ${t('daysPerWeek').replace('{count}', String(daysPerWeek))}. Contact: ${fullDetails.whatsapp}`;
@@ -105,7 +119,7 @@ export async function sendIjazahApplicationToDiscord(
     }
 
     const embed = {
-        title: "New Ijazah Application",
+        title: isTestModeEnabled() ? "[TEST] New Ijazah Application" : "New Ijazah Application",
         color: 16753920, // Amber
         fields,
         description: `**${t('quizJourneyLabel')}**\n${fullDetails.journey || 'Not provided.'}`,
@@ -145,7 +159,7 @@ export async function sendTasmiRequestToDiscord(request: TasmiRequest, t: (key: 
     await logRegistrationAsFeedback(feedbackMessage);
 
     const embed = {
-        title: "New Opened Tasmi' Request",
+        title: isTestModeEnabled() ? "[TEST] New Opened Tasmi' Request" : "New Opened Tasmi' Request",
         color: 5763719, // Green
         fields: [
             { name: t('quizNameLabel'), value: request.name, inline: true },
@@ -168,7 +182,7 @@ export async function sendTasmiRequestToDiscord(request: TasmiRequest, t: (key: 
     };
 
     try {
-        const response = await fetch(WEBHOOK_URLS.TASMI, {
+        const response = await fetch(getWebhookUrl('TASMI'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -191,7 +205,7 @@ export async function sendTajwidRequestToDiscord(request: TajwidRequest, t: (key
     await logRegistrationAsFeedback(feedbackMessage);
     
     const embed = {
-        title: "New Tajwid Improvement Request",
+        title: isTestModeEnabled() ? "[TEST] New Tajwid Improvement Request" : "New Tajwid Improvement Request",
         color: 15252002, // Rose
         fields: [
             { name: t('quizNameLabel'), value: request.name, inline: true },
@@ -212,7 +226,7 @@ export async function sendTajwidRequestToDiscord(request: TajwidRequest, t: (key
     };
 
     try {
-        const response = await fetch(WEBHOOK_URLS.TAJWID, {
+        const response = await fetch(getWebhookUrl('TAJWID'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -235,7 +249,7 @@ export async function sendCourseRegistrationToDiscord(request: CourseRegistratio
     await logRegistrationAsFeedback(feedbackMessage);
     
      const embed = {
-        title: "New Course Registration",
+        title: isTestModeEnabled() ? "[TEST] New Course Registration" : "New Course Registration",
         color: 16753920, // Amber
         fields: [
             { name: t('nameLabel'), value: request.name, inline: true },
@@ -255,7 +269,7 @@ export async function sendCourseRegistrationToDiscord(request: CourseRegistratio
     };
 
     try {
-        const response = await fetch(WEBHOOK_URLS.COURSE_REGISTRATION, {
+        const response = await fetch(getWebhookUrl('COURSE_REGISTRATION'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -266,5 +280,41 @@ export async function sendCourseRegistrationToDiscord(request: CourseRegistratio
         }
     } catch (error) {
         console.error('Error sending message to Discord:', error);
+    }
+}
+
+/**
+ * Sends a user's question to the AI to a Discord channel for logging.
+ * @param question - The user's question.
+ */
+export async function sendAiQuestionToDiscord(question: string) {
+    const embed = {
+        title: isTestModeEnabled() ? "[TEST] New AI Assistant Question" : "New AI Assistant Question",
+        color: 8359053, // Purple
+        description: question,
+        footer: {
+            text: "Submitted via Maqra'at Al-Huda App"
+        },
+        timestamp: new Date().toISOString()
+    };
+    
+    const payload = {
+        username: "AI Question Logger",
+        avatar_url: "https://i.imgur.com/uFPNd22.png",
+        embeds: [embed]
+    };
+
+    try {
+        const response = await fetch(getWebhookUrl('AI_QUESTIONS'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (!response.ok) {
+            const errorBody = await response.text();
+            console.error('Failed to send AI question to Discord:', response.status, response.statusText, errorBody);
+        }
+    } catch (error) {
+        console.error('Error sending AI question to Discord:', error);
     }
 }

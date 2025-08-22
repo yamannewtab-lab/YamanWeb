@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { Page } from '../types';
+import { Page, SubmissionType } from '../types';
 import { TAJWID_IMPROVEMENT_PRICES } from '../constants';
 import { sendTajwidRequestToDiscord } from '../discordService';
 
 interface TajwidQuizPageProps {
     navigateTo: (page: Page) => void;
     t: (key: string) => string;
+    setLastSubmissionType: (type: SubmissionType) => void;
 }
 
-const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t }) => {
+const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t, setLastSubmissionType }) => {
     const subscriptionOptions = Object.keys(TAJWID_IMPROVEMENT_PRICES).map(Number).sort((a, b) => b - a);
     const [selectedSubscription, setSelectedSubscription] = useState<number>(subscriptionOptions[0]);
 
@@ -45,6 +46,7 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t }) => {
             console.error("Failed to send Tajwid request to Discord:", error);
         }
         
+        setLastSubmissionType('paid');
         navigateTo('thanks');
     };
 

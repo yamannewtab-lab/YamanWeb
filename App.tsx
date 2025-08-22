@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Page, IjazahApplication } from './types';
+import { Page, IjazahApplication, SubmissionType } from './types';
 import { LANGUAGE_DATA, LANGUAGES } from './constants';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -20,10 +20,11 @@ import TeachersPage from './components/TeachersPage';
 import AdminPanel from './components/AdminPanel';
 import FeedbackPage from './components/FeedbackPage';
 import FeedbackThanksPage from './components/FeedbackThanksPage';
+import AiChatWidget from './components/AiChatWidget';
 
 const App: React.FC = () => {
     const [currentPage, setCurrentPage] = useState<Page>('home');
-    const [currentLanguageIndex, setCurrentLanguageIndex] = useState(0);
+    const [currentLanguageIndex, setCurrentLanguageIndex] = useState(2);
     const [ijazahApplication, setIjazahApplication] = useState<IjazahApplication>({
         path: '',
         daysPerWeek: 7,
@@ -33,6 +34,8 @@ const App: React.FC = () => {
     const [imageModalSrc, setImageModalSrc] = useState<string | null>(null);
     const [registerAgainTarget, setRegisterAgainTarget] = useState<Page>('ijazah');
     const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
+    const [isAiChatOpen, setIsAiChatOpen] = useState(false);
+    const [lastSubmissionType, setLastSubmissionType] = useState<SubmissionType>(null);
     
     const currentLanguage = LANGUAGES[currentLanguageIndex];
 
@@ -80,7 +83,7 @@ const App: React.FC = () => {
             case 'home':
                 return <HomePage navigateTo={navigateTo} t={t} />;
             case 'register':
-                return <RegisterPage navigateTo={navigateTo} t={t} />;
+                return <RegisterPage navigateTo={navigateTo} t={t} setLastSubmissionType={setLastSubmissionType} />;
             case 'courses':
                 return <CoursesPage navigateTo={navigateTo} t={t} onImageClick={setImageModalSrc} />;
             case 'ijazah':
@@ -92,13 +95,13 @@ const App: React.FC = () => {
             case 'tasmiQuiz':
                 return <TasmiQuizPage navigateTo={navigateTo} t={t} />;
             case 'tajwidImprovement':
-                return <TajwidQuizPage navigateTo={navigateTo} t={t} />;
+                return <TajwidQuizPage navigateTo={navigateTo} t={t} setLastSubmissionType={setLastSubmissionType} />;
             case 'tasmiInfo':
                 return <TasmiInfoPage navigateTo={navigateTo} t={t} />;
             case 'payment':
-                return <PaymentPage navigateTo={navigateTo} t={t} ijazahApplication={ijazahApplication} />;
+                return <PaymentPage navigateTo={navigateTo} t={t} ijazahApplication={ijazahApplication} setLastSubmissionType={setLastSubmissionType} />;
             case 'thanks':
-                return <ThanksPage navigateTo={navigateTo} t={t} registerAgainTarget={registerAgainTarget} ijazahApplication={ijazahApplication} />;
+                return <ThanksPage navigateTo={navigateTo} t={t} registerAgainTarget={registerAgainTarget} ijazahApplication={ijazahApplication} lastSubmissionType={lastSubmissionType} />;
             case 'about':
                 return <AboutPage navigateTo={navigateTo} t={t} />;
             case 'teachers':
@@ -114,7 +117,7 @@ const App: React.FC = () => {
 
     return (
         <div className="flex items-center justify-center min-h-screen p-4">
-            <div className="w-full max-w-4xl bg-stone-100 rounded-2xl shadow-lg overflow-hidden transition-colors duration-300 flex flex-col dark:bg-black">
+            <div className="w-full max-w-4xl bg-gradient-to-b from-stone-100 to-white rounded-2xl shadow-lg overflow-hidden transition-colors duration-300 flex flex-col dark:from-gray-900 dark:to-slate-800">
                 <Header
                     t={t}
                     onLanguageToggle={handleLanguageToggle}
@@ -130,6 +133,7 @@ const App: React.FC = () => {
             </div>
             {imageModalSrc && <ImageModal src={imageModalSrc} onClose={() => setImageModalSrc(null)} />}
             {isAdminPanelOpen && <AdminPanel onClose={() => setIsAdminPanelOpen(false)} />}
+            <AiChatWidget isOpen={isAiChatOpen} setIsOpen={setIsAiChatOpen} t={t} />
         </div>
     );
 };

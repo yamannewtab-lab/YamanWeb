@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Page, IjazahApplication } from '../types';
+import { Page, IjazahApplication, SubmissionType } from '../types';
 import { IJAZAH_PRICES, PATH_TRANSLATION_KEYS } from '../constants';
 import { sendIjazahApplicationToDiscord } from '../discordService';
 
@@ -7,9 +7,10 @@ interface PaymentPageProps {
     navigateTo: (page: Page) => void;
     t: (key: string) => string;
     ijazahApplication: IjazahApplication;
+    setLastSubmissionType: (type: SubmissionType) => void;
 }
 
-const PaymentPage: React.FC<PaymentPageProps> = ({ navigateTo, t, ijazahApplication }) => {
+const PaymentPage: React.FC<PaymentPageProps> = ({ navigateTo, t, ijazahApplication, setLastSubmissionType }) => {
     const [showPaymentDetails, setShowPaymentDetails] = useState(false);
 
     const { path, daysPerWeek, fullDetails, memorization } = ijazahApplication;
@@ -23,6 +24,7 @@ const PaymentPage: React.FC<PaymentPageProps> = ({ navigateTo, t, ijazahApplicat
             console.error("Failed to send Discord notification:", error);
             // Log the error, but don't block the user from seeing the confirmation page.
         }
+        setLastSubmissionType('paid');
         navigateTo('thanks');
     };
 

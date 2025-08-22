@@ -2,6 +2,8 @@ export type Page = 'home' | 'register' | 'courses' | 'ijazah' | 'quiz' | 'tasmiQ
 
 export type Language = 'en' | 'ar' | 'id';
 
+export type SubmissionType = 'paid' | 'free' | null;
+
 export interface IjazahApplication {
     path: string;
     daysPerWeek: number;

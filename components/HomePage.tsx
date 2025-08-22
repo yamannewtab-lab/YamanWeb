@@ -96,7 +96,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigateTo, t }) => {
                     <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-stone-800 dark:text-gray-100">{t('homePageTitle')}</h2>
                     <p className="mt-4 text-lg text-stone-600 dark:text-gray-400">{t('homePageSubtitle')}</p>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <ActionCard
                         title={t('ijazahSectionTitle')}
                         description={t('ijazahSectionDesc')}
@@ -121,16 +121,6 @@ const HomePage: React.FC<HomePageProps> = ({ navigateTo, t }) => {
                         buttonClassName="bg-gradient-to-r from-rose-500 to-pink-500"
                         icon={<IconSparkles />}
                     />
-                    <ActionCard
-                        title={t('coursesSectionTitle')}
-                        description={t('coursesSectionDesc')}
-                        buttonText={t('previousCoursesBtnHomepage')}
-                        onButtonClick={() => navigateTo('courses')}
-                        buttonClassName="bg-gradient-to-r from-blue-500 to-sky-500"
-                        icon={<IconCollection />}
-                    />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
                      <ActionCard
                         title={t('ijazahPreviewCardTitle')}
                         description={t('ijazahPreviewDesc')}
@@ -154,6 +144,14 @@ const HomePage: React.FC<HomePageProps> = ({ navigateTo, t }) => {
                         onButtonClick={() => navigateTo('teachers')}
                         buttonClassName="bg-gradient-to-r from-teal-500 to-cyan-500"
                         icon={<IconUsers />}
+                    />
+                    <ActionCard
+                        title={t('coursesSectionTitle')}
+                        description={t('coursesSectionDesc')}
+                        buttonText={t('previousCoursesBtnHomepage')}
+                        onButtonClick={() => navigateTo('courses')}
+                        buttonClassName="bg-gradient-to-r from-blue-500 to-sky-500"
+                        icon={<IconCollection />}
                     />
                     <ActionCard
                         title={t('feedbackSectionTitle')}

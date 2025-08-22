@@ -1,13 +1,14 @@
 import React from 'react';
-import { Page } from '../types';
+import { Page, SubmissionType } from '../types';
 import { sendCourseRegistrationToDiscord } from '../discordService';
 
 interface RegisterPageProps {
     navigateTo: (page: Page) => void;
     t: (key: string) => string;
+    setLastSubmissionType: (type: SubmissionType) => void;
 }
 
-const RegisterPage: React.FC<RegisterPageProps> = ({ navigateTo, t }) => {
+const RegisterPage: React.FC<RegisterPageProps> = ({ navigateTo, t, setLastSubmissionType }) => {
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -26,6 +27,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ navigateTo, t }) => {
             // We can decide to show an error to the user here, but for now we'll proceed
         }
 
+        setLastSubmissionType('free');
         navigateTo('thanks');
     };
 

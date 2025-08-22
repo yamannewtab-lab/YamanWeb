@@ -26,7 +26,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [password, setPassword] = useState('');
     const [authError, setAuthError] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<'visitors' | 'feedbacks'>('visitors');
+    const [activeTab, setActiveTab] = useState<'visitors' | 'feedbacks' | 'settings'>('visitors');
 
     // Visitor states
     const [visitors, setVisitors] = useState<GroupedVisitors>({});
@@ -37,66 +37,70 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
     const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
     const [feedbacksLoading, setFeedbacksLoading] = useState(true);
     const [feedbacksError, setFeedbacksError] = useState<string | null>(null);
+    
+    // Settings state
+    const [isTestMode, setIsTestMode] = useState<boolean>((window as any).maqraatIsTestMode || false);
 
     useEffect(() => {
         if (!isAuthenticated) return;
 
-        const fetchVisitors = async () => {
-            setVisitorsLoading(true);
-            setVisitorsError(null);
-            const { data, error } = await supabase
-                .from('visitors')
-                .select('country, city');
+        if (activeTab === 'visitors') {
+            const fetchVisitors = async () => {
+                setVisitorsLoading(true);
+                setVisitorsError(null);
+                const { data, error } = await supabase
+                    .from('visitors')
+                    .select('country, city');
 
-            if (error) {
-                console.error("Error fetching visitors:", error.message);
-                setVisitorsError("Failed to fetch visitor data.");
+                if (error) {
+                    console.error("Error fetching visitors:", error.message);
+                    setVisitorsError("Failed to fetch visitor data.");
+                    setVisitorsLoading(false);
+                    return;
+                }
+
+                if (data) {
+                    const grouped = data.reduce((acc: GroupedVisitors, visitor: Visitor) => {
+                        const country = visitor.country || "Unknown";
+                        if (!acc[country]) {
+                            acc[country] = { cities: [], count: 0 };
+                        }
+                        if (visitor.city) {
+                            acc[country].cities.push(visitor.city);
+                        }
+                        acc[country].count += 1;
+                        return acc;
+                    }, {});
+                    
+                    Object.keys(grouped).forEach(country => {
+                        grouped[country].cities = [...new Set(grouped[country].cities)];
+                    });
+
+                    setVisitors(grouped);
+                }
                 setVisitorsLoading(false);
-                return;
-            }
+            };
+            fetchVisitors();
+        } else if (activeTab === 'feedbacks') {
+            const fetchFeedbacks = async () => {
+                setFeedbacksLoading(true);
+                setFeedbacksError(null);
+                const { data, error } = await supabase
+                    .from('feedbacks')
+                    .select('message, created_at')
+                    .order('created_at', { ascending: false });
 
-            if (data) {
-                const grouped = data.reduce((acc: GroupedVisitors, visitor: Visitor) => {
-                    const country = visitor.country || "Unknown";
-                    if (!acc[country]) {
-                        acc[country] = { cities: [], count: 0 };
-                    }
-                    if (visitor.city) {
-                        acc[country].cities.push(visitor.city);
-                    }
-                    acc[country].count += 1;
-                    return acc;
-                }, {});
-                
-                Object.keys(grouped).forEach(country => {
-                    grouped[country].cities = [...new Set(grouped[country].cities)];
-                });
-
-                setVisitors(grouped);
-            }
-            setVisitorsLoading(false);
-        };
-
-        const fetchFeedbacks = async () => {
-            setFeedbacksLoading(true);
-            setFeedbacksError(null);
-            const { data, error } = await supabase
-                .from('feedbacks')
-                .select('message, created_at')
-                .order('created_at', { ascending: false });
-
-            if (error) {
-                console.error("Error fetching feedbacks:", error.message);
-                setFeedbacksError("Failed to fetch feedback data.");
-            } else if (data) {
-                setFeedbacks(data as Feedback[]);
-            }
-            setFeedbacksLoading(false);
-        };
-
-        fetchVisitors();
-        fetchFeedbacks();
-    }, [isAuthenticated]);
+                if (error) {
+                    console.error("Error fetching feedbacks:", error.message);
+                    setFeedbacksError("Failed to fetch feedback data.");
+                } else if (data) {
+                    setFeedbacks(data as Feedback[]);
+                }
+                setFeedbacksLoading(false);
+            };
+            fetchFeedbacks();
+        }
+    }, [isAuthenticated, activeTab]);
     
     useEffect(() => {
         const handleEsc = (event: KeyboardEvent) => {
@@ -121,7 +125,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
         }
     };
     
-    const getTabClassName = (tabName: 'visitors' | 'feedbacks') => {
+    const getTabClassName = (tabName: 'visitors' | 'feedbacks' | 'settings') => {
         return `px-4 py-2 text-sm font-medium rounded-t-md transition-colors focus:outline-none ${
             activeTab === tabName
                 ? 'bg-gray-700 text-white'
@@ -179,6 +183,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                         <div className="flex border-b border-gray-600 -mt-4 -mx-6 px-6">
                             <button onClick={() => setActiveTab('visitors')} className={getTabClassName('visitors')}>Visitors</button>
                             <button onClick={() => setActiveTab('feedbacks')} className={getTabClassName('feedbacks')}>Feedbacks</button>
+                            <button onClick={() => setActiveTab('settings')} className={getTabClassName('settings')}>Settings</button>
                         </div>
                         <div className="overflow-y-auto custom-scrollbar pr-2 mt-4 flex-grow">
                             {activeTab === 'visitors' && (
@@ -228,6 +233,36 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                                             ))}
                                         </ul>
                                     )}
+                                </div>
+                            )}
+                            {activeTab === 'settings' && (
+                                <div className="space-y-4">
+                                    <div>
+                                        <h3 className="text-lg font-bold mb-2">Application Settings</h3>
+                                        <div className="bg-gray-700 p-4 rounded-lg flex items-center justify-between">
+                                            <div>
+                                                <label htmlFor="test-mode-toggle" className="font-semibold text-gray-200">Test Mode</label>
+                                                <p className="text-sm text-gray-400">Route all notifications to a single test webhook.</p>
+                                            </div>
+                                            <label htmlFor="test-mode-toggle" className="flex items-center cursor-pointer">
+                                                <div className="relative">
+                                                    <input
+                                                        type="checkbox"
+                                                        id="test-mode-toggle"
+                                                        className="sr-only"
+                                                        checked={isTestMode}
+                                                        onChange={() => {
+                                                            const newMode = !isTestMode;
+                                                            setIsTestMode(newMode);
+                                                            (window as any).maqraatIsTestMode = newMode;
+                                                        }}
+                                                    />
+                                                    <div className={`block w-14 h-8 rounded-full transition ${isTestMode ? 'bg-amber-500' : 'bg-gray-600'}`}></div>
+                                                    <div className={`dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform ${isTestMode ? 'translate-x-6' : 'translate-x-0'}`}></div>
+                                                </div>
+                                            </label>
+                                        </div>
+                                    </div>
                                 </div>
                             )}
                         </div>
