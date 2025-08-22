@@ -98,7 +98,7 @@ const App: React.FC = () => {
             case 'payment':
                 return <PaymentPage navigateTo={navigateTo} t={t} ijazahApplication={ijazahApplication} />;
             case 'thanks':
-                return <ThanksPage navigateTo={navigateTo} t={t} registerAgainTarget={registerAgainTarget} />;
+                return <ThanksPage navigateTo={navigateTo} t={t} registerAgainTarget={registerAgainTarget} ijazahApplication={ijazahApplication} />;
             case 'about':
                 return <AboutPage navigateTo={navigateTo} t={t} />;
             case 'teachers':

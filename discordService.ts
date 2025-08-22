@@ -1,5 +1,6 @@
 import { IjazahApplication } from './types';
 import { PATH_TRANSLATION_KEYS } from './constants';
+import { supabase } from './supabaseClient';
 
 const WEBHOOK_URLS = {
     IJAZAH_HAFS: 'https://discord.com/api/webhooks/1407931017729146941/c7MgVod-fi3_kTB9ofFXj8to9tZLGkY1cZ77rDmebPG-WGpBvR96Wcz2hDAFy3vZV8J4',
@@ -11,6 +12,15 @@ const WEBHOOK_URLS = {
     COURSE_REGISTRATION: 'https://discord.com/api/webhooks/1407929481943060521/ptt6k-9KH-ZoNsxdj6x1N0rUbIprbTYYiOwTl59gE9k6nFL93ZhYOlBJlljLXDXAKw5t',
 };
 
+async function logRegistrationAsFeedback(message: string) {
+    const { error } = await supabase
+        .from('feedbacks')
+        .insert([{ message: `[AUTO-LOG] ${message}` }]);
+
+    if (error) {
+        console.error("Error logging registration to feedback table:", error.message);
+    }
+}
 
 // Define interfaces for the request types for better type safety
 interface TasmiRequest {
@@ -71,6 +81,10 @@ export async function sendIjazahApplicationToDiscord(
     const { path, daysPerWeek, fullDetails, memorization } = application;
     const webhookUrl = getIjazahWebhookUrl(path);
 
+    // Log a summary to the feedback table
+    const feedbackMessage = `New Ijazah Application: ${t(PATH_TRANSLATION_KEYS[path] || path)} for ${t('daysPerWeek').replace('{count}', String(daysPerWeek))}. Contact: ${fullDetails.whatsapp}`;
+    await logRegistrationAsFeedback(feedbackMessage);
+
     const fields = [
         { name: t('quizNameLabel'), value: fullDetails.name || 'N/A', inline: true },
         { name: t('quizAgeLabel'), value: fullDetails.age || 'N/A', inline: true },
@@ -126,6 +140,10 @@ export async function sendIjazahApplicationToDiscord(
  * Sends the Tasmi' request data to Discord.
  */
 export async function sendTasmiRequestToDiscord(request: TasmiRequest, t: (key: string) => string) {
+    // Log a summary to the feedback table
+    const feedbackMessage = `New Tasmi' Request: ${request.sessions} sessions/week. Contact: ${request.whatsapp}`;
+    await logRegistrationAsFeedback(feedbackMessage);
+
     const embed = {
         title: "New Opened Tasmi' Request",
         color: 5763719, // Green
@@ -168,6 +186,10 @@ export async function sendTasmiRequestToDiscord(request: TasmiRequest, t: (key: 
  * Sends the Tajwid Improvement request data to Discord.
  */
 export async function sendTajwidRequestToDiscord(request: TajwidRequest, t: (key: string) => string) {
+    // Log a summary to the feedback table
+    const feedbackMessage = `New Tajwid Improvement Request: ${request.subscriptionText}. Contact: ${request.whatsapp}`;
+    await logRegistrationAsFeedback(feedbackMessage);
+    
     const embed = {
         title: "New Tajwid Improvement Request",
         color: 15252002, // Rose
@@ -208,6 +230,10 @@ export async function sendTajwidRequestToDiscord(request: TajwidRequest, t: (key
  * Sends the general course registration data to Discord.
  */
 export async function sendCourseRegistrationToDiscord(request: CourseRegistration, t: (key: string) => string) {
+     // Log a summary to the feedback table
+    const feedbackMessage = `New Course Registration. Contact: ${request.whatsapp}`;
+    await logRegistrationAsFeedback(feedbackMessage);
+    
      const embed = {
         title: "New Course Registration",
         color: 16753920, // Amber

@@ -1,4 +1,5 @@
 import React from 'react';
+import ShareButton from './ShareButton';
 
 interface HeaderProps {
     t: (key: string) => string;
@@ -31,6 +32,7 @@ const Header: React.FC<HeaderProps> = ({ t, onLanguageToggle, onNavigateHome, is
                         {t('homeButtonText')}
                     </button>
                 )}
+                <ShareButton t={t} className="bg-white/10 text-gray-200 hover:bg-white/20 text-sm" />
                 <button onClick={onLanguageToggle} className="text-sm font-semibold text-gray-300 hover:text-amber-400 transition-colors px-2 py-2">
                     {t('langButtonText')}
                 </button>

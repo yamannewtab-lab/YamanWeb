@@ -34,3 +34,8 @@ export interface IjazahPrices {
         [days: number]: number;
     };
 }
+
+export type FaqItem = {
+    q: string;
+    a: string;
+};

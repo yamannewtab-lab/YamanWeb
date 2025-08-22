@@ -60,34 +60,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigateTo, t }) => {
     const sectionsRef = useRef<HTMLDivElement>(null);
 
     const handleScrollToSections = () => {
-        if (!sectionsRef.current) return;
-
-        const targetElement = sectionsRef.current;
-        const headerOffset = 0; 
-        const elementPosition = targetElement.getBoundingClientRect().top;
-        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-
-        const startPosition = window.pageYOffset;
-        const distance = offsetPosition - startPosition;
-        const duration = 1000; // Duration in milliseconds
-        let startTime: number | null = null;
-
-        const easeInOutCubic = (t: number) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-
-        const animation = (currentTime: number) => {
-            if (startTime === null) startTime = currentTime;
-            const timeElapsed = currentTime - startTime;
-            const progress = Math.min(timeElapsed / duration, 1);
-            const easedProgress = easeInOutCubic(progress);
-            
-            window.scrollTo(0, startPosition + distance * easedProgress);
-
-            if (timeElapsed < duration) {
-                requestAnimationFrame(animation);
-            }
-        };
-
-        requestAnimationFrame(animation);
+        sectionsRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
 
     return (
