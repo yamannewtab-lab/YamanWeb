@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Page } from '../types';
-import { GoogleGenAI, Chat } from "@google/genai";
+import { GoogleGenAI, Chat } from '@google/genai';
 import { sendAiQuestionToDiscord } from '../discordService';
 
 interface AskAiPageProps {
@@ -13,8 +13,6 @@ type Message = {
     text: string;
     id: number;
 };
-
-const API_KEY = process.env.API_KEY;
 
 const BotAvatar = () => (
     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-md">
@@ -32,12 +30,9 @@ const AskAiPage: React.FC<AskAiPageProps> = ({ navigateTo, t }) => {
     const messagesEndRef = useRef<null | HTMLDivElement>(null);
     const [error, setError] = useState<string | null>(null);
 
-    const initializeChat = async () => {
+    const initializeChat = () => {
         try {
-            if (!API_KEY) {
-                throw new Error("API key is missing.");
-            }
-            const ai = new GoogleGenAI({ apiKey: API_KEY });
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             
             const systemInstruction = "You are a helpful and friendly AI assistant for 'Maqra'at Al-Huda', an online platform for learning the Qur'an. Your purpose is to answer user questions about the platform, its courses, Ijazah programs, teachers, schedules, and payment. Be polite, concise, and informative. The platform is run by Qari Yaman Darwish. Always answer in the language of the user's question.";
             
@@ -52,7 +47,7 @@ const AskAiPage: React.FC<AskAiPageProps> = ({ navigateTo, t }) => {
             setChat(chatSession);
             setError(null);
             if (messages.length === 0 || messages[0]?.text !== t('askAiInitialMessage')) {
-                 setMessages([{ role: 'model', text: t('askAiInitialMessage'), id: Date.now() }]);
+                setMessages([{ role: 'model', text: t('askAiInitialMessage'), id: Date.now() }]);
             }
 
         } catch (e: any) {
@@ -88,10 +83,10 @@ const AskAiPage: React.FC<AskAiPageProps> = ({ navigateTo, t }) => {
         setMessages(prev => [...prev, { role: 'model', text: '', id: modelMessageId }]);
 
         try {
-            const responseStream = await chat.sendMessageStream({ message: currentInput });
+            const result = await chat.sendMessageStream({ message: currentInput });
             
             let text = '';
-            for await (const chunk of responseStream) {
+            for await (const chunk of result) {
                 const chunkText = chunk.text;
                 text += chunkText;
                 setMessages(prev =>
@@ -115,7 +110,7 @@ const AskAiPage: React.FC<AskAiPageProps> = ({ navigateTo, t }) => {
             setIsLoading(false);
         }
     };
-
+    
     const TypingIndicator = () => (
         <div className="flex items-center space-x-1.5 p-3">
             <div className="h-2 w-2 bg-stone-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
@@ -136,22 +131,13 @@ const AskAiPage: React.FC<AskAiPageProps> = ({ navigateTo, t }) => {
     );
     
     return (
-        <div className="flex flex-col h-[85vh] bg-stone-100 dark:from-gray-800 dark:to-slate-900 relative">
-            <div className="relative text-center p-4 border-b border-stone-200/80 dark:border-gray-700/60 flex-shrink-0 bg-stone-50/80 dark:bg-slate-900/80 backdrop-blur-sm">
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent">{t('askAiPageTitle')}</h2>
-                <p className="text-sm text-stone-500 dark:text-gray-400">{t('askAiPageSubtitle')}</p>
-                 <button
-                    onClick={() => navigateTo('home')}
-                    className="absolute top-1/2 -translate-y-1/2 right-4 text-stone-500 hover:text-stone-800 dark:text-gray-400 dark:hover:text-white transition-colors"
-                    aria-label="Close chat"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
+        <div className="h-full flex flex-col">
+            <div className="text-center p-4 border-b border-stone-200/80 dark:border-gray-700/60 flex-shrink-0 bg-stone-50/80 dark:bg-slate-900/80 backdrop-blur-sm">
+                <h2 className="text-xl font-bold bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent">{t('askAiPageTitle')}</h2>
+                <p className="text-xs text-stone-500 dark:text-gray-400">{t('askAiPageSubtitle')}</p>
             </div>
             
-            <div className="flex-grow overflow-y-auto p-4 space-y-6 custom-scrollbar">
+            <div className="flex-grow overflow-y-auto p-4 space-y-6 custom-scrollbar bg-stone-100 dark:bg-gray-800">
                 {messages.map((msg) => (
                     <MessageBubble key={msg.id} msg={msg} />
                 ))}
@@ -184,11 +170,14 @@ const AskAiPage: React.FC<AskAiPageProps> = ({ navigateTo, t }) => {
                         className="bg-amber-500 text-white rounded-full p-3 hover:bg-amber-600 disabled:bg-amber-300 dark:disabled:bg-amber-800 disabled:scale-100 hover:scale-110 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-lg"
                         aria-label="Send message"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
                         </svg>
                     </button>
                 </form>
+            </div>
+             <div className="mt-4 text-center pb-4">
+                <button onClick={() => navigateTo('home')} className="text-sm font-semibold text-stone-600 hover:text-amber-600 transition-colors dark:text-gray-400 dark:hover:text-amber-400">{t('backToHome')}</button>
             </div>
         </div>
     );

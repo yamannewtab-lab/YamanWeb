@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { GoogleGenAI, Chat } from "@google/genai";
+import { GoogleGenAI, Chat } from '@google/genai';
 import { sendAiQuestionToDiscord } from '../discordService';
 
 interface AiChatWidgetProps {
@@ -13,8 +13,6 @@ type Message = {
     text: string;
     id: number;
 };
-
-const API_KEY = process.env.API_KEY;
 
 const BotAvatar = () => (
     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-md">
@@ -32,12 +30,9 @@ const AiChatWidget: React.FC<AiChatWidgetProps> = ({ isOpen, setIsOpen, t }) => 
     const messagesEndRef = useRef<null | HTMLDivElement>(null);
     const [error, setError] = useState<string | null>(null);
 
-    const initializeChat = async () => {
+    const initializeChat = () => {
         try {
-            if (!API_KEY) {
-                throw new Error("API key is missing.");
-            }
-            const ai = new GoogleGenAI({ apiKey: API_KEY });
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             
             const systemInstruction = "You are a helpful and friendly AI assistant for 'Maqra'at Al-Huda', an online platform for learning the Qur'an. Your purpose is to answer user questions about the platform, its courses, Ijazah programs, teachers, schedules, and payment. Be polite, concise, and informative. The platform is run by Qari Yaman Darwish. Always answer in the language of the user's question.";
             
@@ -92,10 +87,10 @@ const AiChatWidget: React.FC<AiChatWidgetProps> = ({ isOpen, setIsOpen, t }) => 
         setMessages(prev => [...prev, { role: 'model', text: '', id: modelMessageId }]);
 
         try {
-            const responseStream = await chat.sendMessageStream({ message: currentInput });
+            const result = await chat.sendMessageStream({ message: currentInput });
             
             let text = '';
-            for await (const chunk of responseStream) {
+            for await (const chunk of result) {
                 const chunkText = chunk.text;
                 text += chunkText;
                 setMessages(prev =>
