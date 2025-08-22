@@ -154,7 +154,7 @@ const AiChatWidget: React.FC<AiChatWidgetProps> = ({ isOpen, setIsOpen, t }) => 
                     <p className="text-xs text-stone-500 dark:text-gray-400">{t('askAiPageSubtitle')}</p>
                     <button
                         onClick={() => setIsOpen(false)}
-                        className="absolute top-1/2 -translate-y-1/2 right-3 text-stone-500 hover:text-stone-800 dark:text-gray-400 dark:hover:text-white transition-colors"
+                        className="absolute top-1/2 -translate-y-1/2 right-2 p-1.5 rounded-full text-stone-500 hover:text-stone-800 dark:text-gray-400 dark:hover:text-white hover:bg-stone-200 dark:hover:bg-gray-600/50 transition-all"
                         aria-label="Close chat"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -207,7 +207,7 @@ const AiChatWidget: React.FC<AiChatWidgetProps> = ({ isOpen, setIsOpen, t }) => 
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className={`
-                    absolute bottom-0 right-0 w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-600 
+                    absolute bottom-0 right-0 w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-600 
                     text-white rounded-full shadow-lg
                     flex items-center justify-center
                     transform hover:scale-110 transition-all duration-300 ease-in-out
@@ -217,7 +217,7 @@ const AiChatWidget: React.FC<AiChatWidgetProps> = ({ isOpen, setIsOpen, t }) => 
                 `}
                 aria-label="Open AI Assistant"
             >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
             </button>

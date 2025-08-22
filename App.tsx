@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Page, IjazahApplication, SubmissionType } from './types';
 import { LANGUAGE_DATA, LANGUAGES } from './constants';
@@ -116,6 +117,9 @@ const App: React.FC = () => {
         }
     };
 
+    const formPages: Page[] = ['register', 'quiz', 'tasmiQuiz', 'tajwidImprovement', 'feedback'];
+    const showAiChat = formPages.includes(currentPage);
+
     return (
         <>
             {/* Main Application Content */}
@@ -142,7 +146,7 @@ const App: React.FC = () => {
             <div id="app-overlays">
                 {imageModalSrc && <ImageModal src={imageModalSrc} onClose={() => setImageModalSrc(null)} />}
                 {isAdminPanelOpen && <AdminPanel onClose={() => setIsAdminPanelOpen(false)} />}
-                <AiChatWidget isOpen={isAiChatOpen} setIsOpen={setIsAiChatOpen} t={t} />
+                {showAiChat && <AiChatWidget isOpen={isAiChatOpen} setIsOpen={setIsAiChatOpen} t={t} />}
             </div>
         </>
     );

@@ -28,7 +28,7 @@ const Header: React.FC<HeaderProps> = ({ t, onLanguageToggle, onNavigateHome, is
                     </button>
                 )}
                 <ShareButton t={t} iconOnly className="bg-stone-200/50 dark:bg-white/10 text-stone-700 dark:text-gray-200 hover:bg-stone-300/50 dark:hover:bg-white/20" />
-                <button onClick={onLanguageToggle} className="text-sm font-semibold text-stone-600 dark:text-gray-300 hover:text-amber-600 dark:hover:text-amber-400 transition-colors px-3 py-2">
+                <button onClick={onLanguageToggle} className="bg-stone-200/50 dark:bg-white/10 text-stone-700 dark:text-gray-200 rounded-lg hover:bg-stone-300/50 dark:hover:bg-white/20 transition-colors text-sm font-semibold px-4 py-2">
                     {t('langButtonText')}
                 </button>
             </div>
