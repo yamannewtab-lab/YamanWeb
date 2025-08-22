@@ -16,8 +16,8 @@ type Message = {
 };
 
 const BotAvatar = () => (
-    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-md">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <div className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-md">
+        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 sm:h-5 sm:w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
         </svg>
     </div>
@@ -127,7 +127,7 @@ const AskAiPage: React.FC<AskAiPageProps> = ({ navigateTo, t }) => {
         <div className={`flex items-end gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             {msg.role === 'model' && msg.text && <BotAvatar />}
             {msg.text && (
-                 <div className={`max-w-xs md:max-w-md lg:max-w-lg px-4 py-3 rounded-2xl ${msg.role === 'user' ? 'bg-gradient-to-br from-amber-500 to-orange-500 text-white rounded-br-none' : 'bg-stone-200 dark:bg-gray-700 text-stone-800 dark:text-gray-200 rounded-bl-none'} shadow-sm whitespace-pre-wrap`}>
+                 <div className={`max-w-[85%] sm:max-w-xs md:max-w-md lg:max-w-lg px-3 py-2 sm:px-4 sm:py-3 rounded-2xl ${msg.role === 'user' ? 'bg-gradient-to-br from-amber-500 to-orange-500 text-white rounded-br-none' : 'bg-stone-200 dark:bg-gray-700 text-stone-800 dark:text-gray-200 rounded-bl-none'} shadow-sm whitespace-pre-wrap text-sm sm:text-base`}>
                     {msg.text}
                 </div>
             )}
@@ -137,8 +137,8 @@ const AskAiPage: React.FC<AskAiPageProps> = ({ navigateTo, t }) => {
     return (
         <div className="h-full flex flex-col">
             <div className="text-center p-4 border-b border-stone-200/80 dark:border-gray-700/60 flex-shrink-0 bg-stone-50/80 dark:bg-slate-900/80 backdrop-blur-sm">
-                <h2 className="text-xl font-bold bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent">{t('askAiPageTitle')}</h2>
-                <p className="text-xs text-stone-500 dark:text-gray-400">{t('askAiPageSubtitle')}</p>
+                <h2 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent">{t('askAiPageTitle')}</h2>
+                <p className="text-[11px] sm:text-xs text-stone-500 dark:text-gray-400">{t('askAiPageSubtitle')}</p>
             </div>
             
             <div className="flex-grow overflow-y-auto p-4 space-y-6 custom-scrollbar bg-stone-100 dark:bg-gray-800">
@@ -156,32 +156,29 @@ const AskAiPage: React.FC<AskAiPageProps> = ({ navigateTo, t }) => {
                 <div ref={messagesEndRef} />
             </div>
 
-            <div className="p-4 border-t border-stone-200/80 dark:border-gray-700/60 bg-stone-100/50 dark:bg-black/20 backdrop-blur-sm flex-shrink-0">
+            <div className="p-2 sm:p-4 border-t border-stone-200/80 dark:border-gray-700/60 bg-stone-100/50 dark:bg-black/20 backdrop-blur-sm flex-shrink-0">
                 {error && <p className="text-red-500 text-center text-sm mb-2">{error}</p>}
-                <form onSubmit={handleSend} className="flex items-center gap-3">
+                <form onSubmit={handleSend} className="flex items-center gap-2">
                     <input
                         type="text"
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         placeholder={t('askAiPlaceholder')}
-                        className="flex-grow px-4 py-3 bg-white/80 border border-stone-300 rounded-full shadow-inner focus:outline-none focus:ring-2 focus:ring-amber-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 transition-all"
+                        className="flex-grow w-full px-4 py-2 bg-white/80 border border-stone-300 rounded-full shadow-inner focus:outline-none focus:ring-2 focus:ring-amber-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 transition-all text-sm sm:text-base"
                         disabled={isLoading || !!error || !chat}
                         aria-label="Chat input"
                     />
                     <button 
                         type="submit" 
                         disabled={isLoading || !input.trim() || !!error || !chat}
-                        className="bg-amber-500 text-white rounded-full p-3 hover:bg-amber-600 disabled:bg-amber-300 dark:disabled:bg-amber-800 disabled:scale-100 hover:scale-110 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-lg"
+                        className="flex-shrink-0 bg-amber-500 text-white rounded-full p-2.5 sm:p-3 hover:bg-amber-600 disabled:bg-amber-300 dark:disabled:bg-amber-800 disabled:scale-100 hover:scale-110 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-lg"
                         aria-label="Send message"
                     >
-                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                           <path strokeLinecap="round" strokeLinejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
                         </svg>
                     </button>
                 </form>
-            </div>
-             <div className="mt-4 text-center pb-4">
-                <button onClick={() => navigateTo('home')} className="text-sm font-semibold text-stone-600 hover:text-amber-600 transition-colors dark:text-gray-400 dark:hover:text-amber-400">{t('backToHome')}</button>
             </div>
         </div>
     );
