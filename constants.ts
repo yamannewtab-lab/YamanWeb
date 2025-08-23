@@ -23,6 +23,45 @@ export const PATH_TRANSLATION_KEYS: { [key: string]: string } = {
     "Different Qira'ah": 'differentQiraahButton'
 };
 
+export const TIME_SLOTS = {
+  morning: [
+    { id: 'M_0510_0520', key: 'time_m_1' },
+    { id: 'M_0520_0535', key: 'time_m_2' },
+    { id: 'M_0535_0550', key: 'time_m_3' },
+  ],
+  evening: [
+    { id: 'E_1820_1835', key: 'time_e_1' },
+    { id: 'E_1835_1850', key: 'time_e_2' },
+    { id: 'E_1850_1910', key: 'time_e_3' },
+  ],
+  afternoon: [
+    { id: 'A_1410_1425', key: 'time_a_1' },
+    { id: 'A_1425_1440', key: 'time_a_2' },
+    { id: 'A_1440_1455', key: 'time_a_3' },
+  ]
+};
+
+export const MAIN_TIME_BLOCKS = [
+    {
+        id: 'morning',
+        key: 'timeBlockMorning',
+        timeRangeKey: 'timeRangeMorning',
+        slots: TIME_SLOTS.morning
+    },
+    {
+        id: 'afternoon',
+        key: 'timeBlockAfternoon',
+        timeRangeKey: 'timeRangeAfternoon',
+        slots: TIME_SLOTS.afternoon
+    },
+    {
+        id: 'evening',
+        key: 'timeBlockEvening',
+        timeRangeKey: 'timeRangeEvening',
+        slots: TIME_SLOTS.evening
+    }
+];
+
 
 export const LANGUAGE_DATA: LanguageData = {
     'en': {
@@ -128,9 +167,21 @@ export const LANGUAGE_DATA: LanguageData = {
         quizTimeLabel: "What time do you want to read?",
         quizQiraahLabel: "Which Qira'ah do you want to learn?",
         scrollNote: "Scroll to see all days",
-        timeSlot1: "5:10 AM - 5:50 AM",
-        timeSlot2: "6:20 PM - 7:10 PM",
-        timeSlot3: "2:10 PM - 3:00 PM",
+        timeBlockMorning: "Morning",
+        timeBlockEvening: "Evening",
+        timeBlockAfternoon: "Afternoon",
+        time_m_1: "5:10 - 5:20 AM",
+        time_m_2: "5:20 - 5:35 AM",
+        time_m_3: "5:35 - 5:50 AM",
+        time_e_1: "6:20 - 6:35 PM",
+        time_e_2: "6:35 - 6:50 PM",
+        time_e_3: "6:50 - 7:10 PM",
+        time_a_1: "2:10 - 2:25 PM",
+        time_a_2: "2:25 - 2:40 PM",
+        time_a_3: "2:40 - 2:55 PM",
+        timeRangeMorning: "5:10 AM - 5:50 AM",
+        timeRangeAfternoon: "2:10 PM - 2:55 PM",
+        timeRangeEvening: "6:20 PM - 7:10 PM",
         timezoneNote: "(GMT+7 Jakarta Time)",
         quizLanguageLabel: "In which language do you want to learn?",
         langArabic: "Arabic",
@@ -192,6 +243,13 @@ export const LANGUAGE_DATA: LanguageData = {
         askAiInitialMessage: "As-salamu alaykum! I'm the Maqra'at Al-Huda AI assistant. How can I help you today? You can ask about Ijazah programs, Tasmi' sessions, teachers, or anything else.",
         shareButtonText: "Share",
         copiedButtonText: "Copied!",
+        stepIndicator: "Step {current} of {total}",
+        cardTitlePersonalInfo: "Personal Information",
+        cardTitleSessionDetails: "Session Details",
+        cardTitleJourney: "Your Qur'anic Journey",
+        cardTitleSummary: "Summary & Submit",
+        cardTitleAdditionalNotes: "Additional Notes (Optional)",
+        infoLabel: "Additional Notes:",
     },
     'ar': {
         headerTitle: "مقرأة الهدى",
@@ -296,9 +354,21 @@ export const LANGUAGE_DATA: LanguageData = {
         quizTimeLabel: "في أي وقت تريد أن تقرأ؟",
         quizQiraahLabel: "أي قراءة تريد أن تتعلم؟",
         scrollNote: "مرر لرؤية كل الأيام",
-        timeSlot1: "5:10 صباحًا - 5:50 صباحًا",
-        timeSlot2: "6:20 مساءً - 7:10 مساءً",
-        timeSlot3: "2:10 مساءً - 3:00 مساءً",
+        timeBlockMorning: "صباحاً",
+        timeBlockEvening: "مساءً",
+        timeBlockAfternoon: "ظهراً",
+        time_m_1: "5:10 - 5:20 صباحًا",
+        time_m_2: "5:20 - 5:35 صباحًا",
+        time_m_3: "5:35 - 5:50 صباحًا",
+        time_e_1: "6:20 - 6:35 مساءً",
+        time_e_2: "6:35 - 6:50 مساءً",
+        time_e_3: "6:50 - 7:10 مساءً",
+        time_a_1: "2:10 - 2:25 مساءً",
+        time_a_2: "2:25 - 2:40 مساءً",
+        time_a_3: "2:40 - 2:55 مساءً",
+        timeRangeMorning: "5:10 صباحًا - 5:50 صباحًا",
+        timeRangeAfternoon: "2:10 مساءً - 2:55 مساءً",
+        timeRangeEvening: "6:20 مساءً - 7:10 مساءً",
         timezoneNote: "(توقيت جاكرتا GMT+7)",
         quizLanguageLabel: "بأي لغة تريد أن تتعلم؟",
         langArabic: "العربية",
@@ -360,6 +430,13 @@ export const LANGUAGE_DATA: LanguageData = {
         askAiInitialMessage: "السلام عليكم! أنا مساعد مقرأة الهدى الذكي. كيف يمكنني مساعدتك اليوم؟ يمكنك السؤال عن برامج الإجازة، جلسات التسميع، المشايخ، أو أي شيء آخر.",
         shareButtonText: "مشاركة",
         copiedButtonText: "تم النسخ!",
+        stepIndicator: "خطوة {current} من {total}",
+        cardTitlePersonalInfo: "المعلومات الشخصية",
+        cardTitleSessionDetails: "تفاصيل الجلسة",
+        cardTitleJourney: "رحلتك القرآنية",
+        cardTitleSummary: "الملخص والإرسال",
+        cardTitleAdditionalNotes: "ملاحظات إضافية (اختياري)",
+        infoLabel: "ملاحظات إضافية:",
     },
     'id': {
         headerTitle: "Maqra'at Al-Huda",
@@ -464,9 +541,21 @@ export const LANGUAGE_DATA: LanguageData = {
         quizTimeLabel: "Jam berapa Anda ingin membaca?",
         quizQiraahLabel: "Qira'ah mana yang ingin Anda pelajari?",
         scrollNote: "Gulir untuk melihat semua hari",
-        timeSlot1: "05:10 - 05:50",
-        timeSlot2: "18:20 - 19:10",
-        timeSlot3: "14:10 - 15:00",
+        timeBlockMorning: "Pagi",
+        timeBlockEvening: "Malam",
+        timeBlockAfternoon: "Siang",
+        time_m_1: "05:10 - 05:20",
+        time_m_2: "05:20 - 05:35",
+        time_m_3: "05:35 - 05:50",
+        time_e_1: "18:20 - 18:35",
+        time_e_2: "18:35 - 18:50",
+        time_e_3: "18:50 - 19:10",
+        time_a_1: "14:10 - 14:25",
+        time_a_2: "14:25 - 14:40",
+        time_a_3: "14:40 - 14:55",
+        timeRangeMorning: "05:10 - 05:50",
+        timeRangeAfternoon: "14:10 - 14:55",
+        timeRangeEvening: "18:20 - 19:10",
         timezoneNote: "(WIB, GMT+7 Waktu Jakarta)",
         quizLanguageLabel: "Dalam bahasa apa Anda ingin belajar?",
         langArabic: "Arab",
@@ -528,5 +617,12 @@ export const LANGUAGE_DATA: LanguageData = {
         askAiInitialMessage: "Assalamualaikum! Saya adalah asisten AI Maqra'at Al-Huda. Ada yang bisa saya bantu hari ini? Anda bisa bertanya tentang program Ijazah, sesi Tasmi', para guru, atau hal lainnya.",
         shareButtonText: "Bagikan",
         copiedButtonText: "Tersalin!",
+        stepIndicator: "Langkah {current} dari {total}",
+        cardTitlePersonalInfo: "Informasi Pribadi",
+        cardTitleSessionDetails: "Detail Sesi",
+        cardTitleJourney: "Perjalanan Qur'an Anda",
+        cardTitleSummary: "Ringkasan & Kirim",
+        cardTitleAdditionalNotes: "Catatan Tambahan (Opsional)",
+        infoLabel: "Catatan Tambahan:",
     }
 };

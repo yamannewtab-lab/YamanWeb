@@ -13,7 +13,6 @@ import IjazahPreviewPage from './components/IjazahPreviewPage';
 import QuizPage from './components/QuizPage';
 import TasmiQuizPage from './components/TasmiQuizPage';
 import TasmiInfoPage from './components/TasmiInfoPage';
-import PaymentPage from './components/PaymentPage';
 import ThanksPage from './components/ThanksPage';
 import ImageModal from './components/ImageModal';
 import AboutPage from './components/AboutPage';
@@ -93,15 +92,13 @@ const App: React.FC = () => {
             case 'ijazahPreview':
                 return <IjazahPreviewPage navigateTo={navigateTo} t={t} onImageClick={setImageModalSrc} />;
             case 'quiz':
-                return <QuizPage navigateTo={navigateTo} t={t} ijazahApplication={ijazahApplication} setIjazahApplication={setIjazahApplication} />;
+                return <QuizPage navigateTo={navigateTo} t={t} ijazahApplication={ijazahApplication} setIjazahApplication={setIjazahApplication} setLastSubmissionType={setLastSubmissionType} />;
             case 'tasmiQuiz':
                 return <TasmiQuizPage navigateTo={navigateTo} t={t} />;
             case 'tajwidImprovement':
                 return <TajwidQuizPage navigateTo={navigateTo} t={t} setLastSubmissionType={setLastSubmissionType} />;
             case 'tasmiInfo':
                 return <TasmiInfoPage navigateTo={navigateTo} t={t} />;
-            case 'payment':
-                return <PaymentPage navigateTo={navigateTo} t={t} ijazahApplication={ijazahApplication} setLastSubmissionType={setLastSubmissionType} />;
             case 'thanks':
                 return <ThanksPage navigateTo={navigateTo} t={t} registerAgainTarget={registerAgainTarget} ijazahApplication={ijazahApplication} lastSubmissionType={lastSubmissionType} />;
             case 'about':

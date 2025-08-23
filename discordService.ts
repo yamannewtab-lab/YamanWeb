@@ -16,7 +16,7 @@ const WEBHOOK_URLS = {
 
 type WebhookType = keyof typeof WEBHOOK_URLS;
 
-const isTestModeEnabled = (): boolean => {
+export const isTestModeEnabled = (): boolean => {
     // Read directly from a global variable. This resets on every page refresh.
     return (window as any).maqraatIsTestMode === true;
 };
@@ -58,6 +58,7 @@ interface TajwidRequest {
     tajwidLevel: string;
     subscriptionText: string;
     priceText: string;
+    additionalNotes?: string;
 }
 
 interface CourseRegistration {
@@ -118,7 +119,7 @@ export async function sendIjazahApplicationToDiscord(
         fields.splice(4, 0, { name: t('summaryQiraah'), value: fullDetails.qiraah, inline: true });
     }
 
-    const embed = {
+    const embed: any = {
         title: isTestModeEnabled() ? "[TEST] New Ijazah Application" : "New Ijazah Application",
         color: 16753920, // Amber
         fields,
@@ -204,7 +205,7 @@ export async function sendTajwidRequestToDiscord(request: TajwidRequest, t: (key
     const feedbackMessage = `New Tajwid Improvement Request: ${request.subscriptionText}. Contact: ${request.whatsapp}`;
     await logRegistrationAsFeedback(feedbackMessage);
     
-    const embed = {
+    const embed: any = {
         title: isTestModeEnabled() ? "[TEST] New Tajwid Improvement Request" : "New Tajwid Improvement Request",
         color: 15252002, // Rose
         fields: [
@@ -218,6 +219,10 @@ export async function sendTajwidRequestToDiscord(request: TajwidRequest, t: (key
         footer: { text: "Submitted via Maqra'at Al-Huda App" },
         timestamp: new Date().toISOString()
     };
+
+    if (request.additionalNotes) {
+        embed.description = `**${t('infoLabel')}**\n${request.additionalNotes}`;
+    }
 
     const payload = {
         username: "Maqra'at Al-Huda Bot",
