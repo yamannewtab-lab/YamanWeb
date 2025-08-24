@@ -56,7 +56,15 @@ const TasmiQuizPage: React.FC<TasmiQuizPageProps> = ({ navigateTo, t }) => {
                     setBookedSeats(currentSeats => currentSeats.includes(newBookedSlot) ? currentSeats : [...currentSeats, newBookedSlot]);
                 }
             }).subscribe();
-        return () => { supabase.removeChannel(channel); };
+        
+        const timer = setTimeout(() => {
+            pageTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+
+        return () => { 
+            supabase.removeChannel(channel); 
+            clearTimeout(timer);
+        };
     }, []);
     
     const scrollToTop = () => {

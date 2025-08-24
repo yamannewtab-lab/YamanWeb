@@ -77,7 +77,15 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                 }
             )
             .subscribe();
-        return () => { supabase.removeChannel(channel); };
+
+        const timer = setTimeout(() => {
+            pageTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+            
+        return () => { 
+            supabase.removeChannel(channel); 
+            clearTimeout(timer);
+        };
     }, []);
 
     const scrollToTop = () => {
@@ -336,7 +344,7 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                                 <div>
                                     <span className="block text-sm font-medium text-gray-300">{t('selectDaysOfWeek')}</span>
                                     <div className="mt-2 p-2 rounded-lg bg-gray-900">
-                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                             {weekdays.map(day => (
                                                 <DayButton
                                                     key={day}
