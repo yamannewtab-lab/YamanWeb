@@ -10,7 +10,7 @@ const AboutPage: React.FC<AboutPageProps> = ({ navigateTo, t }) => {
     return (
         <div>
             <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold text-stone-800 dark:text-gray-100">{t('aboutUsPageTitle')}</h2>
+                <h2 className="text-3xl font-bold text-gray-100">{t('aboutUsPageTitle')}</h2>
             </div>
 
             <div className="max-w-2xl mx-auto">
@@ -27,7 +27,7 @@ const AboutPage: React.FC<AboutPageProps> = ({ navigateTo, t }) => {
             </div>
             
             <div className="mt-12 text-center">
-                <button onClick={() => navigateTo('home')} className="text-sm font-semibold text-stone-600 hover:text-amber-600 transition-colors dark:text-gray-400 dark:hover:text-amber-400">
+                <button onClick={() => navigateTo('home')} className="text-sm font-semibold text-gray-400 hover:text-amber-400 transition-colors">
                     {t('backToHome')}
                 </button>
             </div>

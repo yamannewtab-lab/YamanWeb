@@ -21,24 +21,24 @@ const IjazahPage: React.FC<IjazahPageProps> = ({ navigateTo, t, setIjazahApplica
     };
 
     const primaryButtonClasses = "w-full sm:w-auto bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300";
-    const secondaryButtonClasses = "w-full sm:w-auto bg-stone-200 text-stone-700 font-bold py-3 px-6 rounded-lg shadow-sm hover:shadow-md hover:bg-stone-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 transform hover:-translate-y-0.5 transition-all duration-300";
+    const secondaryButtonClasses = "w-full sm:w-auto bg-gray-700 text-gray-200 font-bold py-3 px-6 rounded-lg shadow-sm hover:shadow-md hover:bg-gray-600 transform hover:-translate-y-0.5 transition-all duration-300";
 
     if (step === 'memorization') {
         return (
             <div>
                 <div className="text-center mb-8">
-                    <h2 className="text-3xl font-bold text-stone-800 dark:text-gray-100">{t('ijazahMemorizationTitle')}</h2>
-                    <p className="mt-2 text-stone-600 dark:text-gray-400">{t('ijazahMemorizationSubtitle')}</p>
+                    <h2 className="text-3xl font-bold text-gray-100">{t('ijazahMemorizationTitle')}</h2>
+                    <p className="mt-2 text-gray-400">{t('ijazahMemorizationSubtitle')}</p>
                 </div>
                 <div className="mt-8 flex flex-col items-center gap-4">
                     <div className="flex flex-col items-center w-full sm:w-auto">
                         <button onClick={() => handleMemorizationClick('with')} className={`${primaryButtonClasses} text-lg`}>{t('withMemorizationButton')}</button>
-                        <span className="mt-2 text-xs bg-stone-200 text-stone-600 font-semibold px-2 py-0.5 rounded-full dark:bg-gray-600 dark:text-gray-300">Recommended</span>
+                        <span className="mt-2 text-xs bg-gray-600 text-gray-300 font-semibold px-2 py-0.5 rounded-full">{t('withMemorizationButton')}</span>
                     </div>
                     <button onClick={() => handleMemorizationClick('without')} className={`${secondaryButtonClasses} text-lg`}>{t('withoutMemorizationButton')}</button>
                 </div>
                 <div className="mt-12 text-center">
-                    <button onClick={() => navigateTo('home')} className="text-sm font-semibold text-stone-600 hover:text-amber-600 transition-colors dark:text-gray-400 dark:hover:text-amber-400">{t('backToHome')}</button>
+                    <button onClick={() => navigateTo('home')} className="text-sm font-semibold text-gray-400 hover:text-amber-400 transition-colors">{t('backToHome')}</button>
                 </div>
             </div>
         );
@@ -47,8 +47,8 @@ const IjazahPage: React.FC<IjazahPageProps> = ({ navigateTo, t, setIjazahApplica
     return (
         <div>
             <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold text-stone-800 dark:text-gray-100">{t('ijazahTitle')}</h2>
-                <p className="mt-2 text-stone-600 dark:text-gray-400">{t('ijazahSubtitle')}</p>
+                <h2 className="text-3xl font-bold text-gray-100">{t('ijazahTitle')}</h2>
+                <p className="mt-2 text-gray-400">{t('ijazahSubtitle')}</p>
             </div>
             <div className="mt-8 flex flex-col items-center gap-4">
                 <button onClick={() => handleOptionClick("Hafs 'an 'Asim")} className={primaryButtonClasses}>{t('hafsButton')}</button>
@@ -56,12 +56,12 @@ const IjazahPage: React.FC<IjazahPageProps> = ({ navigateTo, t, setIjazahApplica
                 <button onClick={() => handleOptionClick("Different Qira'ah")} className={primaryButtonClasses}>{t('differentQiraahButton')}</button>
             </div>
             <div className="mt-8 text-center">
-                <button onClick={() => setStep('memorization')} className="text-sm font-semibold text-stone-600 hover:text-amber-600 transition-colors dark:text-gray-400 dark:hover:text-amber-400">
+                <button onClick={() => setStep('memorization')} className="text-sm font-semibold text-gray-400 hover:text-amber-400 transition-colors">
                     &larr; {t('backButton')}
                 </button>
             </div>
             <div className="mt-4 text-center">
-                <button onClick={() => navigateTo('home')} className="text-sm font-semibold text-stone-600 hover:text-amber-600 transition-colors dark:text-gray-400 dark:hover:text-amber-400">{t('backToHome')}</button>
+                <button onClick={() => navigateTo('home')} className="text-sm font-semibold text-gray-400 hover:text-amber-400 transition-colors">{t('backToHome')}</button>
             </div>
         </div>
     );

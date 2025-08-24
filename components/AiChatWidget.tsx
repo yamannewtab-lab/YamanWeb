@@ -131,7 +131,7 @@ const AiChatWidget: React.FC<AiChatWidgetProps> = ({ isOpen, setIsOpen, t }) => 
         <div className={`flex items-end gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             {msg.role === 'model' && msg.text && <BotAvatar />}
             {msg.text && (
-                 <div className={`max-w-[85%] px-3 py-2 rounded-2xl ${msg.role === 'user' ? 'bg-gradient-to-br from-amber-500 to-orange-500 text-white rounded-br-none' : 'bg-stone-200 dark:bg-gray-700 text-stone-800 dark:text-gray-200 rounded-bl-none'} shadow-sm whitespace-pre-wrap text-sm`}>
+                 <div className={`max-w-[85%] px-3 py-2 rounded-2xl ${msg.role === 'user' ? 'bg-gradient-to-br from-amber-500 to-orange-500 text-white rounded-br-none' : 'bg-gray-700 text-gray-200 rounded-bl-none'} shadow-sm whitespace-pre-wrap text-sm`}>
                     {msg.text}
                 </div>
             )}
@@ -142,19 +142,19 @@ const AiChatWidget: React.FC<AiChatWidgetProps> = ({ isOpen, setIsOpen, t }) => 
         <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 pointer-events-none">
             <div 
                 className={`
-                    w-[calc(100vw-2rem)] max-w-sm h-[70vh] max-h-[550px] bg-stone-50 dark:bg-slate-900 
-                    rounded-2xl shadow-2xl flex flex-col border border-stone-200 dark:border-gray-700
+                    w-[calc(100vw-2rem)] max-w-sm h-[70vh] max-h-[550px] bg-slate-900 
+                    rounded-2xl shadow-2xl flex flex-col border border-gray-700
                     origin-bottom-right transition-all duration-300 ease-in-out relative
                     ${isOpen ? 'opacity-100 translate-y-0 scale-100 pointer-events-auto' : 'opacity-0 translate-y-8 scale-95 pointer-events-none'}
                 `}
                 aria-hidden={!isOpen}
             >
-                <div className="relative text-center p-3 border-b border-stone-200/80 dark:border-gray-700/60 flex-shrink-0 bg-stone-50/80 dark:bg-slate-900/80 backdrop-blur-sm">
+                <div className="relative text-center p-3 border-b border-gray-700/60 flex-shrink-0 bg-slate-900/80 backdrop-blur-sm">
                     <h2 className="text-lg font-bold bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent">{t('askAiPageTitle')}</h2>
-                    <p className="text-xs text-stone-500 dark:text-gray-400">{t('askAiPageSubtitle')}</p>
+                    <p className="text-xs text-gray-400">{t('askAiPageSubtitle')}</p>
                     <button
                         onClick={() => setIsOpen(false)}
-                        className="absolute top-1/2 -translate-y-1/2 right-2 p-1.5 rounded-full text-stone-500 hover:text-stone-800 dark:text-gray-400 dark:hover:text-white hover:bg-stone-200 dark:hover:bg-gray-600/50 transition-all"
+                        className="absolute top-1/2 -translate-y-1/2 right-2 p-1.5 rounded-full text-gray-400 hover:text-white hover:bg-gray-600/50 transition-all"
                         aria-label="Close chat"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -163,14 +163,14 @@ const AiChatWidget: React.FC<AiChatWidgetProps> = ({ isOpen, setIsOpen, t }) => 
                     </button>
                 </div>
                 
-                <div className="flex-grow overflow-y-auto p-3 space-y-4 custom-scrollbar bg-stone-100 dark:bg-gray-800">
+                <div className="flex-grow overflow-y-auto p-3 space-y-4 custom-scrollbar bg-gray-800">
                     {messages.map((msg) => (
                         <MessageBubble key={msg.id} msg={msg} />
                     ))}
                     {isLoading && (
                         <div className="flex items-end gap-2 justify-start">
                             <BotAvatar />
-                            <div className="bg-stone-200 dark:bg-gray-700 rounded-2xl rounded-bl-none shadow-sm">
+                            <div className="bg-gray-700 rounded-2xl rounded-bl-none shadow-sm">
                                 <TypingIndicator/>
                             </div>
                         </div>
@@ -178,7 +178,7 @@ const AiChatWidget: React.FC<AiChatWidgetProps> = ({ isOpen, setIsOpen, t }) => 
                     <div ref={messagesEndRef} />
                 </div>
 
-                <div className="p-3 border-t border-stone-200/80 dark:border-gray-700/60 bg-stone-100/50 dark:bg-black/20 backdrop-blur-sm flex-shrink-0">
+                <div className="p-3 border-t border-gray-700/60 bg-black/20 backdrop-blur-sm flex-shrink-0">
                     {error && <p className="text-red-500 text-center text-xs mb-2">{error}</p>}
                     <form onSubmit={handleSend} className="flex items-center gap-2">
                         <input
@@ -186,14 +186,14 @@ const AiChatWidget: React.FC<AiChatWidgetProps> = ({ isOpen, setIsOpen, t }) => 
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             placeholder={t('askAiPlaceholder')}
-                            className="flex-grow w-full px-4 py-2 text-sm bg-white/80 border border-stone-300 rounded-full shadow-inner focus:outline-none focus:ring-2 focus:ring-amber-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 transition-all"
+                            className="flex-grow w-full px-4 py-2 text-sm bg-gray-700 border border-gray-600 rounded-full shadow-inner focus:outline-none focus:ring-2 focus:ring-amber-500 text-gray-200 transition-all"
                             disabled={isLoading || !!error || !chat}
                             aria-label="Chat input"
                         />
                         <button 
                             type="submit" 
                             disabled={isLoading || !input.trim() || !!error || !chat}
-                            className="flex-shrink-0 bg-amber-500 text-white rounded-full p-2.5 hover:bg-amber-600 disabled:bg-amber-300 dark:disabled:bg-amber-800 disabled:scale-100 hover:scale-110 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-lg"
+                            className="flex-shrink-0 bg-amber-500 text-white rounded-full p-2.5 hover:bg-amber-600 disabled:bg-amber-800 disabled:scale-100 hover:scale-110 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-lg"
                             aria-label="Send message"
                         >
                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -211,7 +211,7 @@ const AiChatWidget: React.FC<AiChatWidgetProps> = ({ isOpen, setIsOpen, t }) => 
                     text-white rounded-full shadow-lg
                     flex items-center justify-center
                     transform hover:scale-110 transition-all duration-300 ease-in-out
-                    focus:outline-none focus:ring-4 focus:ring-amber-300 dark:focus:ring-amber-800
+                    focus:outline-none focus:ring-4 focus:ring-amber-800
                     pointer-events-auto
                     ${isOpen ? 'opacity-0 scale-75 pointer-events-none' : 'opacity-100 scale-100'}
                 `}

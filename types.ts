@@ -18,6 +18,7 @@ export interface IjazahApplication {
         preferredTime?: string;
         language?: string;
         qiraah?: string;
+        selectedDays?: string[];
     };
 }
 

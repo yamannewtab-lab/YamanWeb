@@ -114,9 +114,12 @@ export async function sendIjazahApplicationToDiscord(
         { name: t('quizSheikhLabel'), value: fullDetails.sheikh ? t(fullDetails.sheikh) : 'N/A', inline: true },
     ];
     
-    // Add Qira'ah field only if it exists
     if (fullDetails.qiraah) {
         fields.splice(4, 0, { name: t('summaryQiraah'), value: fullDetails.qiraah, inline: true });
+    }
+
+    if (fullDetails.selectedDays && fullDetails.selectedDays.length > 0) {
+        fields.push({ name: t('summaryPreferredDays'), value: fullDetails.selectedDays.map(day => t(`day${day}`)).join(', '), inline: false });
     }
 
     const embed: any = {

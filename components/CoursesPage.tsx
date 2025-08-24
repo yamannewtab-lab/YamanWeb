@@ -16,12 +16,12 @@ const CoursesPage: React.FC<CoursesPageProps> = ({ navigateTo, t, onImageClick }
     return (
         <div>
             <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold text-stone-800 dark:text-gray-100">{t('coursesTitle')}</h2>
+                <h2 className="text-3xl font-bold text-gray-100">{t('coursesTitle')}</h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="bg-stone-50 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-shadow dark:bg-gray-800 flex flex-col">
-                    <div className="bg-stone-100 dark:bg-gray-900">
+                <div className="bg-gray-800 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-shadow flex flex-col">
+                    <div className="bg-gray-900">
                         <img 
                             src={courseImage1} 
                             alt={t('course3Text')} 
@@ -30,12 +30,12 @@ const CoursesPage: React.FC<CoursesPageProps> = ({ navigateTo, t, onImageClick }
                         />
                     </div>
                     <div className="p-6 flex-grow">
-                        <h3 className="font-bold text-xl text-stone-800 dark:text-gray-100">{t('course3Text')}</h3>
+                        <h3 className="font-bold text-xl text-gray-100">{t('course3Text')}</h3>
                     </div>
                 </div>
 
-                <div className="bg-stone-50 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-shadow dark:bg-gray-800 flex flex-col">
-                    <div className="bg-stone-100 dark:bg-gray-900">
+                <div className="bg-gray-800 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-shadow flex flex-col">
+                    <div className="bg-gray-900">
                         <img 
                             src={courseImage2} 
                             alt={t('course4Text')} 
@@ -44,13 +44,13 @@ const CoursesPage: React.FC<CoursesPageProps> = ({ navigateTo, t, onImageClick }
                         />
                     </div>
                     <div className="p-6 flex-grow">
-                        <h3 className="font-bold text-xl text-stone-800 dark:text-gray-100">{t('course4Text')}</h3>
+                        <h3 className="font-bold text-xl text-gray-100">{t('course4Text')}</h3>
                     </div>
                 </div>
             </div>
 
             <div className="mt-12 text-center">
-                <button onClick={() => navigateTo('home')} className="text-sm font-semibold text-stone-600 hover:text-amber-600 transition-colors dark:text-gray-400 dark:hover:text-amber-400">{t('backToHome')}</button>
+                <button onClick={() => navigateTo('home')} className="text-sm font-semibold text-gray-400 hover:text-amber-400 transition-colors">{t('backToHome')}</button>
             </div>
         </div>
     );

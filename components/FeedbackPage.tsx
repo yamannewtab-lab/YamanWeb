@@ -40,8 +40,8 @@ const FeedbackPage: React.FC<FeedbackPageProps> = ({ navigateTo, t }) => {
             {/* Form Section */}
             <div className="order-2 md:order-1">
                  <div className="text-center md:text-left mb-8">
-                    <h2 className="text-3xl font-bold text-stone-800 dark:text-gray-100">{t('feedbackPageTitle')}</h2>
-                    <p className="mt-2 text-stone-600 dark:text-gray-400">{t('feedbackPageSubtitle')}</p>
+                    <h2 className="text-3xl font-bold text-gray-100">{t('feedbackPageTitle')}</h2>
+                    <p className="mt-2 text-gray-400">{t('feedbackPageSubtitle')}</p>
                 </div>
                 <form onSubmit={handleSubmit}>
                     <div className="relative">
@@ -54,19 +54,19 @@ const FeedbackPage: React.FC<FeedbackPageProps> = ({ navigateTo, t }) => {
                             placeholder={t('feedbackPlaceholder')}
                             maxLength={maxChars}
                             required
-                            className="mt-1 block w-full px-4 py-3 bg-white border border-stone-300 rounded-lg shadow-sm placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 dark:bg-gray-700 dark:border-gray-600 text-stone-800 dark:text-gray-200 dark:placeholder-gray-400 transition"
+                            className="mt-1 block w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-gray-200 transition"
                             aria-describedby="char-count"
                         />
-                        <div id="char-count" className="absolute bottom-3 right-3 text-xs text-stone-500 dark:text-gray-400">
+                        <div id="char-count" className="absolute bottom-3 right-3 text-xs text-gray-400">
                             {feedback.length} / {maxChars}
                         </div>
                     </div>
-                    {error && <p className="mt-2 text-sm text-red-500 dark:text-red-400 text-center md:text-left">{error}</p>}
+                    {error && <p className="mt-2 text-sm text-red-400 text-center md:text-left">{error}</p>}
                     <div className="mt-6">
                         <button
                             type="submit"
                             disabled={isSubmitting || !feedback.trim()}
-                            className="w-full flex justify-center items-center bg-gradient-to-r from-pink-500 to-rose-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300 ease-in-out text-lg disabled:from-pink-400 disabled:to-rose-400 disabled:cursor-not-allowed dark:disabled:opacity-60"
+                            className="w-full flex justify-center items-center bg-gradient-to-r from-pink-500 to-rose-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300 ease-in-out text-lg disabled:from-pink-400 disabled:to-rose-400 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                             {isSubmitting ? (
                                 <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -78,7 +78,7 @@ const FeedbackPage: React.FC<FeedbackPageProps> = ({ navigateTo, t }) => {
                     </div>
                 </form>
                  <div className="mt-8 text-center md:text-left">
-                    <button onClick={() => navigateTo('home')} className="text-sm font-semibold text-stone-600 hover:text-amber-600 transition-colors dark:text-gray-400 dark:hover:text-amber-400">{t('backToHome')}</button>
+                    <button onClick={() => navigateTo('home')} className="text-sm font-semibold text-gray-400 hover:text-amber-400 transition-colors">{t('backToHome')}</button>
                 </div>
             </div>
             

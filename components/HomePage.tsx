@@ -77,7 +77,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigateTo, t }) => {
                     </p>
                     <button 
                         onClick={handleScrollToSections}
-                        className="mt-8 px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold text-lg rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 ease-in-out focus:outline-none focus:ring-4 focus:ring-amber-300 dark:focus:ring-amber-800"
+                        className="mt-8 px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold text-lg rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 ease-in-out focus:outline-none focus:ring-4 focus:ring-amber-800"
                     >
                         {t('heroButton')}
                     </button>
@@ -93,8 +93,8 @@ const HomePage: React.FC<HomePageProps> = ({ navigateTo, t }) => {
             
             <div ref={sectionsRef} className="p-6 sm:p-8 md:p-12" id="journey-sections">
                  <div className="text-center mb-10">
-                    <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-stone-800 dark:text-gray-100">{t('homePageTitle')}</h2>
-                    <p className="mt-4 text-lg text-stone-600 dark:text-gray-400">{t('homePageSubtitle')}</p>
+                    <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-100">{t('homePageTitle')}</h2>
+                    <p className="mt-4 text-lg text-gray-400">{t('homePageSubtitle')}</p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <ActionCard

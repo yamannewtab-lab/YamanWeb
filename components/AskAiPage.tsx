@@ -127,7 +127,7 @@ const AskAiPage: React.FC<AskAiPageProps> = ({ navigateTo, t }) => {
         <div className={`flex items-end gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             {msg.role === 'model' && msg.text && <BotAvatar />}
             {msg.text && (
-                 <div className={`max-w-[85%] sm:max-w-xs md:max-w-md lg:max-w-lg px-3 py-2 sm:px-4 sm:py-3 rounded-2xl ${msg.role === 'user' ? 'bg-gradient-to-br from-amber-500 to-orange-500 text-white rounded-br-none' : 'bg-stone-200 dark:bg-gray-700 text-stone-800 dark:text-gray-200 rounded-bl-none'} shadow-sm whitespace-pre-wrap text-sm sm:text-base`}>
+                 <div className={`max-w-[85%] sm:max-w-xs md:max-w-md lg:max-w-lg px-3 py-2 sm:px-4 sm:py-3 rounded-2xl ${msg.role === 'user' ? 'bg-gradient-to-br from-amber-500 to-orange-500 text-white rounded-br-none' : 'bg-gray-700 text-gray-200 rounded-bl-none'} shadow-sm whitespace-pre-wrap text-sm sm:text-base`}>
                     {msg.text}
                 </div>
             )}
@@ -136,19 +136,19 @@ const AskAiPage: React.FC<AskAiPageProps> = ({ navigateTo, t }) => {
     
     return (
         <div className="h-full flex flex-col">
-            <div className="text-center p-4 border-b border-stone-200/80 dark:border-gray-700/60 flex-shrink-0 bg-stone-50/80 dark:bg-slate-900/80 backdrop-blur-sm">
+            <div className="text-center p-4 border-b border-gray-700/60 flex-shrink-0 bg-slate-900/80 backdrop-blur-sm">
                 <h2 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent">{t('askAiPageTitle')}</h2>
-                <p className="text-[11px] sm:text-xs text-stone-500 dark:text-gray-400">{t('askAiPageSubtitle')}</p>
+                <p className="text-[11px] sm:text-xs text-gray-400">{t('askAiPageSubtitle')}</p>
             </div>
             
-            <div className="flex-grow overflow-y-auto p-4 space-y-6 custom-scrollbar bg-stone-100 dark:bg-gray-800">
+            <div className="flex-grow overflow-y-auto p-4 space-y-6 custom-scrollbar bg-gray-800">
                 {messages.map((msg) => (
                     <MessageBubble key={msg.id} msg={msg} />
                 ))}
                 {isLoading && (
                     <div className="flex items-end gap-2 justify-start">
                         <BotAvatar />
-                        <div className="bg-stone-200 dark:bg-gray-700 rounded-2xl rounded-bl-none shadow-sm">
+                        <div className="bg-gray-700 rounded-2xl rounded-bl-none shadow-sm">
                             <TypingIndicator/>
                         </div>
                     </div>
@@ -156,7 +156,7 @@ const AskAiPage: React.FC<AskAiPageProps> = ({ navigateTo, t }) => {
                 <div ref={messagesEndRef} />
             </div>
 
-            <div className="p-2 sm:p-4 border-t border-stone-200/80 dark:border-gray-700/60 bg-stone-100/50 dark:bg-black/20 backdrop-blur-sm flex-shrink-0">
+            <div className="p-2 sm:p-4 border-t border-gray-700/60 bg-black/20 backdrop-blur-sm flex-shrink-0">
                 {error && <p className="text-red-500 text-center text-sm mb-2">{error}</p>}
                 <form onSubmit={handleSend} className="flex items-center gap-2">
                     <input
@@ -164,14 +164,14 @@ const AskAiPage: React.FC<AskAiPageProps> = ({ navigateTo, t }) => {
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         placeholder={t('askAiPlaceholder')}
-                        className="flex-grow w-full px-4 py-2 bg-white/80 border border-stone-300 rounded-full shadow-inner focus:outline-none focus:ring-2 focus:ring-amber-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 transition-all text-sm sm:text-base"
+                        className="flex-grow w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-full shadow-inner focus:outline-none focus:ring-2 focus:ring-amber-500 text-gray-200 transition-all text-sm sm:text-base"
                         disabled={isLoading || !!error || !chat}
                         aria-label="Chat input"
                     />
                     <button 
                         type="submit" 
                         disabled={isLoading || !input.trim() || !!error || !chat}
-                        className="flex-shrink-0 bg-amber-500 text-white rounded-full p-2.5 sm:p-3 hover:bg-amber-600 disabled:bg-amber-300 dark:disabled:bg-amber-800 disabled:scale-100 hover:scale-110 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-lg"
+                        className="flex-shrink-0 bg-amber-500 text-white rounded-full p-2.5 sm:p-3 hover:bg-amber-600 disabled:bg-amber-800 disabled:scale-100 hover:scale-110 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-lg"
                         aria-label="Send message"
                     >
                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
