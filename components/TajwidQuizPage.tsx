@@ -32,6 +32,7 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t, setLastS
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [expandedBlock, setExpandedBlock] = useState<string | null>(null);
     const formRef = useRef<HTMLFormElement>(null);
+    const pageTopRef = useRef<HTMLDivElement>(null);
     
     const fetchBookedSeats = async () => {
         setIsLoadingSeats(true);
@@ -60,10 +61,7 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t, setLastS
     }, []);
 
     const scrollToTop = () => {
-        document.querySelector('#app-main-content main')?.scrollTo({
-            top: 0,
-            behavior: 'smooth'
-        });
+        pageTopRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -161,7 +159,7 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t, setLastS
     );
 
     return (
-        <div>
+        <div ref={pageTopRef}>
             <div className="text-center mb-6"><h2 className="text-3xl font-bold text-gray-100">{t('tajwidQuizTitle')}</h2></div>
             <form ref={formRef} onSubmit={handleSubmit} className="max-w-2xl mx-auto">
                 <FormProgress currentStep={step} totalSteps={4} />

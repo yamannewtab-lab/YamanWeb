@@ -41,6 +41,7 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
     const [expandedBlock, setExpandedBlock] = useState<string | null>(null);
     const [selectedTime, setSelectedTime] = useState<string | null>(null);
     const formRef = useRef<HTMLFormElement>(null);
+    const pageTopRef = useRef<HTMLDivElement>(null);
 
     const fetchBookedSeats = async () => {
         setIsLoadingSeats(true);
@@ -80,10 +81,7 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
     }, []);
 
     const scrollToTop = () => {
-        document.querySelector('#app-main-content main')?.scrollTo({
-            top: 0,
-            behavior: 'smooth'
-        });
+        pageTopRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
 
     const handleDaySelection = (days: number) => {
@@ -293,7 +291,7 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
     const selectedDays = ijazahApplication.fullDetails.selectedDays || [];
 
     return (
-        <div>
+        <div ref={pageTopRef}>
             <div className="text-center mb-6">
                 <h2 className="text-3xl font-bold text-gray-100">{t('quizTitle')}</h2>
             </div>
