@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Page, IjazahApplication, SubmissionType } from '../types';
 import { IJAZAH_PRICES, PATH_TRANSLATION_KEYS } from '../constants';
 import { sendIjazahApplicationToDiscord } from '../discordService';
@@ -12,10 +12,15 @@ interface PaymentPageProps {
 
 const PaymentPage: React.FC<PaymentPageProps> = ({ navigateTo, t, ijazahApplication, setLastSubmissionType }) => {
     const [showPaymentDetails, setShowPaymentDetails] = useState(false);
+    const pageTopRef = useRef<HTMLDivElement>(null);
 
     const { path, daysPerWeek, fullDetails, memorization } = ijazahApplication;
     const price = IJAZAH_PRICES[path]?.[daysPerWeek] || 0;
     const priceString = `${price.toLocaleString()} IDR`;
+    
+    const scrollToTop = () => {
+        pageTopRef.current?.scrollIntoView({ behavior: 'smooth' });
+    };
 
     const handlePay = async () => {
         try {
@@ -30,15 +35,17 @@ const PaymentPage: React.FC<PaymentPageProps> = ({ navigateTo, t, ijazahApplicat
 
     const handleContinue = () => {
         setShowPaymentDetails(true);
-        document.querySelector('#app-main-content main')?.scrollTo({ 
-            top: 0, 
-            behavior: 'smooth' 
-        });
+        scrollToTop();
+    };
+    
+    const handleBack = () => {
+        setShowPaymentDetails(false);
+        scrollToTop();
     };
 
 
     return (
-        <div className="py-10">
+        <div className="py-10" ref={pageTopRef}>
             {!showPaymentDetails ? (
                 <div key="info" className="page-transition text-center">
                     <h2 className="text-3xl font-bold text-gray-100">{t('ijazahInfoRequirementsTitle')}</h2>
@@ -111,7 +118,7 @@ const PaymentPage: React.FC<PaymentPageProps> = ({ navigateTo, t, ijazahApplicat
                         >
                             {t('changeIjazahButton')}
                         </button>
-                        <button onClick={() => setShowPaymentDetails(false)} className="text-sm font-semibold text-gray-400 hover:text-amber-400 transition-colors">
+                        <button onClick={handleBack} className="text-sm font-semibold text-gray-400 hover:text-amber-400 transition-colors">
                             &larr; {t('backButton')}
                         </button>
                     </div>

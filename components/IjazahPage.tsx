@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Page, IjazahApplication } from '../types';
 
 interface IjazahPageProps {
@@ -9,10 +9,21 @@ interface IjazahPageProps {
 
 const IjazahPage: React.FC<IjazahPageProps> = ({ navigateTo, t, setIjazahApplication }) => {
     const [step, setStep] = useState<'memorization' | 'path'>('memorization');
+    const pageTopRef = useRef<HTMLDivElement>(null);
+
+    const scrollToTop = () => {
+        pageTopRef.current?.scrollIntoView({ behavior: 'smooth' });
+    };
 
     const handleMemorizationClick = (choice: 'with' | 'without') => {
         setIjazahApplication(prev => ({ ...prev, memorization: choice }));
         setStep('path');
+        scrollToTop();
+    };
+
+    const handleBackToMemorization = () => {
+        setStep('memorization');
+        scrollToTop();
     };
 
     const handleOptionClick = (path: string) => {
@@ -25,7 +36,7 @@ const IjazahPage: React.FC<IjazahPageProps> = ({ navigateTo, t, setIjazahApplica
 
     if (step === 'memorization') {
         return (
-            <div>
+            <div ref={pageTopRef}>
                 <div className="text-center mb-8">
                     <h2 className="text-3xl font-bold text-gray-100">{t('ijazahMemorizationTitle')}</h2>
                     <p className="mt-2 text-gray-400">{t('ijazahMemorizationSubtitle')}</p>
@@ -45,7 +56,7 @@ const IjazahPage: React.FC<IjazahPageProps> = ({ navigateTo, t, setIjazahApplica
     }
     
     return (
-        <div>
+        <div ref={pageTopRef}>
             <div className="text-center mb-8">
                 <h2 className="text-3xl font-bold text-gray-100">{t('ijazahTitle')}</h2>
                 <p className="mt-2 text-gray-400">{t('ijazahSubtitle')}</p>
@@ -56,7 +67,7 @@ const IjazahPage: React.FC<IjazahPageProps> = ({ navigateTo, t, setIjazahApplica
                 <button onClick={() => handleOptionClick("Different Qira'ah")} className={primaryButtonClasses}>{t('differentQiraahButton')}</button>
             </div>
             <div className="mt-8 text-center">
-                <button onClick={() => setStep('memorization')} className="text-sm font-semibold text-gray-400 hover:text-amber-400 transition-colors">
+                <button onClick={handleBackToMemorization} className="text-sm font-semibold text-gray-400 hover:text-amber-400 transition-colors">
                     &larr; {t('backButton')}
                 </button>
             </div>
