@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Page, IjazahApplication, SubmissionType } from '../types';
 import { IJAZAH_PRICES, PATH_TRANSLATION_KEYS } from '../constants';
 import { sendIjazahApplicationToDiscord } from '../discordService';
@@ -12,20 +12,21 @@ interface PaymentPageProps {
 
 const PaymentPage: React.FC<PaymentPageProps> = ({ navigateTo, t, ijazahApplication, setLastSubmissionType }) => {
     const [showPaymentDetails, setShowPaymentDetails] = useState(false);
+    const infoRef = useRef<HTMLDivElement>(null);
+    const paymentRef = useRef<HTMLDivElement>(null);
 
     const { path, daysPerWeek, fullDetails, memorization } = ijazahApplication;
     const price = IJAZAH_PRICES[path]?.[daysPerWeek] || 0;
     const priceString = `${price.toLocaleString()} IDR`;
     
-    const scrollToTop = () => {
-        const mainContent = document.querySelector('main');
-        if (mainContent) {
-            mainContent.scrollTop = 0;
-        }
-    };
-
     useEffect(() => {
-        scrollToTop();
+        const targetRef = !showPaymentDetails ? infoRef : paymentRef;
+        setTimeout(() => {
+            targetRef?.current?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start',
+            });
+        }, 100);
     }, [showPaymentDetails]);
 
     const handlePay = async () => {
@@ -51,7 +52,7 @@ const PaymentPage: React.FC<PaymentPageProps> = ({ navigateTo, t, ijazahApplicat
     return (
         <div className="py-10">
             {!showPaymentDetails ? (
-                <div key="info" className="page-transition text-center">
+                <div ref={infoRef} key="info" className="page-transition text-center">
                     <h2 className="text-3xl font-bold text-gray-100">{t('ijazahInfoRequirementsTitle')}</h2>
                     <p className="mt-2 text-gray-400">{t('paymentSubtitle')}</p>
                     
@@ -71,7 +72,7 @@ const PaymentPage: React.FC<PaymentPageProps> = ({ navigateTo, t, ijazahApplicat
                     </div>
                 </div>
             ) : (
-                <div key="payment" className="page-transition text-center">
+                <div ref={paymentRef} key="payment" className="page-transition text-center">
                     <h2 className="text-3xl font-bold text-gray-100">{t('summaryTitle')}</h2>
                     <p className="mt-2 text-gray-400">{t('paymentSubtitle')}</p>
 

@@ -41,16 +41,21 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
     const [expandedBlock, setExpandedBlock] = useState<string | null>(null);
     const [selectedTime, setSelectedTime] = useState<string | null>(null);
     const formRef = useRef<HTMLFormElement>(null);
-
-    const scrollToTop = () => {
-        const mainContent = document.querySelector('main');
-        if (mainContent) {
-            mainContent.scrollTop = 0;
-        }
+    const stepRefs = {
+        1: useRef<HTMLDivElement>(null),
+        2: useRef<HTMLDivElement>(null),
+        3: useRef<HTMLDivElement>(null),
+        4: useRef<HTMLDivElement>(null),
     };
-    
+
     useEffect(() => {
-        scrollToTop();
+        const targetRef = stepRefs[step as keyof typeof stepRefs];
+        setTimeout(() => {
+            targetRef?.current?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start',
+            });
+        }, 100);
     }, [step]);
 
     const fetchBookedSeats = async () => {
@@ -307,110 +312,118 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                 <FormProgress currentStep={step} totalSteps={4} />
                 <div className="relative">
                     {step === 1 && (
-                        <Card title={t('cardTitlePersonalInfo')}>
-                            <div>
-                                <label htmlFor="quiz-name" className="block text-sm font-medium text-gray-300">{t('quizNameLabel')}</label>
-                                <input type="text" id="quiz-name" name="name" defaultValue={ijazahApplication.fullDetails.name} required className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-200" />
-                            </div>
-                            <div>
-                                <label htmlFor="quiz-age" className="block text-sm font-medium text-gray-300">{t('quizAgeLabel')}</label>
-                                <input type="text" inputMode="decimal" pattern="[0-9٠-٩]*" id="quiz-age" name="age" defaultValue={ijazahApplication.fullDetails.age} required className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-200" />
-                            </div>
-                            <div>
-                                <label htmlFor="quiz-whatsapp" className="block text-sm font-medium text-gray-300">{t('whatsappLabel')}</label>
-                                <input type="tel" id="quiz-whatsapp" name="whatsapp" defaultValue={ijazahApplication.fullDetails.whatsapp} required className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-200" />
-                            </div>
-                            <div>
-                                <label htmlFor="quiz-from" className="block text-sm font-medium text-gray-300">{t('quizFromLabel')}</label>
-                                <input type="text" id="quiz-from" name="from" defaultValue={ijazahApplication.fullDetails.from} required className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-200" />
-                            </div>
-                        </Card>
+                        <div ref={stepRefs[1]}>
+                            <Card title={t('cardTitlePersonalInfo')}>
+                                <div>
+                                    <label htmlFor="quiz-name" className="block text-sm font-medium text-gray-300">{t('quizNameLabel')}</label>
+                                    <input type="text" id="quiz-name" name="name" defaultValue={ijazahApplication.fullDetails.name} required className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-200" />
+                                </div>
+                                <div>
+                                    <label htmlFor="quiz-age" className="block text-sm font-medium text-gray-300">{t('quizAgeLabel')}</label>
+                                    <input type="text" inputMode="decimal" pattern="[0-9٠-٩]*" id="quiz-age" name="age" defaultValue={ijazahApplication.fullDetails.age} required className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-200" />
+                                </div>
+                                <div>
+                                    <label htmlFor="quiz-whatsapp" className="block text-sm font-medium text-gray-300">{t('whatsappLabel')}</label>
+                                    <input type="tel" id="quiz-whatsapp" name="whatsapp" defaultValue={ijazahApplication.fullDetails.whatsapp} required className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-200" />
+                                </div>
+                                <div>
+                                    <label htmlFor="quiz-from" className="block text-sm font-medium text-gray-300">{t('quizFromLabel')}</label>
+                                    <input type="text" id="quiz-from" name="from" defaultValue={ijazahApplication.fullDetails.from} required className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-200" />
+                                </div>
+                            </Card>
+                        </div>
                     )}
                     {step === 2 && (
-                        <Card title={t('cardTitleSessionDetails')}>
-                            {ijazahApplication.path === "Different Qira'ah" && (
-                                <div>
-                                    <label htmlFor="quiz-qiraah" className="block text-sm font-medium text-gray-300">{t('quizQiraahLabel')}</label>
-                                    <input type="text" id="quiz-qiraah" name="qiraah" defaultValue={ijazahApplication.fullDetails.qiraah} required className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-200" />
-                                </div>
-                            )}
-                             <div>
-                                <label className="block text-sm font-medium text-gray-300">{t('quizWeeklyLabel')}</label>
-                                <div className="mt-2 rounded-lg bg-gray-900 p-2"><div className="grid grid-cols-12 gap-2">{[1, 2, 3, 4, 5, 6, 7].map(day => (<div key={day} className={day <= 4 ? 'col-span-3' : 'col-span-4'}><input type="radio" id={`day-${day}`} name="daysPerWeek" value={day} checked={ijazahApplication.daysPerWeek === day} onChange={() => handleDaySelection(day)} className="sr-only peer" /><label htmlFor={`day-${day}`} className={`block text-center py-2 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out peer-checked:shadow text-gray-400 ${getDayButtonColors(day)}`}><span className="font-semibold">{day}</span></label></div>))}</div></div>
-                                <div className="text-center mt-2"><p className="text-sm text-gray-400">{`Price: ${priceString} / month`}</p><div className="mt-2 inline-block relative px-3 py-1.5"><div className="absolute inset-0 bg-gray-800 opacity-50 rounded-md"></div><div className="relative z-10 text-xs text-gray-300"><p><span className="font-semibold">{t('ijazahTimeEstimationTitle')}</span> {timeEstimationText}</p>{showSpeedNote && <p className="italic">{t('ijazahTimeNoteSpeed')}</p>}</div></div></div>
-                            </div>
-                            {ijazahApplication.daysPerWeek < 7 && (
-                                <div>
-                                    <span className="block text-sm font-medium text-gray-300">{t('selectDaysOfWeek')}</span>
-                                    <div className="mt-2 p-2 rounded-lg bg-gray-900">
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                            {weekdays.map(day => (
-                                                <DayButton
-                                                    key={day}
-                                                    day={day}
-                                                    t={t}
-                                                    isSelected={selectedDays.includes(day)}
-                                                    onClick={handleDayToggle}
-                                                />
-                                            ))}
-                                        </div>
-                                        <p className="text-center text-xs text-gray-400 mt-2">
-                                            {t('daysSelected').replace('{count}', String(selectedDays.length)).replace('{total}', String(ijazahApplication.daysPerWeek))}
-                                        </p>
-                                    </div>
-                                </div>
-                            )}
-                             <div>
-                                <span className="block text-sm font-medium text-gray-300">{t('quizTimeLabel')}</span>
-                                <div className="mt-2 rounded-lg bg-gray-900 p-3 space-y-3">
-                                    {isLoadingSeats ? (<div className="space-y-3">{[...Array(3)].map((_, i) => (<div key={i} className="h-16 bg-gray-800 rounded-lg animate-pulse"></div>))}</div>) : (MAIN_TIME_BLOCKS.map(block => (<div key={block.id}><button type="button" onClick={() => setExpandedBlock(expandedBlock === block.id ? null : block.id)} className="w-full text-left p-4 rounded-lg bg-gray-700/50 hover:bg-gray-700 transition-all duration-200 ease-in-out shadow-sm flex justify-between items-center" aria-expanded={expandedBlock === block.id} aria-controls={`time-slots-${block.id}`}><div><h4 className="font-semibold text-gray-200">{t(block.key)}</h4><p className="text-xs text-gray-400">{t(block.timeRangeKey)}</p></div><svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 text-gray-400 transform transition-transform duration-300 ${expandedBlock === block.id ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></button>{expandedBlock === block.id && (<div id={`time-slots-${block.id}`} className="mt-2 p-3 bg-gray-700/30 rounded-lg"><div className="flex flex-col gap-2">{block.slots.map(slot => { const isBooked = bookedSeats.includes(slot.id); return (<div key={slot.id}><input type="radio" id={`time-${slot.id}`} name="time" value={slot.id} required disabled={isBooked} className="sr-only peer" onChange={() => setSelectedTime(slot.id)} checked={selectedTime === slot.id} /><label htmlFor={`time-${slot.id}`} className={`block text-center py-3 px-2 rounded-lg cursor-pointer transition-all duration-200 ease-in-out border-2 text-xs sm:text-sm font-semibold ${isBooked ? 'bg-gray-800 text-gray-600 cursor-not-allowed line-through border-transparent' : 'bg-gray-700 text-gray-300 border-transparent hover:border-amber-400 peer-checked:bg-amber-500 peer-checked:text-white peer-checked:border-amber-600 peer-checked:shadow-lg'}`}>{t(slot.key)}</label></div>); })}</div></div>)}</div>)))}
-                                </div>
-                                <p className="text-center mt-2 text-xs text-gray-400">{t('timezoneNote')}</p>
-                            </div>
-                             <div>
-                                <span className="block text-sm font-medium text-gray-300">{t('quizLanguageLabel')}</span>
-                                <div className="mt-2 grid grid-cols-2 gap-1 rounded-lg bg-gray-900 p-1"><div className="col-span-1"><input type="radio" id="lang-ar" name="language" value="Arabic" className="sr-only peer" defaultChecked={ijazahApplication.fullDetails.language === "Arabic" || !ijazahApplication.fullDetails.language} /><label htmlFor="lang-ar" className="block w-full text-center py-2 px-2 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-gray-400 peer-checked:bg-gray-700 peer-checked:text-gray-100 peer-checked:shadow"><span className="font-semibold">{t('langArabic')}</span></label></div><div className="col-span-1"><input type="radio" id="lang-en" name="language" value="English" className="sr-only peer" defaultChecked={ijazahApplication.fullDetails.language === "English"}/><label htmlFor="lang-en" className="block w-full text-center py-2 px-2 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-gray-400 peer-checked:bg-gray-700 peer-checked:text-gray-100 peer-checked:shadow"><span className="font-semibold">{t('langEnglish')}</span></label></div><div className="col-span-2"><input type="radio" id="lang-id" name="language" value="Indonesian" className="sr-only peer" defaultChecked={ijazahApplication.fullDetails.language === "Indonesian"}/><label htmlFor="lang-id" className="block w-full text-center py-2 px-2 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-gray-400 peer-checked:bg-gray-700 peer-checked:text-gray-100 peer-checked:shadow"><span className="font-semibold">{t('langIndonesian')}</span></label></div></div>
-                            </div>
-                            <div>
-                                <span className="block text-sm font-medium text-gray-300">{t('quizSheikhLabel')}</span>
-                                <div className="mt-2 grid grid-cols-2 gap-2 rounded-lg bg-gray-900 p-1"><div><input type="radio" id="sheikh-yes" name="sheikh" value="yes" className="sr-only peer" defaultChecked={ijazahApplication.fullDetails.sheikh === 'yes'}/><label htmlFor="sheikh-yes" className="block w-full text-center py-2 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-gray-400 peer-checked:bg-gray-700 peer-checked:text-gray-100 peer-checked:shadow"><span className="font-semibold">{t('yes')}</span></label></div><div><input type="radio" id="sheikh-no" name="sheikh" value="no" className="sr-only peer" defaultChecked={ijazahApplication.fullDetails.sheikh !== 'yes'}/><label htmlFor="sheikh-no" className="block w-full text-center py-2 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-gray-400 peer-checked:bg-gray-700 peer-checked:text-gray-100 peer-checked:shadow"><span className="font-semibold">{t('no')}</span></label></div></div>
-                            </div>
-                        </Card>
-                    )}
-                    {step === 3 && (
-                         <Card title={t('cardTitleJourney')}>
-                             <div>
-                                <label htmlFor="quiz-journey" className="block text-sm font-medium text-gray-300">{t('quizJourneyLabel')}</label>
-                                <textarea id="quiz-journey" name="journey" rows={6} defaultValue={ijazahApplication.fullDetails.journey} required className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-200"></textarea>
-                            </div>
-                        </Card>
-                    )}
-                    {step === 4 && (
-                        <Card title={t('cardTitleSummary')}>
-                            <div className="bg-gray-700/50 p-4 rounded-lg text-left space-y-4">
-                                <div className="text-center pb-2 border-b border-gray-600">
-                                    <h4 className="font-bold text-lg text-gray-100">{t('summaryTitle')}</h4>
-                                </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div><p className="text-sm text-gray-400">{t('summaryPath')}</p><p className="font-semibold text-gray-200">{t(PATH_TRANSLATION_KEYS[ijazahApplication.path] || ijazahApplication.path)}</p></div>
-                                    {ijazahApplication.memorization && (<div><p className="text-sm text-gray-400">{t('summaryMemorization')}</p><p className="font-semibold text-gray-200">{ijazahApplication.memorization === 'with' ? t('summaryWithMemorization') : t('summaryWithoutMemorization')}</p></div>)}
-                                    {ijazahApplication.fullDetails.qiraah && (<div><p className="text-sm text-gray-400">{t('summaryQiraah')}</p><p className="font-semibold text-gray-200">{ijazahApplication.fullDetails.qiraah}</p></div>)}
-                                    <div><p className="text-sm text-gray-400">{t('summaryCommitment')}</p><p className="font-semibold text-gray-200">{t('daysPerWeek').replace('{count}', String(ijazahApplication.daysPerWeek))}</p></div>
-                                    <div><p className="text-sm text-gray-400">{t('summaryTime')}</p><p className="font-semibold text-gray-200">{ijazahApplication.fullDetails.preferredTime}</p></div>
-                                    <div><p className="text-sm text-gray-400">{t('summaryLanguage')}</p><p className="font-semibold text-gray-200">{ijazahApplication.fullDetails.language}</p></div>
-                                </div>
-                                {selectedDays.length > 0 && (
-                                     <div className="border-t border-gray-600 pt-4">
-                                        <p className="text-sm text-gray-400">{t('summaryPreferredDays')}</p>
-                                        <p className="font-semibold text-gray-200">{selectedDays.map(day => t(`day${day}`)).join(', ')}</p>
+                        <div ref={stepRefs[2]}>
+                            <Card title={t('cardTitleSessionDetails')}>
+                                {ijazahApplication.path === "Different Qira'ah" && (
+                                    <div>
+                                        <label htmlFor="quiz-qiraah" className="block text-sm font-medium text-gray-300">{t('quizQiraahLabel')}</label>
+                                        <input type="text" id="quiz-qiraah" name="qiraah" defaultValue={ijazahApplication.fullDetails.qiraah} required className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-200" />
                                     </div>
                                 )}
-                                <div className="border-t border-gray-600 pt-4">
-                                    <p className="text-sm text-gray-400">{t('summaryPrice')}</p>
-                                    <p className="text-2xl font-bold text-gray-100"><span>{priceString}</span><span className="text-base font-medium opacity-50 ml-1">{t('monthlyText')}</span></p>
+                                 <div>
+                                    <label className="block text-sm font-medium text-gray-300">{t('quizWeeklyLabel')}</label>
+                                    <div className="mt-2 rounded-lg bg-gray-900 p-2"><div className="grid grid-cols-12 gap-2">{[1, 2, 3, 4, 5, 6, 7].map(day => (<div key={day} className={day <= 4 ? 'col-span-3' : 'col-span-4'}><input type="radio" id={`day-${day}`} name="daysPerWeek" value={day} checked={ijazahApplication.daysPerWeek === day} onChange={() => handleDaySelection(day)} className="sr-only peer" /><label htmlFor={`day-${day}`} className={`block text-center py-2 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out peer-checked:shadow text-gray-400 ${getDayButtonColors(day)}`}><span className="font-semibold">{day}</span></label></div>))}</div></div>
+                                    <div className="text-center mt-2"><p className="text-sm text-gray-400">{`Price: ${priceString} / month`}</p><div className="mt-2 inline-block relative px-3 py-1.5"><div className="absolute inset-0 bg-gray-800 opacity-50 rounded-md"></div><div className="relative z-10 text-xs text-gray-300"><p><span className="font-semibold">{t('ijazahTimeEstimationTitle')}</span> {timeEstimationText}</p>{showSpeedNote && <p className="italic">{t('ijazahTimeNoteSpeed')}</p>}</div></div></div>
                                 </div>
-                            </div>
-                        </Card>
+                                {ijazahApplication.daysPerWeek < 7 && (
+                                    <div>
+                                        <span className="block text-sm font-medium text-gray-300">{t('selectDaysOfWeek')}</span>
+                                        <div className="mt-2 p-2 rounded-lg bg-gray-900">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                {weekdays.map(day => (
+                                                    <DayButton
+                                                        key={day}
+                                                        day={day}
+                                                        t={t}
+                                                        isSelected={selectedDays.includes(day)}
+                                                        onClick={handleDayToggle}
+                                                    />
+                                                ))}
+                                            </div>
+                                            <p className="text-center text-xs text-gray-400 mt-2">
+                                                {t('daysSelected').replace('{count}', String(selectedDays.length)).replace('{total}', String(ijazahApplication.daysPerWeek))}
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+                                 <div>
+                                    <span className="block text-sm font-medium text-gray-300">{t('quizTimeLabel')}</span>
+                                    <div className="mt-2 rounded-lg bg-gray-900 p-3 space-y-3">
+                                        {isLoadingSeats ? (<div className="space-y-3">{[...Array(3)].map((_, i) => (<div key={i} className="h-16 bg-gray-800 rounded-lg animate-pulse"></div>))}</div>) : (MAIN_TIME_BLOCKS.map(block => (<div key={block.id}><button type="button" onClick={() => setExpandedBlock(expandedBlock === block.id ? null : block.id)} className="w-full text-left p-4 rounded-lg bg-gray-700/50 hover:bg-gray-700 transition-all duration-200 ease-in-out shadow-sm flex justify-between items-center" aria-expanded={expandedBlock === block.id} aria-controls={`time-slots-${block.id}`}><div><h4 className="font-semibold text-gray-200">{t(block.key)}</h4><p className="text-xs text-gray-400">{t(block.timeRangeKey)}</p></div><svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 text-gray-400 transform transition-transform duration-300 ${expandedBlock === block.id ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></button>{expandedBlock === block.id && (<div id={`time-slots-${block.id}`} className="mt-2 p-3 bg-gray-700/30 rounded-lg"><div className="flex flex-col gap-2">{block.slots.map(slot => { const isBooked = bookedSeats.includes(slot.id); return (<div key={slot.id}><input type="radio" id={`time-${slot.id}`} name="time" value={slot.id} required disabled={isBooked} className="sr-only peer" onChange={() => setSelectedTime(slot.id)} checked={selectedTime === slot.id} /><label htmlFor={`time-${slot.id}`} className={`block text-center py-3 px-2 rounded-lg cursor-pointer transition-all duration-200 ease-in-out border-2 text-xs sm:text-sm font-semibold ${isBooked ? 'bg-gray-800 text-gray-600 cursor-not-allowed line-through border-transparent' : 'bg-gray-700 text-gray-300 border-transparent hover:border-amber-400 peer-checked:bg-amber-500 peer-checked:text-white peer-checked:border-amber-600 peer-checked:shadow-lg'}`}>{t(slot.key)}</label></div>); })}</div></div>)}</div>)))}
+                                    </div>
+                                    <p className="text-center mt-2 text-xs text-gray-400">{t('timezoneNote')}</p>
+                                </div>
+                                 <div>
+                                    <span className="block text-sm font-medium text-gray-300">{t('quizLanguageLabel')}</span>
+                                    <div className="mt-2 grid grid-cols-2 gap-1 rounded-lg bg-gray-900 p-1"><div className="col-span-1"><input type="radio" id="lang-ar" name="language" value="Arabic" className="sr-only peer" defaultChecked={ijazahApplication.fullDetails.language === "Arabic" || !ijazahApplication.fullDetails.language} /><label htmlFor="lang-ar" className="block w-full text-center py-2 px-2 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-gray-400 peer-checked:bg-gray-700 peer-checked:text-gray-100 peer-checked:shadow"><span className="font-semibold">{t('langArabic')}</span></label></div><div className="col-span-1"><input type="radio" id="lang-en" name="language" value="English" className="sr-only peer" defaultChecked={ijazahApplication.fullDetails.language === "English"}/><label htmlFor="lang-en" className="block w-full text-center py-2 px-2 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-gray-400 peer-checked:bg-gray-700 peer-checked:text-gray-100 peer-checked:shadow"><span className="font-semibold">{t('langEnglish')}</span></label></div><div className="col-span-2"><input type="radio" id="lang-id" name="language" value="Indonesian" className="sr-only peer" defaultChecked={ijazahApplication.fullDetails.language === "Indonesian"}/><label htmlFor="lang-id" className="block w-full text-center py-2 px-2 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-gray-400 peer-checked:bg-gray-700 peer-checked:text-gray-100 peer-checked:shadow"><span className="font-semibold">{t('langIndonesian')}</span></label></div></div>
+                                </div>
+                                <div>
+                                    <span className="block text-sm font-medium text-gray-300">{t('quizSheikhLabel')}</span>
+                                    <div className="mt-2 grid grid-cols-2 gap-2 rounded-lg bg-gray-900 p-1"><div><input type="radio" id="sheikh-yes" name="sheikh" value="yes" className="sr-only peer" defaultChecked={ijazahApplication.fullDetails.sheikh === 'yes'}/><label htmlFor="sheikh-yes" className="block w-full text-center py-2 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-gray-400 peer-checked:bg-gray-700 peer-checked:text-gray-100 peer-checked:shadow"><span className="font-semibold">{t('yes')}</span></label></div><div><input type="radio" id="sheikh-no" name="sheikh" value="no" className="sr-only peer" defaultChecked={ijazahApplication.fullDetails.sheikh !== 'yes'}/><label htmlFor="sheikh-no" className="block w-full text-center py-2 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-gray-400 peer-checked:bg-gray-700 peer-checked:text-gray-100 peer-checked:shadow"><span className="font-semibold">{t('no')}</span></label></div></div>
+                                </div>
+                            </Card>
+                        </div>
+                    )}
+                    {step === 3 && (
+                        <div ref={stepRefs[3]}>
+                             <Card title={t('cardTitleJourney')}>
+                                 <div>
+                                    <label htmlFor="quiz-journey" className="block text-sm font-medium text-gray-300">{t('quizJourneyLabel')}</label>
+                                    <textarea id="quiz-journey" name="journey" rows={6} defaultValue={ijazahApplication.fullDetails.journey} required className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-200"></textarea>
+                                </div>
+                            </Card>
+                        </div>
+                    )}
+                    {step === 4 && (
+                        <div ref={stepRefs[4]}>
+                            <Card title={t('cardTitleSummary')}>
+                                <div className="bg-gray-700/50 p-4 rounded-lg text-left space-y-4">
+                                    <div className="text-center pb-2 border-b border-gray-600">
+                                        <h4 className="font-bold text-lg text-gray-100">{t('summaryTitle')}</h4>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div><p className="text-sm text-gray-400">{t('summaryPath')}</p><p className="font-semibold text-gray-200">{t(PATH_TRANSLATION_KEYS[ijazahApplication.path] || ijazahApplication.path)}</p></div>
+                                        {ijazahApplication.memorization && (<div><p className="text-sm text-gray-400">{t('summaryMemorization')}</p><p className="font-semibold text-gray-200">{ijazahApplication.memorization === 'with' ? t('summaryWithMemorization') : t('summaryWithoutMemorization')}</p></div>)}
+                                        {ijazahApplication.fullDetails.qiraah && (<div><p className="text-sm text-gray-400">{t('summaryQiraah')}</p><p className="font-semibold text-gray-200">{ijazahApplication.fullDetails.qiraah}</p></div>)}
+                                        <div><p className="text-sm text-gray-400">{t('summaryCommitment')}</p><p className="font-semibold text-gray-200">{t('daysPerWeek').replace('{count}', String(ijazahApplication.daysPerWeek))}</p></div>
+                                        <div><p className="text-sm text-gray-400">{t('summaryTime')}</p><p className="font-semibold text-gray-200">{ijazahApplication.fullDetails.preferredTime}</p></div>
+                                        <div><p className="text-sm text-gray-400">{t('summaryLanguage')}</p><p className="font-semibold text-gray-200">{ijazahApplication.fullDetails.language}</p></div>
+                                    </div>
+                                    {selectedDays.length > 0 && (
+                                         <div className="border-t border-gray-600 pt-4">
+                                            <p className="text-sm text-gray-400">{t('summaryPreferredDays')}</p>
+                                            <p className="font-semibold text-gray-200">{selectedDays.map(day => t(`day${day}`)).join(', ')}</p>
+                                        </div>
+                                    )}
+                                    <div className="border-t border-gray-600 pt-4">
+                                        <p className="text-sm text-gray-400">{t('summaryPrice')}</p>
+                                        <p className="text-2xl font-bold text-gray-100"><span>{priceString}</span><span className="text-base font-medium opacity-50 ml-1">{t('monthlyText')}</span></p>
+                                    </div>
+                                </div>
+                            </Card>
+                        </div>
                     )}
                 </div>
                 

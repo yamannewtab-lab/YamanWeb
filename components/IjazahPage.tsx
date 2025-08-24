@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Page, IjazahApplication } from '../types';
 
 interface IjazahPageProps {
@@ -9,16 +9,17 @@ interface IjazahPageProps {
 
 const IjazahPage: React.FC<IjazahPageProps> = ({ navigateTo, t, setIjazahApplication }) => {
     const [step, setStep] = useState<'memorization' | 'path'>('memorization');
-
-    const scrollToTop = () => {
-        const mainContent = document.querySelector('main');
-        if (mainContent) {
-            mainContent.scrollTop = 0;
-        }
-    };
+    const memorizationRef = useRef<HTMLDivElement>(null);
+    const pathRef = useRef<HTMLDivElement>(null);
     
     useEffect(() => {
-        scrollToTop();
+        const targetRef = step === 'memorization' ? memorizationRef : pathRef;
+        setTimeout(() => {
+            targetRef?.current?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start',
+            });
+        }, 100);
     }, [step]);
 
     const handleMemorizationClick = (choice: 'with' | 'without') => {
@@ -40,7 +41,7 @@ const IjazahPage: React.FC<IjazahPageProps> = ({ navigateTo, t, setIjazahApplica
 
     if (step === 'memorization') {
         return (
-            <div>
+            <div ref={memorizationRef}>
                 <div className="text-center mb-8">
                     <h2 className="text-3xl font-bold text-gray-100">{t('ijazahMemorizationTitle')}</h2>
                     <p className="mt-2 text-gray-400">{t('ijazahMemorizationSubtitle')}</p>
@@ -60,7 +61,7 @@ const IjazahPage: React.FC<IjazahPageProps> = ({ navigateTo, t, setIjazahApplica
     }
     
     return (
-        <div>
+        <div ref={pathRef}>
             <div className="text-center mb-8">
                 <h2 className="text-3xl font-bold text-gray-100">{t('ijazahTitle')}</h2>
                 <p className="mt-2 text-gray-400">{t('ijazahSubtitle')}</p>
