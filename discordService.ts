@@ -112,6 +112,7 @@ export async function sendIjazahApplicationToDiscord(
         { name: t('summaryLanguage'), value: fullDetails.language || 'N/A', inline: true },
         { name: t('quizFromLabel'), value: fullDetails.from || 'N/A', inline: true },
         { name: t('quizSheikhLabel'), value: fullDetails.sheikh ? t(fullDetails.sheikh) : 'N/A', inline: true },
+        { name: 'Status', value: 'Pending Approval', inline: true },
     ];
     
     if (fullDetails.qiraah) {
@@ -123,7 +124,7 @@ export async function sendIjazahApplicationToDiscord(
     }
 
     const embed: any = {
-        title: isTestModeEnabled() ? "[TEST] New Ijazah Application" : "New Ijazah Application",
+        title: isTestModeEnabled() ? "[TEST] New Ijazah Approval Request" : "New Ijazah Approval Request",
         color: 16753920, // Amber
         fields,
         description: `**${t('quizJourneyLabel')}**\n${fullDetails.journey || 'Not provided.'}`,
@@ -163,7 +164,7 @@ export async function sendTasmiRequestToDiscord(request: TasmiRequest, t: (key: 
     await logRegistrationAsFeedback(feedbackMessage);
 
     const embed = {
-        title: isTestModeEnabled() ? "[TEST] New Opened Tasmi' Request" : "New Opened Tasmi' Request",
+        title: isTestModeEnabled() ? "[TEST] New Tasmi' Approval Request" : "New Tasmi' Approval Request",
         color: 5763719, // Green
         fields: [
             { name: t('quizNameLabel'), value: request.name, inline: true },
@@ -173,6 +174,7 @@ export async function sendTasmiRequestToDiscord(request: TasmiRequest, t: (key: 
             { name: t('tasmiPortionLabel'), value: request.portion, inline: true },
             { name: t('tasmiTimeLabel'), value: request.time, inline: true },
             { name: t('quizLanguageLabel'), value: request.language, inline: true },
+            { name: 'Status', value: 'Pending Approval', inline: true },
         ],
         description: `**${t('quizJourneyLabel')}**\n${request.journey}`,
         footer: { text: "Submitted via Maqra'at Al-Huda App" },
@@ -217,6 +219,7 @@ export async function sendTajwidRequestToDiscord(request: TajwidRequest, t: (key
             { name: t('whatsappLabel'), value: request.whatsapp || 'N/A', inline: true },
             { name: t('quizTimeLabel'), value: request.time, inline: true },
             { name: t('tajwidLevelLabel'), value: request.tajwidLevel, inline: true },
+            { name: 'Status', value: 'Pending Approval', inline: true },
             { name: "Subscription Plan", value: `${request.subscriptionText} (${request.priceText})`, inline: false },
         ],
         footer: { text: "Submitted via Maqra'at Al-Huda App" },

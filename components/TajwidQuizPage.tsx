@@ -142,13 +142,19 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t, setLastS
 
         try {
             const dayOfWeekNumber = new Date().getDay(); // 0=Sunday, 6=Saturday
+            
+            const slotsToBook = [{ time_slot: selectedSlot.id, day_number: dayOfWeekNumber }];
+
+            const approvalRequest = {
+                name: formData.name,
+                application_type: 'Tajwid',
+                requested_slots: JSON.stringify(slotsToBook),
+                application_data: JSON.stringify(formData),
+                status: 'pending'
+            };
 
             if (!isTestModeEnabled()) {
-                const { error: bookingError } = await supabase.from('booking').insert({ 
-                    time_slot: selectedSlot.id,
-                    day_number: dayOfWeekNumber,
-                    is_booked: true,
-                });
+                const { error: bookingError } = await supabase.from('approvals').insert([approvalRequest]);
                 if (bookingError) throw bookingError;
             }
 
@@ -168,8 +174,8 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t, setLastS
             setLastSubmissionType('paid');
             navigateTo('thanks');
         } catch (error: any) {
-            console.error('Error booking slot or submitting request:', error.message || error);
-            alert('This time slot was just booked by someone else, or an error occurred. Please select another time and try again.');
+            console.error('Error submitting Tajwid request for approval:', error.message || error);
+            alert('An error occurred while submitting your request. Please try again.');
             fetchAllBookings();
         } finally {
             setIsSubmitting(false);

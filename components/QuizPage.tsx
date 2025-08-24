@@ -256,14 +256,23 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                 throw new Error("Selected time slot details could not be found.");
             }
 
-            const newBookings = daysToBook.map(day => ({
+            const slotsToBook = daysToBook.map(day => ({
                 time_slot: selectedSlot.id,
                 day_number: dayStringToNumber(day),
-                is_booked: true,
             }));
 
+            const applicationData = { ...ijazahApplication, fullDetails: localDetails };
+
+            const approvalRequest = {
+                name: localDetails.name,
+                application_type: 'Ijazah',
+                requested_slots: JSON.stringify(slotsToBook),
+                application_data: JSON.stringify(applicationData),
+                status: 'pending'
+            };
+
             if (!isTestModeEnabled()) {
-                const { error } = await supabase.from('booking').insert(newBookings);
+                const { error } = await supabase.from('approvals').insert([approvalRequest]);
                 if (error) throw error;
             }
             
@@ -272,8 +281,8 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
             navigateTo('thanks');
 
         } catch (error: any) {
-            console.error('Error booking slot:', error.message || error);
-            alert('This time slot was just booked by someone else on one of your selected days. Please select another time or change your days.');
+            console.error('Error submitting application for approval:', error.message || error);
+            alert('An error occurred while submitting your application. Please try again.');
             fetchAllBookings();
         } finally {
             setIsSubmitting(false);
