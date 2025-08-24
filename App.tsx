@@ -22,6 +22,7 @@ import AdminPanel from './components/AdminPanel';
 import FeedbackPage from './components/FeedbackPage';
 import FeedbackThanksPage from './components/FeedbackThanksPage';
 import AiChatWidget from './components/AiChatWidget';
+import JoinClassPage from './components/JoinClassPage';
 
 const App: React.FC = () => {
     const [currentPage, setCurrentPage] = useState<Page>('home');
@@ -115,6 +116,8 @@ const App: React.FC = () => {
                 return <FeedbackPage navigateTo={navigateTo} t={t} />;
             case 'feedbackThanks':
                 return <FeedbackThanksPage navigateTo={navigateTo} t={t} />;
+            case 'joinClass':
+                return <JoinClassPage navigateTo={navigateTo} t={t} />;
             default:
                 return <HomePage navigateTo={navigateTo} t={t} />;
         }

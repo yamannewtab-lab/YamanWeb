@@ -45,7 +45,6 @@ interface TasmiRequest {
     whatsapp: string;
     sessions: number;
     portion: string;
-    time: string;
     language: string;
     journey: string;
 }
@@ -54,11 +53,15 @@ interface TajwidRequest {
     name: string;
     age: string;
     whatsapp: string;
-    time: string;
+    time: string; // Time text
     tajwidLevel: string;
-    subscriptionText: string;
-    priceText: string;
     additionalNotes?: string;
+    daysPerWeek: number;
+    selectedDays: string[];
+    priceText: string; // Monthly price string
+    paymentPreference?: string;
+    paymentMethod?: string;
+    agreedToTerms?: boolean;
 }
 
 interface CourseRegistration {
@@ -123,6 +126,16 @@ export async function sendIjazahApplicationToDiscord(
         fields.push({ name: t('summaryPreferredDays'), value: fullDetails.selectedDays.map(day => t(`day${day}`)).join(', '), inline: false });
     }
 
+    // Add payment fields
+    fields.push({ name: '---', value: '**Payment Information**', inline: false });
+    if (fullDetails.paymentPreference) {
+        fields.push({ name: 'Payment Preference', value: fullDetails.paymentPreference === 'start' ? t('paymentPrefOptionStart') : t('paymentPrefOptionEnd'), inline: true });
+    }
+    if (fullDetails.paymentMethod) {
+        fields.push({ name: 'Payment Method', value: fullDetails.paymentMethod, inline: true });
+    }
+    fields.push({ name: 'Agreed to Terms', value: fullDetails.agreedToTerms ? t('yes') : t('no'), inline: true });
+
     const embed: any = {
         title: isTestModeEnabled() ? "[TEST] New Ijazah Approval Request" : "New Ijazah Approval Request",
         color: 16753920, // Amber
@@ -172,7 +185,6 @@ export async function sendTasmiRequestToDiscord(request: TasmiRequest, t: (key: 
             { name: t('whatsappLabel'), value: request.whatsapp || 'N/A', inline: true },
             { name: t('tasmiWeeklyLabel'), value: String(request.sessions), inline: true },
             { name: t('tasmiPortionLabel'), value: request.portion, inline: true },
-            { name: t('tasmiTimeLabel'), value: request.time, inline: true },
             { name: t('quizLanguageLabel'), value: request.language, inline: true },
             { name: 'Status', value: 'Pending Approval', inline: true },
         ],
@@ -207,21 +219,39 @@ export async function sendTasmiRequestToDiscord(request: TasmiRequest, t: (key: 
  */
 export async function sendTajwidRequestToDiscord(request: TajwidRequest, t: (key: string) => string) {
     // Log a summary to the feedback table
-    const feedbackMessage = `New Tajwid Improvement Request: ${request.subscriptionText}. Contact: ${request.whatsapp}`;
+    const feedbackMessage = `New Tajwid Improvement Request: ${request.daysPerWeek} days/week. Contact: ${request.whatsapp}`;
     await logRegistrationAsFeedback(feedbackMessage);
     
+    const fields = [
+        { name: t('quizNameLabel'), value: request.name, inline: true },
+        { name: t('quizAgeLabel'), value: request.age, inline: true },
+        { name: t('whatsappLabel'), value: request.whatsapp || 'N/A', inline: true },
+        { name: t('summaryCommitment'), value: t('daysPerWeek').replace('{count}', String(request.daysPerWeek)), inline: true },
+        { name: t('summaryTime'), value: request.time, inline: true },
+        { name: t('tajwidLevelLabel'), value: request.tajwidLevel, inline: true },
+        { name: t('summaryPrice'), value: `${request.priceText} / ${t('monthlyText')}`, inline: true },
+        { name: 'Status', value: 'Pending Approval', inline: true },
+    ];
+    
+    if (request.selectedDays && request.selectedDays.length > 0) {
+        fields.push({ name: t('summaryPreferredDays'), value: request.selectedDays.map(day => t(`day${day}`)).join(', '), inline: false });
+    }
+
+    // Add payment fields
+    fields.push({ name: '---', value: '**Payment Information**', inline: false });
+    if (request.paymentPreference) {
+        fields.push({ name: 'Payment Preference', value: request.paymentPreference === 'start' ? t('paymentPrefOptionStart') : t('paymentPrefOptionEnd'), inline: true });
+    }
+    if (request.paymentMethod) {
+        fields.push({ name: 'Payment Method', value: request.paymentMethod, inline: true });
+    }
+    fields.push({ name: 'Agreed to Terms', value: request.agreedToTerms ? t('yes') : t('no'), inline: true });
+
+
     const embed: any = {
         title: isTestModeEnabled() ? "[TEST] New Tajwid Improvement Request" : "New Tajwid Improvement Request",
         color: 15252002, // Rose
-        fields: [
-            { name: t('quizNameLabel'), value: request.name, inline: true },
-            { name: t('quizAgeLabel'), value: request.age, inline: true },
-            { name: t('whatsappLabel'), value: request.whatsapp || 'N/A', inline: true },
-            { name: t('quizTimeLabel'), value: request.time, inline: true },
-            { name: t('tajwidLevelLabel'), value: request.tajwidLevel, inline: true },
-            { name: 'Status', value: 'Pending Approval', inline: true },
-            { name: "Subscription Plan", value: `${request.subscriptionText} (${request.priceText})`, inline: false },
-        ],
+        fields,
         footer: { text: "Submitted via Maqra'at Al-Huda App" },
         timestamp: new Date().toISOString()
     };

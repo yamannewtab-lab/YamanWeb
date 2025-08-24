@@ -37,16 +37,18 @@ const DayButton: React.FC<{
     t: (key: string) => string;
     isSelected: boolean;
     onClick: (day: string) => void;
-}> = React.memo(({ day, t, isSelected, onClick }) => {
+    disabled?: boolean;
+}> = React.memo(({ day, t, isSelected, onClick, disabled }) => {
     return (
         <button
             type="button"
             onClick={() => onClick(day)}
+            disabled={disabled}
             className={`w-full text-center py-2 px-2 rounded-md cursor-pointer transition-all duration-200 ease-in-out border-2 text-sm font-semibold ${
                 isSelected 
                     ? 'bg-amber-500 text-white border-amber-600 shadow-lg' 
                     : 'bg-gray-700 text-gray-300 border-transparent hover:border-amber-400'
-            }`}
+            } ${disabled ? 'opacity-70 cursor-not-allowed' : ''}`}
         >
             {t(`day${day}`)}
         </button>
@@ -67,7 +69,10 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
         2: useRef<HTMLDivElement>(null),
         3: useRef<HTMLDivElement>(null),
         4: useRef<HTMLDivElement>(null),
+        5: useRef<HTMLDivElement>(null),
     };
+
+    const weekdays = ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
     const dayStringToNumber = (day: string): number => {
         const map: { [key: string]: number } = {
@@ -139,11 +144,16 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
             ...prev, 
             daysPerWeek: days,
         }));
-        // Reset selected days locally when commitment changes
-        setLocalDetails(prev => ({...prev, selectedDays: []}));
+        if (days === 7) {
+            setLocalDetails(prev => ({...prev, selectedDays: weekdays}));
+        } else {
+            setLocalDetails(prev => ({...prev, selectedDays: []}));
+        }
     };
     
     const handleDayToggle = useCallback((day: string) => {
+        if (ijazahApplication.daysPerWeek === 7) return;
+
         setLocalDetails(prev => {
             const currentDays = prev.selectedDays || [];
             const isSelected = currentDays.includes(day);
@@ -188,7 +198,7 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
             return;
         }
         
-        if (step === 2 && ijazahApplication.daysPerWeek < 7 && (localDetails.selectedDays?.length ?? 0) !== ijazahApplication.daysPerWeek) {
+        if (ijazahApplication.daysPerWeek < 7 && (localDetails.selectedDays?.length ?? 0) !== ijazahApplication.daysPerWeek) {
             alert(t('daysSelected').replace('{count}', String(localDetails.selectedDays?.length ?? 0)).replace('{total}', String(ijazahApplication.daysPerWeek)) + `. Please select exactly ${ijazahApplication.daysPerWeek} days.`);
             return;
         }
@@ -242,7 +252,7 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
        
         try {
              const daysToBook = ijazahApplication.daysPerWeek === 7
-                ? ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+                ? weekdays
                 : localDetails.selectedDays || [];
 
             if (daysToBook.length === 0) {
@@ -300,7 +310,6 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
         showSpeedNote = true;
     }
     
-    const weekdays = ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
     const selectedDays = localDetails.selectedDays || [];
 
     return (
@@ -310,7 +319,7 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
             </div>
             
             <form ref={formRef} onSubmit={handleSubmit} className="max-w-2xl mx-auto">
-                <FormProgress currentStep={step} totalSteps={4} t={t} />
+                <FormProgress currentStep={step} totalSteps={5} t={t} />
                 <div className="relative">
                     {step === 1 && (
                         <div ref={stepRefs[1]}>
@@ -348,31 +357,30 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                                     <div className="mt-2 rounded-lg bg-gray-900 p-2"><div className="grid grid-cols-12 gap-2">{[1, 2, 3, 4, 5, 6, 7].map(day => (<div key={day} className={day <= 4 ? 'col-span-3' : 'col-span-4'}><input type="radio" id={`day-${day}`} name="daysPerWeek" value={day} checked={ijazahApplication.daysPerWeek === day} onChange={() => handleDaySelection(day)} className="sr-only peer" /><label htmlFor={`day-${day}`} className={`block text-center py-2 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out peer-checked:shadow text-gray-400 ${getDayButtonColors(day)}`}><span className="font-semibold">{day}</span></label></div>))}</div></div>
                                     <div className="text-center mt-2"><p className="text-sm text-gray-400">{`Price: ${priceString} / month`}</p><div className="mt-2 inline-block relative px-3 py-1.5"><div className="absolute inset-0 bg-gray-800 opacity-50 rounded-md"></div><div className="relative z-10 text-xs text-gray-300"><p><span className="font-semibold">{t('ijazahTimeEstimationTitle')}</span> {timeEstimationText}</p>{showSpeedNote && <p className="italic">{t('ijazahTimeNoteSpeed')}</p>}</div></div></div>
                                 </div>
-                                {ijazahApplication.daysPerWeek < 7 && (
-                                    <div>
-                                        <span className="block text-sm font-medium text-gray-300">{t('selectDaysOfWeek')}</span>
-                                        <div className="mt-2 p-2 rounded-lg bg-gray-900">
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                                {weekdays.map(day => (
-                                                    <DayButton
-                                                        key={day}
-                                                        day={day}
-                                                        t={t}
-                                                        isSelected={selectedDays.includes(day)}
-                                                        onClick={handleDayToggle}
-                                                    />
-                                                ))}
-                                            </div>
-                                            <p className="text-center text-xs text-gray-400 mt-2">
-                                                {t('daysSelected').replace('{count}', String(selectedDays.length)).replace('{total}', String(ijazahApplication.daysPerWeek))}
-                                            </p>
+                                <div>
+                                    <span className="block text-sm font-medium text-gray-300">{t('selectDaysOfWeek')}</span>
+                                    <div className="mt-2 p-2 rounded-lg bg-gray-900">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                            {weekdays.map(day => (
+                                                <DayButton
+                                                    key={day}
+                                                    day={day}
+                                                    t={t}
+                                                    isSelected={selectedDays.includes(day)}
+                                                    onClick={handleDayToggle}
+                                                    disabled={ijazahApplication.daysPerWeek === 7}
+                                                />
+                                            ))}
                                         </div>
+                                        <p className="text-center text-xs text-gray-400 mt-2">
+                                            {t('daysSelected').replace('{count}', String(selectedDays.length)).replace('{total}', String(ijazahApplication.daysPerWeek))}
+                                        </p>
                                     </div>
-                                )}
+                                </div>
                                  <div>
                                     <span className="block text-sm font-medium text-gray-300">{t('quizTimeLabel')}</span>
                                     <div className="mt-2 rounded-lg bg-gray-900 p-3 space-y-3">
-                                        {isLoadingSeats ? (<div className="space-y-3">{[...Array(3)].map((_, i) => (<div key={i} className="h-16 bg-gray-800 rounded-lg animate-pulse"></div>))}</div>) : (MAIN_TIME_BLOCKS.map(block => (<div key={block.id}><button type="button" onClick={() => setExpandedBlock(expandedBlock === block.id ? null : block.id)} className="w-full text-left p-4 rounded-lg bg-gray-700/50 hover:bg-gray-700 transition-all duration-200 ease-in-out shadow-sm flex justify-between items-center" aria-expanded={expandedBlock === block.id} aria-controls={`time-slots-${block.id}`}><div><h4 className="font-semibold text-gray-200">{t(block.key)}</h4><p className="text-xs text-gray-400">{t(block.timeRangeKey)}</p></div><svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 text-gray-400 transform transition-transform duration-300 ${expandedBlock === block.id ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></button>{expandedBlock === block.id && (<div id={`time-slots-${block.id}`} className="mt-2 p-3 bg-gray-700/30 rounded-lg"><div className="flex flex-col gap-2">{block.slots.map(slot => { const isBooked = selectedDays.length > 0 && selectedDays.some(day => allBookings.some(booking => booking.time_slot === slot.id && booking.day_number === dayStringToNumber(day))); return (<div key={slot.id}><input type="radio" id={`time-${slot.id}`} name="time" value={slot.id} required disabled={isBooked} className="sr-only peer" onChange={() => setSelectedTime(slot.id)} checked={selectedTime === slot.id} /><label htmlFor={`time-${slot.id}`} className={`block text-center py-3 px-2 rounded-lg cursor-pointer transition-all duration-200 ease-in-out border-2 text-xs sm:text-sm font-semibold ${isBooked ? 'bg-gray-800 text-gray-600 cursor-not-allowed line-through border-transparent' : 'bg-gray-700 text-gray-300 border-transparent hover:border-amber-400 peer-checked:bg-amber-500 peer-checked:text-white peer-checked:border-amber-600 peer-checked:shadow-lg'}`}>{t(slot.key)}</label></div>); })}</div></div>)}</div>)))}
+                                        {isLoadingSeats ? (<div className="space-y-3">{[...Array(3)].map((_, i) => (<div key={i} className="h-16 bg-gray-800 rounded-lg animate-pulse"></div>))}</div>) : (MAIN_TIME_BLOCKS.map(block => (<div key={block.id}><button type="button" onClick={() => setExpandedBlock(expandedBlock === block.id ? null : block.id)} className="w-full text-left p-4 rounded-lg bg-gray-700/50 hover:bg-gray-700 transition-all duration-200 ease-in-out shadow-sm flex justify-between items-center" aria-expanded={expandedBlock === block.id} aria-controls={`time-slots-${block.id}`}><div><h4 className="font-semibold text-gray-200">{t(block.key)}</h4><p className="text-xs text-gray-400">{t(block.timeRangeKey)}</p></div><svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 text-gray-400 transform transition-transform duration-300 ${expandedBlock === block.id ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></button>{expandedBlock === block.id && (<div id={`time-slots-${block.id}`} className="mt-2 p-3 bg-gray-700/30 rounded-lg"><div className="flex flex-col gap-2">{block.slots.map(slot => { const bookingsForSlot = allBookings.filter(b => b.time_slot === slot.id); const bookedDayNumbers = new Set(bookingsForSlot.map(b => b.day_number)); const isFullyBooked = bookedDayNumbers.size >= 7; let conflictDays: string[] = []; if (selectedDays.length > 0) { conflictDays = selectedDays.filter(day => bookedDayNumbers.has(dayStringToNumber(day))); } const isBookedOnSelectedDays = conflictDays.length > 0; const isDisabled = isFullyBooked || isBookedOnSelectedDays; return (<div key={slot.id}><div className="relative"><input type="radio" id={`time-${slot.id}`} name="time" value={slot.id} required disabled={isDisabled} className="sr-only peer" onChange={() => setSelectedTime(slot.id)} checked={selectedTime === slot.id} /><label htmlFor={`time-${slot.id}`} className={`block text-center py-3 px-2 rounded-lg cursor-pointer transition-all duration-200 ease-in-out border-2 text-xs sm:text-sm font-semibold ${isDisabled ? 'bg-gray-800 text-gray-600 cursor-not-allowed border-transparent' : 'bg-gray-700 text-gray-300 border-transparent hover:border-amber-400 peer-checked:bg-amber-500 peer-checked:text-white peer-checked:border-amber-600 peer-checked:shadow-lg'}`}><span className={isDisabled ? 'line-through' : ''}>{t(slot.key)}</span></label></div>{isDisabled && (<p className="text-xs text-red-400 text-center mt-1">{isFullyBooked ? t('fullyBooked') : t('bookedOnYourSelectedDays').replace('{days}', conflictDays.map(d => t(`day${d}`)).join(', '))}</p>)}</div>); })}</div></div>)}</div>)))}
                                     </div>
                                     <p className="text-center mt-2 text-xs text-gray-400">{t('timezoneNote')}</p>
                                 </div>
@@ -426,12 +434,56 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                             </Card>
                         </div>
                     )}
+                    {step === 5 && (
+                        <div ref={stepRefs[5]}>
+                            <Card title={t('paymentInfoTitle')}>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-300">{t('paymentPrefLabel')}</label>
+                                    <div className="mt-2 grid grid-cols-2 gap-2 rounded-lg bg-gray-900 p-1">
+                                        <div>
+                                            <input type="radio" id="payment-start" name="paymentPreference" value="start" required className="sr-only peer" onChange={handleDetailChange} checked={localDetails.paymentPreference === 'start'} />
+                                            <label htmlFor="payment-start" className="block w-full text-center py-2 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-gray-400 peer-checked:bg-gray-700 peer-checked:text-gray-100 peer-checked:shadow">
+                                                <span className="font-semibold">{t('paymentPrefOptionStart')}</span>
+                                            </label>
+                                        </div>
+                                        <div>
+                                            <input type="radio" id="payment-end" name="paymentPreference" value="end" required className="sr-only peer" onChange={handleDetailChange} checked={localDetails.paymentPreference === 'end'} />
+                                            <label htmlFor="payment-end" className="block w-full text-center py-2 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-gray-400 peer-checked:bg-gray-700 peer-checked:text-gray-100 peer-checked:shadow">
+                                                 <span className="font-semibold">{t('paymentPrefOptionEnd')}</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label htmlFor="payment-method" className="block text-sm font-medium text-gray-300">{t('paymentMethodLabel')}</label>
+                                    <input type="text" id="payment-method" name="paymentMethod" value={localDetails.paymentMethod || ''} onChange={handleDetailChange} required placeholder={t('paymentMethodPlaceholder')} className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-200 placeholder-gray-400" />
+                                </div>
+                                <div className="mt-4 bg-gray-900/50 p-4 rounded-lg border border-gray-700">
+                                    <h4 className="font-semibold text-gray-200">{t('attendancePolicyTitle')}</h4>
+                                    <p className="mt-2 text-sm text-gray-400">{t('attendancePolicyNote')}</p>
+                                    <div className="mt-4">
+                                        <label htmlFor="agree-terms" className="flex items-center cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                id="agree-terms"
+                                                name="agreedToTerms"
+                                                checked={!!localDetails.agreedToTerms}
+                                                onChange={(e) => setLocalDetails(prev => ({...prev, agreedToTerms: e.target.checked}))}
+                                                className="h-4 w-4 rounded border-gray-500 bg-gray-700 text-amber-600 focus:ring-amber-500"
+                                            />
+                                            <span className="ml-3 text-sm text-gray-300">{t('agreeToTermsLabel')}</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </Card>
+                        </div>
+                    )}
                 </div>
                 
                 <div className="mt-8 flex gap-4">
                     {step > 1 && <button type="button" onClick={handleBack} className="w-full bg-gray-700 text-gray-200 font-bold py-3 px-6 rounded-lg shadow-sm hover:shadow-md hover:bg-gray-600 transition-all">{t('backButton')}</button>}
-                    {step < 4 && <button type="button" onClick={handleNext} className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all">{t('nextButton')}</button>}
-                    {step === 4 && <button type="submit" disabled={isSubmitting} className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-wait">{isSubmitting ? '...' : t('payButton')}</button>}
+                    {step < 5 && <button type="button" onClick={handleNext} className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all">{t('nextButton')}</button>}
+                    {step === 5 && <button type="submit" disabled={isSubmitting || !localDetails.agreedToTerms} className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-wait">{isSubmitting ? '...' : t('payButton')}</button>}
                 </div>
             </form>
             

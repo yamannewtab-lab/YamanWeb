@@ -1,4 +1,4 @@
-export type Page = 'home' | 'register' | 'courses' | 'ijazah' | 'quiz' | 'tasmiQuiz' | 'tasmiInfo' | 'thanks' | 'ijazahPreview' | 'about' | 'tajwidImprovement' | 'teachers' | 'feedback' | 'feedbackThanks';
+export type Page = 'home' | 'register' | 'courses' | 'ijazah' | 'quiz' | 'tasmiQuiz' | 'tasmiInfo' | 'thanks' | 'ijazahPreview' | 'about' | 'tajwidImprovement' | 'teachers' | 'feedback' | 'feedbackThanks' | 'joinClass';
 
 export type Language = 'en' | 'ar' | 'id';
 
@@ -19,6 +19,9 @@ export interface IjazahApplication {
         language?: string;
         qiraah?: string;
         selectedDays?: string[];
+        paymentPreference?: string;
+        paymentMethod?: string;
+        agreedToTerms?: boolean;
     };
 }
 

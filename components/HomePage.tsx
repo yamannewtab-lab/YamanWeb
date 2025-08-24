@@ -75,12 +75,20 @@ const HomePage: React.FC<HomePageProps> = ({ navigateTo, t }) => {
                     <p className="mt-4 max-w-3xl mx-auto text-lg text-stone-200 drop-shadow-md">
                         {t('heroSubtitle')}
                     </p>
-                    <button 
-                        onClick={handleScrollToSections}
-                        className="mt-8 px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold text-lg rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 ease-in-out focus:outline-none focus:ring-4 focus:ring-amber-800"
-                    >
-                        {t('heroButton')}
-                    </button>
+                    <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+                        <button 
+                            onClick={handleScrollToSections}
+                            className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold text-lg rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 ease-in-out focus:outline-none focus:ring-4 focus:ring-amber-800"
+                        >
+                            {t('heroButton')}
+                        </button>
+                         <button 
+                            onClick={() => navigateTo('joinClass')}
+                            className="w-full sm:w-auto px-8 py-4 bg-gray-700/80 backdrop-blur-sm text-gray-200 font-bold text-lg rounded-lg shadow-md hover:shadow-lg hover:bg-gray-600 transform hover:scale-105 transition-all duration-300 ease-in-out focus:outline-none focus:ring-4 focus:ring-gray-600 border border-gray-600"
+                        >
+                            {t('heroJoinButton')}
+                        </button>
+                    </div>
                 </div>
                  <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10">
                     <button onClick={handleScrollToSections} className="animate-bounce p-2 group" aria-label="Scroll down">

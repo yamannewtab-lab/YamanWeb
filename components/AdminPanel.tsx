@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { TIME_SLOTS } from '../constants';
+import { TIME_SLOTS, MAIN_TIME_BLOCKS } from '../constants';
 
 interface Visitor {
     country: string;
@@ -35,6 +35,15 @@ interface ProcessedApproval {
     data: any;
 }
 
+interface BookedSlot {
+    time_slot: string;
+    day_number: number;
+}
+
+interface GroupedBookings {
+    [time_slot: string]: number[]; // array of day numbers
+}
+
 
 interface AdminPanelProps {
     onClose: () => void;
@@ -45,7 +54,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [password, setPassword] = useState('');
     const [authError, setAuthError] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<'visitors' | 'feedbacks' | 'approvals' | 'settings'>('visitors');
+    const [activeTab, setActiveTab] = useState<'visitors' | 'feedbacks' | 'approvals' | 'settings' | 'bookedSeats'>('visitors');
 
     const [visitors, setVisitors] = useState<GroupedVisitors>({});
     const [visitorsLoading, setVisitorsLoading] = useState(true);
@@ -59,6 +68,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
     const [approvalsLoading, setApprovalsLoading] = useState(true);
     const [approvalsError, setApprovalsError] = useState<string | null>(null);
     const [processingId, setProcessingId] = useState<number | null>(null);
+
+    const [bookedSeats, setBookedSeats] = useState<GroupedBookings>({});
+    const [bookedSeatsLoading, setBookedSeatsLoading] = useState(true);
+    const [bookedSeatsError, setBookedSeatsError] = useState<string | null>(null);
 
     const [isTestMode, setIsTestMode] = useState<boolean>((window as any).maqraatIsTestMode || false);
 
@@ -95,6 +108,30 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
             setApprovals(processed);
         }
         setApprovalsLoading(false);
+    };
+
+    const fetchBookedSeats = async () => {
+        setBookedSeatsLoading(true);
+        setBookedSeatsError(null);
+        const { data, error } = await supabase
+            .from('booking')
+            .select('time_slot, day_number')
+            .eq('is_booked', true);
+
+        if (error) {
+            setBookedSeatsError("Failed to fetch booked seats data.");
+        } else if (data) {
+            const grouped = (data as BookedSlot[]).reduce((acc: GroupedBookings, slot) => {
+                if (!acc[slot.time_slot]) {
+                    acc[slot.time_slot] = [];
+                }
+                acc[slot.time_slot].push(slot.day_number);
+                acc[slot.time_slot].sort((a, b) => a - b);
+                return acc;
+            }, {});
+            setBookedSeats(grouped);
+        }
+        setBookedSeatsLoading(false);
     };
 
     useEffect(() => {
@@ -136,6 +173,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
             fetchFeedbacks();
         } else if (activeTab === 'approvals') {
             fetchApprovals();
+        } else if (activeTab === 'bookedSeats') {
+            fetchBookedSeats();
         }
     }, [isAuthenticated, activeTab]);
     
@@ -194,7 +233,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
             setProcessingId(null);
         }
     };
-    
+
     const getTabClassName = (tabName: string) => `px-4 py-2 text-sm font-medium rounded-t-md transition-colors focus:outline-none ${activeTab === tabName ? 'bg-gray-700 text-white' : 'text-gray-400 hover:bg-gray-700/50 hover:text-gray-200'}`;
     const dayNumberToString = (num: number) => ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][num];
     const timeSlotToKey = (slotId: string): string => {
@@ -217,16 +256,56 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
                     <div className="p-4"><h3 className="text-lg font-semibold mb-4 text-center">Authentication Required</h3><form onSubmit={handlePasswordSubmit} className="space-y-4"><div><label htmlFor="password-input" className="sr-only">Password</label><input id="password-input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter password" autoFocus className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-amber-500 focus:border-amber-500 text-gray-200"/></div>{authError && <p className="text-red-400 text-sm text-center">{authError}</p>}<button type="submit" className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50" disabled={!password}>Unlock</button></form></div>
                 ) : (
                     <>
-                        <div className="flex border-b border-gray-600 -mt-4 -mx-6 px-6">
+                        <div className="flex flex-wrap border-b border-gray-600 -mt-4 -mx-6 px-6">
                             <button onClick={() => setActiveTab('visitors')} className={getTabClassName('visitors')}>Visitors</button>
                             <button onClick={() => setActiveTab('feedbacks')} className={getTabClassName('feedbacks')}>Feedbacks</button>
                             <button onClick={() => setActiveTab('approvals')} className={getTabClassName('approvals')}>Approvals</button>
+                            <button onClick={() => setActiveTab('bookedSeats')} className={getTabClassName('bookedSeats')}>{t('adminTabBookedSeats')}</button>
                             <button onClick={() => setActiveTab('settings')} className={getTabClassName('settings')}>Settings</button>
                         </div>
                         <div className="overflow-y-auto custom-scrollbar pr-2 mt-4 flex-grow">
                             {activeTab === 'visitors' && (<div>{visitorsLoading ? <p>Loading visitors...</p> : visitorsError ? <p className="text-red-400">{visitorsError}</p> : <ul className="space-y-2">{Object.entries(visitors).sort((a,b) => b[1].count - a[1].count).map(([country, data]) => (<li key={country} className="bg-gray-700 rounded-md"><details><summary className="p-3 cursor-pointer flex justify-between items-center font-semibold list-none"><span>{country}</span><span className="text-sm bg-gray-600 px-2 py-0.5 rounded-full">{data.count}</span></summary><div className="p-3 border-t border-gray-600">{data.cities.length > 0 ? <ul className="list-disc list-inside pl-2 space-y-1 text-gray-300">{data.cities.sort().map((city, index) => city && <li key={index}>{city}</li>)}</ul> : <p className="text-gray-400 italic">No city data.</p>}</div></details></li>))}</ul>}</div>)}
                             {activeTab === 'feedbacks' && (<div>{feedbacksLoading ? <p>Loading feedbacks...</p> : feedbacksError ? <p className="text-red-400">{feedbacksError}</p> : <ul className="space-y-3">{feedbacks.map((fb, index) => (<li key={index} className="bg-gray-700 p-4 rounded-md shadow"><p className="text-gray-300 whitespace-pre-wrap">{fb.message}</p></li>))}</ul>}</div>)}
                             {activeTab === 'approvals' && (<div>{approvalsLoading ? <p>Loading approvals...</p> : approvalsError ? <p className="text-red-400">{approvalsError}</p> : approvals.length === 0 ? <p>No pending approvals.</p> : <ul className="space-y-3">{approvals.map(approval => (<li key={approval.id} className="bg-gray-700/80 p-4 rounded-lg"><div className="flex justify-between items-start"><div><h4 className="font-bold text-lg">{approval.name}</h4><p className="text-sm text-amber-400">{approval.type} Application</p></div><div className="flex gap-2">{<button onClick={() => handleApprove(approval)} disabled={processingId===approval.id} className="bg-green-600 text-white px-3 py-1 rounded-md text-sm font-semibold hover:bg-green-500 disabled:bg-gray-500">Approve</button>}<button onClick={() => handleReject(approval.id)} disabled={processingId===approval.id} className="bg-red-600 text-white px-3 py-1 rounded-md text-sm font-semibold hover:bg-red-500 disabled:bg-gray-500">Reject</button></div></div><div className="mt-3 border-t border-gray-600 pt-3"><p className="font-semibold text-gray-300 text-sm mb-1">Requested Slots:</p><ul className="list-disc list-inside pl-2 space-y-1 text-sm">{approval.slots?.map((slot, i) => (<li key={i}>{t('day' + dayNumberToString(slot.day_number))} @ {t(timeSlotToKey(slot.time_slot))}</li>))}</ul></div><details className="mt-3"><summary className="cursor-pointer text-sm text-gray-400 hover:text-white">View Full Details</summary><pre className="mt-2 p-2 bg-gray-900 rounded-md text-xs overflow-x-auto custom-scrollbar"><code>{JSON.stringify(approval.data, null, 2)}</code></pre></details></li>))}</ul>}</div>)}
+                            {activeTab === 'bookedSeats' && (
+                                <div>
+                                    {bookedSeatsLoading ? <p>Loading booked seats...</p> :
+                                    bookedSeatsError ? <p className="text-red-400">{bookedSeatsError}</p> :
+                                    Object.keys(bookedSeats).length === 0 ? <p>No seats are currently booked.</p> :
+                                    (
+                                        <div className="space-y-6">
+                                            {MAIN_TIME_BLOCKS.map(block => {
+                                                const blockBookings = block.slots.filter(slot => bookedSeats[slot.id] && bookedSeats[slot.id].length > 0);
+                                                if (blockBookings.length === 0) return null;
+
+                                                return (
+                                                    <div key={block.id}>
+                                                        <h3 className="text-xl font-bold text-gray-100 mb-3 border-b border-gray-600 pb-2">{t(block.key)}</h3>
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                            {blockBookings.map(slot => (
+                                                                <div key={slot.id} className="bg-gray-700 p-4 rounded-lg">
+                                                                    <p className="font-semibold text-amber-400">{t(slot.key)}</p>
+                                                                    <ul className="mt-2 space-y-1 text-sm text-gray-300">
+                                                                        {bookedSeats[slot.id].map(dayNum => (
+                                                                            <li key={dayNum} className="flex items-center gap-2">
+                                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-400 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                                                                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                                                                </svg>
+                                                                                {t('day' + dayNumberToString(dayNum))}
+                                                                            </li>
+                                                                        ))}
+                                                                    </ul>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )
+                                    }
+                                </div>
+                            )}
                             {activeTab === 'settings' && (<div className="space-y-4"><div><h3 className="text-lg font-bold mb-2">Application Settings</h3><div className="bg-gray-700 p-4 rounded-lg flex items-center justify-between"><div><label htmlFor="test-mode-toggle" className="font-semibold text-gray-200">Test Mode</label><p className="text-sm text-gray-400">Route all notifications to a test webhook.</p></div><label htmlFor="test-mode-toggle" className="flex items-center cursor-pointer"><div className="relative"><input type="checkbox" id="test-mode-toggle" className="sr-only" checked={isTestMode} onChange={() => {const newMode=!isTestMode; setIsTestMode(newMode); (window as any).maqraatIsTestMode=newMode;}}/><div className={`block w-14 h-8 rounded-full transition ${isTestMode ? 'bg-amber-500' : 'bg-gray-600'}`}></div><div className={`dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform ${isTestMode ? 'translate-x-6' : 'translate-x-0'}`}></div></div></label></div></div></div>)}
                         </div>
                     </>
