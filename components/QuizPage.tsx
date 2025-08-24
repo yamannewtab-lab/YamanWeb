@@ -12,6 +12,26 @@ interface QuizPageProps {
     setLastSubmissionType: (type: SubmissionType) => void;
 }
 
+const Card = ({ title, children }: { title: string, children: React.ReactNode }) => (
+    <div className="bg-gray-800/50 p-6 rounded-xl shadow-sm border border-gray-700/50">
+        <h3 className="text-xl font-bold text-gray-100 mb-6 border-b border-gray-700 pb-3">{title}</h3>
+        <div className="space-y-6">{children}</div>
+    </div>
+);
+
+const FormProgress = ({ currentStep, totalSteps, t }: { currentStep: number, totalSteps: number, t: (key: string) => string }) => (
+    <div className="mb-6 text-center">
+        <p className="text-sm font-semibold text-gray-400">
+            {t('stepIndicator').replace('{current}', String(currentStep)).replace('{total}', String(totalSteps))}
+        </p>
+        <div className="mt-2 flex justify-center items-center gap-2">
+            {[...Array(totalSteps)].map((_, i) => (
+                <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i + 1 <= currentStep ? 'bg-amber-500' : 'bg-gray-600'}`} style={{ width: `${100 / totalSteps}%`}}></div>
+            ))}
+        </div>
+    </div>
+);
+
 const DayButton: React.FC<{
     day: string;
     t: (key: string) => string;
@@ -35,7 +55,8 @@ const DayButton: React.FC<{
 
 const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, setIjazahApplication, setLastSubmissionType }) => {
     const [step, setStep] = useState(1);
-    const [bookedSeats, setBookedSeats] = useState<string[]>([]);
+    const [localDetails, setLocalDetails] = useState(ijazahApplication.fullDetails);
+    const [allBookings, setAllBookings] = useState<{ seat_number: number; booked_day: string; }[]>([]);
     const [isLoadingSeats, setIsLoadingSeats] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [expandedBlock, setExpandedBlock] = useState<string | null>(null);
@@ -49,6 +70,10 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
     };
 
     useEffect(() => {
+        setLocalDetails(ijazahApplication.fullDetails);
+    }, [ijazahApplication.fullDetails]);
+
+    useEffect(() => {
         const targetRef = stepRefs[step as keyof typeof stepRefs];
         setTimeout(() => {
             targetRef?.current?.scrollIntoView({
@@ -58,16 +83,16 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
         }, 100);
     }, [step]);
 
-    const fetchBookedSeats = async () => {
+    const fetchAllBookings = async () => {
         setIsLoadingSeats(true);
         try {
             const { data, error } = await supabase
                 .from('seats')
-                .select('time_slot');
+                .select('seat_number, booked_day');
 
             if (error) throw error;
             
-            if (data) setBookedSeats(data.map(seat => seat.time_slot));
+            if (data) setAllBookings(data || []);
         } catch (error: any) {
             console.error('Error fetching booked seats:', error.message || error);
         } finally {
@@ -76,17 +101,19 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
     };
 
     useEffect(() => {
-        fetchBookedSeats();
+        fetchAllBookings();
         const channel = supabase.channel('public-seats');
         const subscription = channel
             .on(
                 'postgres_changes',
                 { event: 'INSERT', schema: 'public', table: 'seats' },
                 (payload) => {
-                    const newBookedSlot = payload.new.time_slot;
-                    if (newBookedSlot) {
-                        setBookedSeats(currentSeats => 
-                            currentSeats.includes(newBookedSlot) ? currentSeats : [...currentSeats, newBookedSlot]
+                    const newBooking = payload.new as { seat_number: number, booked_day: string };
+                    if (newBooking.seat_number && newBooking.booked_day) {
+                         setAllBookings(currentBookings =>
+                            currentBookings.some(b => b.seat_number === newBooking.seat_number && b.booked_day === newBooking.booked_day)
+                                ? currentBookings
+                                : [...currentBookings, newBooking]
                         );
                     }
                 }
@@ -102,39 +129,35 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
         setIjazahApplication(prev => ({ 
             ...prev, 
             daysPerWeek: days,
-            fullDetails: {
-                ...prev.fullDetails,
-                selectedDays: [] // Reset selected days when commitment changes
-            }
         }));
+        // Reset selected days locally when commitment changes
+        setLocalDetails(prev => ({...prev, selectedDays: []}));
     };
     
     const handleDayToggle = useCallback((day: string) => {
-        setIjazahApplication(prev => {
-            const currentDays = prev.fullDetails.selectedDays || [];
+        setLocalDetails(prev => {
+            const currentDays = prev.selectedDays || [];
             const isSelected = currentDays.includes(day);
             let newDays;
 
             if (isSelected) {
                 newDays = currentDays.filter(d => d !== day);
             } else {
-                if (currentDays.length < prev.daysPerWeek) {
+                if (currentDays.length < ijazahApplication.daysPerWeek) {
                     newDays = [...currentDays, day];
                 } else {
-                    // If the limit is reached, replace the last-selected day with the new one.
                     const withoutLast = currentDays.slice(0, -1);
                     newDays = [...withoutLast, day];
                 }
             }
-            return {
-                ...prev,
-                fullDetails: {
-                    ...prev.fullDetails,
-                    selectedDays: newDays
-                }
-            };
+            return { ...prev, selectedDays: newDays };
         });
-    }, [setIjazahApplication]);
+    }, [ijazahApplication.daysPerWeek]);
+
+    const handleDetailChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target;
+        setLocalDetails(prev => ({...prev, [name]: value}));
+    };
 
     const getDayButtonColors = (day: number): string => {
         const colors = [
@@ -151,90 +174,49 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
 
     const handleNext = () => {
         const form = formRef.current;
-        if (!form) return;
-
-        let fieldsToValidate: string[] = [];
-        if (step === 1) {
-            fieldsToValidate = ['name', 'age', 'whatsapp', 'from'];
-        } else if (step === 2) {
-            fieldsToValidate = ['daysPerWeek', 'sheikh', 'time', 'language'];
-            if (ijazahApplication.path === "Different Qira'ah") {
-                fieldsToValidate.push('qiraah');
-            }
-            if (ijazahApplication.daysPerWeek < 7 && (ijazahApplication.fullDetails.selectedDays?.length ?? 0) !== ijazahApplication.daysPerWeek) {
-                alert(t('daysSelected').replace('{count}', String(ijazahApplication.fullDetails.selectedDays?.length ?? 0)).replace('{total}', String(ijazahApplication.daysPerWeek)) + `. Please select exactly ${ijazahApplication.daysPerWeek} days.`);
-                return;
-            }
-        } else if (step === 3) {
-             fieldsToValidate = ['journey'];
+        if (!form || !form.checkValidity()) {
+            form?.reportValidity();
+            return;
         }
         
-        const areFieldsValid = fieldsToValidate.every(fieldName => {
-            const field = form.elements.namedItem(fieldName) as RadioNodeList | HTMLInputElement;
-            if (field instanceof RadioNodeList) {
-                return Array.from(field).some(radio => (radio as HTMLInputElement).checked);
-            }
-            if (field) return field.checkValidity();
-            return false;
-        });
-
-        if (areFieldsValid) {
-            const formData = new FormData(form);
-            const arabicToEnglishNumbers = (str: string): string => {
-                if (!str) return '';
-                const arabicNumerals = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
-                let newStr = str;
-                for (let i = 0; i < 10; i++) {
-                    newStr = newStr.replace(new RegExp(arabicNumerals[i], 'g'), String(i));
-                }
-                return newStr.replace(/[^0-9]/g, '');
-            };
-
-            let updatedDetails = {};
-            if (step === 1) {
-                const ageValue = formData.get('age') as string;
-                const convertedAge = arabicToEnglishNumbers(ageValue);
-                 updatedDetails = {
-                    name: formData.get('name') as string,
-                    age: convertedAge,
-                    whatsapp: formData.get('whatsapp') as string,
-                    from: formData.get('from') as string,
-                };
-            } else if (step === 2) {
-                let preferredTimeText = '';
-                if (selectedTime) {
-                    Object.values(TIME_SLOTS).flat().find(slot => {
-                        if (slot.id === selectedTime) {
-                            preferredTimeText = t(slot.key);
-                            return true;
-                        }
-                        return false;
-                    });
-                }
-                updatedDetails = {
-                    sheikh: formData.get('sheikh') as string,
-                    language: formData.get('language') as string,
-                    qiraah: formData.get('qiraah') as string,
-                    preferredTime: preferredTimeText,
-                };
-            } else if (step === 3) {
-                updatedDetails = {
-                    journey: formData.get('journey') as string,
-                };
-            }
-
-            setIjazahApplication(prev => ({
-                ...prev,
-                fullDetails: {
-                    ...prev.fullDetails,
-                    ...updatedDetails
-                }
-            }));
-
-            setStep(s => s + 1);
-        } else {
-            form.reportValidity();
+        if (step === 2 && ijazahApplication.daysPerWeek < 7 && (localDetails.selectedDays?.length ?? 0) !== ijazahApplication.daysPerWeek) {
+            alert(t('daysSelected').replace('{count}', String(localDetails.selectedDays?.length ?? 0)).replace('{total}', String(ijazahApplication.daysPerWeek)) + `. Please select exactly ${ijazahApplication.daysPerWeek} days.`);
+            return;
         }
+
+        const arabicToEnglishNumbers = (str: string): string => {
+            if (!str) return '';
+            const arabicNumerals = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+            let newStr = str;
+            for (let i = 0; i < 10; i++) {
+                newStr = newStr.replace(new RegExp(arabicNumerals[i], 'g'), String(i));
+            }
+            return newStr.replace(/[^0-9]/g, '');
+        };
+
+        let preferredTimeText = '';
+        if (selectedTime) {
+            Object.values(TIME_SLOTS).flat().find(slot => {
+                if (slot.id === selectedTime) {
+                    preferredTimeText = t(slot.key);
+                    return true;
+                }
+                return false;
+            });
+        }
+
+        const finalDetails = {
+            ...localDetails,
+            age: localDetails.age ? arabicToEnglishNumbers(localDetails.age) : undefined,
+            preferredTime: preferredTimeText,
+        };
+
+        setIjazahApplication(prev => ({
+            ...prev,
+            fullDetails: finalDetails
+        }));
+
+        setStep(s => s + 1);
     };
 
     const handleBack = () => {
@@ -243,26 +225,47 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        if (!selectedTime) {
+            alert("Please select a time slot.");
+            return;
+        }
         setIsSubmitting(true);
        
         try {
+             const daysToBook = ijazahApplication.daysPerWeek === 7
+                ? ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+                : localDetails.selectedDays || [];
+
+            if (daysToBook.length === 0) {
+                alert("Please select your preferred days before submitting.");
+                setIsSubmitting(false);
+                return;
+            }
+
+            const selectedSlot = Object.values(TIME_SLOTS).flat().find(s => s.id === selectedTime);
+            if (!selectedSlot) {
+                throw new Error("Selected time slot details could not be found.");
+            }
+
+            const newBookings = daysToBook.map(day => ({
+                seat_number: selectedSlot.intId,
+                is_booked: true,
+                booked_day: day,
+            }));
+
             if (!isTestModeEnabled()) {
-                const { error } = await supabase.from('seats').insert({ 
-                    time_slot: selectedTime,
-                    seat_number: `ijazah_${selectedTime}`,
-                    is_booked: true,
-                });
+                const { error } = await supabase.from('seats').insert(newBookings);
                 if (error) throw error;
             }
             
-            await sendIjazahApplicationToDiscord(ijazahApplication, priceString, t);
+            await sendIjazahApplicationToDiscord({ ...ijazahApplication, fullDetails: localDetails }, priceString, t);
             setLastSubmissionType('paid');
             navigateTo('thanks');
 
         } catch (error: any) {
             console.error('Error booking seat:', error.message || error);
-            alert('This time slot was just booked by someone else. Please select another time.');
-            fetchBookedSeats();
+            alert('This time slot was just booked by someone else on one of your selected days. Please select another time or change your days.');
+            fetchAllBookings();
         } finally {
             setIsSubmitting(false);
         }
@@ -279,28 +282,8 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
         showSpeedNote = true;
     }
     
-    const Card = ({ title, children }: { title: string, children: React.ReactNode }) => (
-        <div className="bg-gray-800/50 p-6 rounded-xl shadow-sm border border-gray-700/50">
-            <h3 className="text-xl font-bold text-gray-100 mb-6 border-b border-gray-700 pb-3">{title}</h3>
-            <div className="space-y-6">{children}</div>
-        </div>
-    );
-    
-    const FormProgress = ({ currentStep, totalSteps }: { currentStep: number, totalSteps: number }) => (
-        <div className="mb-6 text-center">
-            <p className="text-sm font-semibold text-gray-400">
-                {t('stepIndicator').replace('{current}', String(currentStep)).replace('{total}', String(totalSteps))}
-            </p>
-            <div className="mt-2 flex justify-center items-center gap-2">
-                {[...Array(totalSteps)].map((_, i) => (
-                    <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i + 1 <= currentStep ? 'bg-amber-500' : 'bg-gray-600'}`} style={{ width: `${100 / totalSteps}%`}}></div>
-                ))}
-            </div>
-        </div>
-    );
-    
     const weekdays = ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-    const selectedDays = ijazahApplication.fullDetails.selectedDays || [];
+    const selectedDays = localDetails.selectedDays || [];
 
     return (
         <div>
@@ -309,26 +292,26 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
             </div>
             
             <form ref={formRef} onSubmit={handleSubmit} className="max-w-2xl mx-auto">
-                <FormProgress currentStep={step} totalSteps={4} />
+                <FormProgress currentStep={step} totalSteps={4} t={t} />
                 <div className="relative">
                     {step === 1 && (
                         <div ref={stepRefs[1]}>
                             <Card title={t('cardTitlePersonalInfo')}>
                                 <div>
                                     <label htmlFor="quiz-name" className="block text-sm font-medium text-gray-300">{t('quizNameLabel')}</label>
-                                    <input type="text" id="quiz-name" name="name" defaultValue={ijazahApplication.fullDetails.name} required className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-200" />
+                                    <input type="text" id="quiz-name" name="name" value={localDetails.name || ''} onChange={handleDetailChange} required className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-200" />
                                 </div>
                                 <div>
                                     <label htmlFor="quiz-age" className="block text-sm font-medium text-gray-300">{t('quizAgeLabel')}</label>
-                                    <input type="text" inputMode="decimal" pattern="[0-9٠-٩]*" id="quiz-age" name="age" defaultValue={ijazahApplication.fullDetails.age} required className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-200" />
+                                    <input type="text" inputMode="decimal" pattern="[0-9٠-٩]*" id="quiz-age" name="age" value={localDetails.age || ''} onChange={handleDetailChange} required className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-200" />
                                 </div>
                                 <div>
                                     <label htmlFor="quiz-whatsapp" className="block text-sm font-medium text-gray-300">{t('whatsappLabel')}</label>
-                                    <input type="tel" id="quiz-whatsapp" name="whatsapp" defaultValue={ijazahApplication.fullDetails.whatsapp} required className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-200" />
+                                    <input type="tel" id="quiz-whatsapp" name="whatsapp" value={localDetails.whatsapp || ''} onChange={handleDetailChange} required className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-200" />
                                 </div>
                                 <div>
                                     <label htmlFor="quiz-from" className="block text-sm font-medium text-gray-300">{t('quizFromLabel')}</label>
-                                    <input type="text" id="quiz-from" name="from" defaultValue={ijazahApplication.fullDetails.from} required className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-200" />
+                                    <input type="text" id="quiz-from" name="from" value={localDetails.from || ''} onChange={handleDetailChange} required className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-200" />
                                 </div>
                             </Card>
                         </div>
@@ -339,7 +322,7 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                                 {ijazahApplication.path === "Different Qira'ah" && (
                                     <div>
                                         <label htmlFor="quiz-qiraah" className="block text-sm font-medium text-gray-300">{t('quizQiraahLabel')}</label>
-                                        <input type="text" id="quiz-qiraah" name="qiraah" defaultValue={ijazahApplication.fullDetails.qiraah} required className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-200" />
+                                        <input type="text" id="quiz-qiraah" name="qiraah" value={localDetails.qiraah || ''} onChange={handleDetailChange} required className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-200" />
                                     </div>
                                 )}
                                  <div>
@@ -371,17 +354,17 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                                  <div>
                                     <span className="block text-sm font-medium text-gray-300">{t('quizTimeLabel')}</span>
                                     <div className="mt-2 rounded-lg bg-gray-900 p-3 space-y-3">
-                                        {isLoadingSeats ? (<div className="space-y-3">{[...Array(3)].map((_, i) => (<div key={i} className="h-16 bg-gray-800 rounded-lg animate-pulse"></div>))}</div>) : (MAIN_TIME_BLOCKS.map(block => (<div key={block.id}><button type="button" onClick={() => setExpandedBlock(expandedBlock === block.id ? null : block.id)} className="w-full text-left p-4 rounded-lg bg-gray-700/50 hover:bg-gray-700 transition-all duration-200 ease-in-out shadow-sm flex justify-between items-center" aria-expanded={expandedBlock === block.id} aria-controls={`time-slots-${block.id}`}><div><h4 className="font-semibold text-gray-200">{t(block.key)}</h4><p className="text-xs text-gray-400">{t(block.timeRangeKey)}</p></div><svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 text-gray-400 transform transition-transform duration-300 ${expandedBlock === block.id ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></button>{expandedBlock === block.id && (<div id={`time-slots-${block.id}`} className="mt-2 p-3 bg-gray-700/30 rounded-lg"><div className="flex flex-col gap-2">{block.slots.map(slot => { const isBooked = bookedSeats.includes(slot.id); return (<div key={slot.id}><input type="radio" id={`time-${slot.id}`} name="time" value={slot.id} required disabled={isBooked} className="sr-only peer" onChange={() => setSelectedTime(slot.id)} checked={selectedTime === slot.id} /><label htmlFor={`time-${slot.id}`} className={`block text-center py-3 px-2 rounded-lg cursor-pointer transition-all duration-200 ease-in-out border-2 text-xs sm:text-sm font-semibold ${isBooked ? 'bg-gray-800 text-gray-600 cursor-not-allowed line-through border-transparent' : 'bg-gray-700 text-gray-300 border-transparent hover:border-amber-400 peer-checked:bg-amber-500 peer-checked:text-white peer-checked:border-amber-600 peer-checked:shadow-lg'}`}>{t(slot.key)}</label></div>); })}</div></div>)}</div>)))}
+                                        {isLoadingSeats ? (<div className="space-y-3">{[...Array(3)].map((_, i) => (<div key={i} className="h-16 bg-gray-800 rounded-lg animate-pulse"></div>))}</div>) : (MAIN_TIME_BLOCKS.map(block => (<div key={block.id}><button type="button" onClick={() => setExpandedBlock(expandedBlock === block.id ? null : block.id)} className="w-full text-left p-4 rounded-lg bg-gray-700/50 hover:bg-gray-700 transition-all duration-200 ease-in-out shadow-sm flex justify-between items-center" aria-expanded={expandedBlock === block.id} aria-controls={`time-slots-${block.id}`}><div><h4 className="font-semibold text-gray-200">{t(block.key)}</h4><p className="text-xs text-gray-400">{t(block.timeRangeKey)}</p></div><svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 text-gray-400 transform transition-transform duration-300 ${expandedBlock === block.id ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></button>{expandedBlock === block.id && (<div id={`time-slots-${block.id}`} className="mt-2 p-3 bg-gray-700/30 rounded-lg"><div className="flex flex-col gap-2">{block.slots.map(slot => { const isBooked = selectedDays.length > 0 && allBookings.some(booking => booking.seat_number === slot.intId && selectedDays.includes(booking.booked_day)); return (<div key={slot.id}><input type="radio" id={`time-${slot.id}`} name="time" value={slot.id} required disabled={isBooked} className="sr-only peer" onChange={() => setSelectedTime(slot.id)} checked={selectedTime === slot.id} /><label htmlFor={`time-${slot.id}`} className={`block text-center py-3 px-2 rounded-lg cursor-pointer transition-all duration-200 ease-in-out border-2 text-xs sm:text-sm font-semibold ${isBooked ? 'bg-gray-800 text-gray-600 cursor-not-allowed line-through border-transparent' : 'bg-gray-700 text-gray-300 border-transparent hover:border-amber-400 peer-checked:bg-amber-500 peer-checked:text-white peer-checked:border-amber-600 peer-checked:shadow-lg'}`}>{t(slot.key)}</label></div>); })}</div></div>)}</div>)))}
                                     </div>
                                     <p className="text-center mt-2 text-xs text-gray-400">{t('timezoneNote')}</p>
                                 </div>
                                  <div>
                                     <span className="block text-sm font-medium text-gray-300">{t('quizLanguageLabel')}</span>
-                                    <div className="mt-2 grid grid-cols-2 gap-1 rounded-lg bg-gray-900 p-1"><div className="col-span-1"><input type="radio" id="lang-ar" name="language" value="Arabic" className="sr-only peer" defaultChecked={ijazahApplication.fullDetails.language === "Arabic" || !ijazahApplication.fullDetails.language} /><label htmlFor="lang-ar" className="block w-full text-center py-2 px-2 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-gray-400 peer-checked:bg-gray-700 peer-checked:text-gray-100 peer-checked:shadow"><span className="font-semibold">{t('langArabic')}</span></label></div><div className="col-span-1"><input type="radio" id="lang-en" name="language" value="English" className="sr-only peer" defaultChecked={ijazahApplication.fullDetails.language === "English"}/><label htmlFor="lang-en" className="block w-full text-center py-2 px-2 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-gray-400 peer-checked:bg-gray-700 peer-checked:text-gray-100 peer-checked:shadow"><span className="font-semibold">{t('langEnglish')}</span></label></div><div className="col-span-2"><input type="radio" id="lang-id" name="language" value="Indonesian" className="sr-only peer" defaultChecked={ijazahApplication.fullDetails.language === "Indonesian"}/><label htmlFor="lang-id" className="block w-full text-center py-2 px-2 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-gray-400 peer-checked:bg-gray-700 peer-checked:text-gray-100 peer-checked:shadow"><span className="font-semibold">{t('langIndonesian')}</span></label></div></div>
+                                    <div className="mt-2 grid grid-cols-2 gap-1 rounded-lg bg-gray-900 p-1"><div className="col-span-1"><input type="radio" id="lang-ar" name="language" value="Arabic" className="sr-only peer" checked={localDetails.language === "Arabic" || !localDetails.language} onChange={handleDetailChange} /><label htmlFor="lang-ar" className="block w-full text-center py-2 px-2 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-gray-400 peer-checked:bg-gray-700 peer-checked:text-gray-100 peer-checked:shadow"><span className="font-semibold">{t('langArabic')}</span></label></div><div className="col-span-1"><input type="radio" id="lang-en" name="language" value="English" className="sr-only peer" checked={localDetails.language === "English"} onChange={handleDetailChange}/><label htmlFor="lang-en" className="block w-full text-center py-2 px-2 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-gray-400 peer-checked:bg-gray-700 peer-checked:text-gray-100 peer-checked:shadow"><span className="font-semibold">{t('langEnglish')}</span></label></div><div className="col-span-2"><input type="radio" id="lang-id" name="language" value="Indonesian" className="sr-only peer" checked={localDetails.language === "Indonesian"} onChange={handleDetailChange}/><label htmlFor="lang-id" className="block w-full text-center py-2 px-2 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-gray-400 peer-checked:bg-gray-700 peer-checked:text-gray-100 peer-checked:shadow"><span className="font-semibold">{t('langIndonesian')}</span></label></div></div>
                                 </div>
                                 <div>
                                     <span className="block text-sm font-medium text-gray-300">{t('quizSheikhLabel')}</span>
-                                    <div className="mt-2 grid grid-cols-2 gap-2 rounded-lg bg-gray-900 p-1"><div><input type="radio" id="sheikh-yes" name="sheikh" value="yes" className="sr-only peer" defaultChecked={ijazahApplication.fullDetails.sheikh === 'yes'}/><label htmlFor="sheikh-yes" className="block w-full text-center py-2 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-gray-400 peer-checked:bg-gray-700 peer-checked:text-gray-100 peer-checked:shadow"><span className="font-semibold">{t('yes')}</span></label></div><div><input type="radio" id="sheikh-no" name="sheikh" value="no" className="sr-only peer" defaultChecked={ijazahApplication.fullDetails.sheikh !== 'yes'}/><label htmlFor="sheikh-no" className="block w-full text-center py-2 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-gray-400 peer-checked:bg-gray-700 peer-checked:text-gray-100 peer-checked:shadow"><span className="font-semibold">{t('no')}</span></label></div></div>
+                                    <div className="mt-2 grid grid-cols-2 gap-2 rounded-lg bg-gray-900 p-1"><div><input type="radio" id="sheikh-yes" name="sheikh" value="yes" className="sr-only peer" checked={localDetails.sheikh === 'yes'} onChange={handleDetailChange}/><label htmlFor="sheikh-yes" className="block w-full text-center py-2 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-gray-400 peer-checked:bg-gray-700 peer-checked:text-gray-100 peer-checked:shadow"><span className="font-semibold">{t('yes')}</span></label></div><div><input type="radio" id="sheikh-no" name="sheikh" value="no" className="sr-only peer" checked={localDetails.sheikh !== 'yes'} onChange={handleDetailChange}/><label htmlFor="sheikh-no" className="block w-full text-center py-2 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-gray-400 peer-checked:bg-gray-700 peer-checked:text-gray-100 peer-checked:shadow"><span className="font-semibold">{t('no')}</span></label></div></div>
                                 </div>
                             </Card>
                         </div>
@@ -391,7 +374,7 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                              <Card title={t('cardTitleJourney')}>
                                  <div>
                                     <label htmlFor="quiz-journey" className="block text-sm font-medium text-gray-300">{t('quizJourneyLabel')}</label>
-                                    <textarea id="quiz-journey" name="journey" rows={6} defaultValue={ijazahApplication.fullDetails.journey} required className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-200"></textarea>
+                                    <textarea id="quiz-journey" name="journey" rows={6} value={localDetails.journey || ''} onChange={handleDetailChange} required className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-200"></textarea>
                                 </div>
                             </Card>
                         </div>
@@ -406,10 +389,10 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div><p className="text-sm text-gray-400">{t('summaryPath')}</p><p className="font-semibold text-gray-200">{t(PATH_TRANSLATION_KEYS[ijazahApplication.path] || ijazahApplication.path)}</p></div>
                                         {ijazahApplication.memorization && (<div><p className="text-sm text-gray-400">{t('summaryMemorization')}</p><p className="font-semibold text-gray-200">{ijazahApplication.memorization === 'with' ? t('summaryWithMemorization') : t('summaryWithoutMemorization')}</p></div>)}
-                                        {ijazahApplication.fullDetails.qiraah && (<div><p className="text-sm text-gray-400">{t('summaryQiraah')}</p><p className="font-semibold text-gray-200">{ijazahApplication.fullDetails.qiraah}</p></div>)}
+                                        {localDetails.qiraah && (<div><p className="text-sm text-gray-400">{t('summaryQiraah')}</p><p className="font-semibold text-gray-200">{localDetails.qiraah}</p></div>)}
                                         <div><p className="text-sm text-gray-400">{t('summaryCommitment')}</p><p className="font-semibold text-gray-200">{t('daysPerWeek').replace('{count}', String(ijazahApplication.daysPerWeek))}</p></div>
-                                        <div><p className="text-sm text-gray-400">{t('summaryTime')}</p><p className="font-semibold text-gray-200">{ijazahApplication.fullDetails.preferredTime}</p></div>
-                                        <div><p className="text-sm text-gray-400">{t('summaryLanguage')}</p><p className="font-semibold text-gray-200">{ijazahApplication.fullDetails.language}</p></div>
+                                        <div><p className="text-sm text-gray-400">{t('summaryTime')}</p><p className="font-semibold text-gray-200">{localDetails.preferredTime}</p></div>
+                                        <div><p className="text-sm text-gray-400">{t('summaryLanguage')}</p><p className="font-semibold text-gray-200">{localDetails.language}</p></div>
                                     </div>
                                     {selectedDays.length > 0 && (
                                          <div className="border-t border-gray-600 pt-4">

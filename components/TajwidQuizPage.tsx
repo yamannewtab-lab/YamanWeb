@@ -20,6 +20,17 @@ interface TajwidFormData {
     additionalNotes: string;
 }
 
+const Card = ({ title, children }: { title: string, children: React.ReactNode }) => (
+    <div className="bg-gray-800/50 p-6 rounded-xl shadow-sm border border-gray-700/50 page-transition">
+        <h3 className="text-xl font-bold text-gray-100 mb-6 border-b border-gray-700 pb-3">{title}</h3>
+        <div className="space-y-6">{children}</div>
+    </div>
+);
+
+const FormProgress = ({ currentStep, totalSteps, t }: { currentStep: number, totalSteps: number, t: (key: string) => string }) => (
+    <div className="mb-6 text-center"><p className="text-sm font-semibold text-gray-400">{t('stepIndicator').replace('{current}', String(currentStep)).replace('{total}', String(totalSteps))}</p><div className="mt-2 flex justify-center items-center gap-2">{[...Array(totalSteps)].map((_, i) => (<div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i + 1 <= currentStep ? 'bg-amber-500' : 'bg-gray-600'}`} style={{ width: `${100 / totalSteps}%`}}></div>))}</div></div>
+);
+
 const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t, setLastSubmissionType }) => {
     const subscriptionOptions = Object.keys(TAJWID_IMPROVEMENT_PRICES).map(Number).sort((a, b) => b - a);
     const [step, setStep] = useState(1);
@@ -27,7 +38,7 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t, setLastS
         name: '', age: '', whatsapp: '', time: '', tajwidLevel: t('tajwidLevelNormal'), 
         subscription: subscriptionOptions[0], additionalNotes: ''
     });
-    const [bookedSeats, setBookedSeats] = useState<string[]>([]);
+    const [allBookings, setAllBookings] = useState<{ seat_number: number; booked_day: string | null; }[]>([]);
     const [isLoadingSeats, setIsLoadingSeats] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [expandedBlock, setExpandedBlock] = useState<string | null>(null);
@@ -49,12 +60,12 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t, setLastS
         }, 100);
     }, [step]);
     
-    const fetchBookedSeats = async () => {
+    const fetchAllBookings = async () => {
         setIsLoadingSeats(true);
         try {
-            const { data, error } = await supabase.from('seats').select('time_slot');
+            const { data, error } = await supabase.from('seats').select('seat_number, booked_day');
             if (error) throw error;
-            if (data) setBookedSeats(data.map(seat => seat.time_slot));
+            if (data) setAllBookings(data || []);
         } catch (error: any) {
             console.error('Error fetching booked seats:', error.message || error);
         } finally {
@@ -63,13 +74,17 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t, setLastS
     };
 
     useEffect(() => {
-        fetchBookedSeats();
+        fetchAllBookings();
         const channel = supabase.channel('public-seats');
         const subscription = channel
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'seats' }, (payload) => {
-                const newBookedSlot = payload.new.time_slot;
-                if (newBookedSlot) {
-                    setBookedSeats(currentSeats => currentSeats.includes(newBookedSlot) ? currentSeats : [...currentSeats, newBookedSlot]);
+                 const newBooking = payload.new as { seat_number: number, booked_day: string };
+                if (newBooking.seat_number && newBooking.booked_day) {
+                    setAllBookings(currentBookings =>
+                        currentBookings.some(b => b.seat_number === newBooking.seat_number && b.booked_day === newBooking.booked_day)
+                            ? currentBookings
+                            : [...currentBookings, newBooking]
+                    );
                 }
             }).subscribe();
 
@@ -111,29 +126,33 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t, setLastS
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setIsSubmitting(true);
-        const selectedTimeSlot = formData.time;
-        if (!selectedTimeSlot) {
+        const selectedTimeSlotId = formData.time;
+        if (!selectedTimeSlotId) {
             alert('Please select a time slot.');
             setIsSubmitting(false);
             return;
         }
 
+        const selectedSlot = Object.values(TIME_SLOTS).flat().find(s => s.id === selectedTimeSlotId);
+        if (!selectedSlot) {
+            alert('Invalid time slot selected.');
+            setIsSubmitting(false);
+            return;
+        }
+
         try {
+            const dayOfWeek = new Date().toLocaleString('en-US', { weekday: 'long' });
+
             if (!isTestModeEnabled()) {
                 const { error: bookingError } = await supabase.from('seats').insert({ 
-                    time_slot: selectedTimeSlot, seat_number: `tajwid_${selectedTimeSlot}`, is_booked: true,
+                    seat_number: selectedSlot.intId, 
+                    is_booked: true,
+                    booked_day: dayOfWeek
                 });
                 if (bookingError) throw bookingError;
             }
 
-            let preferredTimeText = '';
-            Object.values(TIME_SLOTS).flat().find(slot => {
-                if (slot.id === selectedTimeSlot) {
-                    preferredTimeText = t(slot.key);
-                    return true;
-                }
-                return false;
-            });
+            let preferredTimeText = t(selectedSlot.key);
             
             const dayToKeyMap: {[key: number]: string} = { 15: 'subscriptionOption15Days', 10: 'subscriptionOption10Days', 5: 'subscriptionOption5Days' };
             const subscriptionText = t(dayToKeyMap[formData.subscription]);
@@ -151,7 +170,7 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t, setLastS
         } catch (error: any) {
             console.error('Error booking seat or submitting request:', error.message || error);
             alert('This time slot was just booked by someone else, or an error occurred. Please select another time and try again.');
-            fetchBookedSeats();
+            fetchAllBookings();
         } finally {
             setIsSubmitting(false);
         }
@@ -159,22 +178,11 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t, setLastS
 
     const tajwidLevels = [{ key: 'tajwidLevelGood' }, { key: 'tajwidLevelNormal' }, { key: 'tajwidLevelNotTooGood' }, { key: 'tajwidLevelBad' }, { key: 'tajwidLevelReallyBad' }];
 
-    const Card = ({ title, children }: { title: string, children: React.ReactNode }) => (
-        <div className="bg-gray-800/50 p-6 rounded-xl shadow-sm border border-gray-700/50 page-transition">
-            <h3 className="text-xl font-bold text-gray-100 mb-6 border-b border-gray-700 pb-3">{title}</h3>
-            <div className="space-y-6">{children}</div>
-        </div>
-    );
-
-    const FormProgress = ({ currentStep, totalSteps }: { currentStep: number, totalSteps: number }) => (
-        <div className="mb-6 text-center"><p className="text-sm font-semibold text-gray-400">{t('stepIndicator').replace('{current}', String(currentStep)).replace('{total}', String(totalSteps))}</p><div className="mt-2 flex justify-center items-center gap-2">{[...Array(totalSteps)].map((_, i) => (<div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i + 1 <= currentStep ? 'bg-amber-500' : 'bg-gray-600'}`} style={{ width: `${100 / totalSteps}%`}}></div>))}</div></div>
-    );
-
     return (
         <div>
             <div className="text-center mb-6"><h2 className="text-3xl font-bold text-gray-100">{t('tajwidQuizTitle')}</h2></div>
             <form ref={formRef} onSubmit={handleSubmit} className="max-w-2xl mx-auto">
-                <FormProgress currentStep={step} totalSteps={4} />
+                <FormProgress currentStep={step} totalSteps={4} t={t} />
                 {step === 1 && (
                     <div ref={stepRefs[1]}>
                         <Card title={t('cardTitlePersonalInfo')}>
@@ -187,7 +195,7 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t, setLastS
                 {step === 2 && (
                     <div ref={stepRefs[2]}>
                         <Card title={t('cardTitleSessionDetails')}>
-                            <div><span className="block text-sm font-medium text-gray-300">{t('quizTimeLabel')}</span><div className="mt-2 rounded-lg bg-gray-900 p-3 space-y-3">{isLoadingSeats ? (<div className="space-y-3">{[...Array(3)].map((_, i) => (<div key={i} className="h-16 bg-gray-800 rounded-lg animate-pulse"></div>))}</div>) : (MAIN_TIME_BLOCKS.map(block => (<div key={block.id}><button type="button" onClick={() => setExpandedBlock(b => b === block.id ? null : block.id)} className="w-full text-left p-4 rounded-lg bg-gray-700/50 hover:bg-gray-700 transition-all shadow-sm flex justify-between items-center"><><div><h4 className="font-semibold text-gray-200">{t(block.key)}</h4><p className="text-xs text-gray-400">{t(block.timeRangeKey)}</p></div><svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 text-stone-500 transform transition-transform ${expandedBlock === block.id ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></></button>{expandedBlock === block.id && (<div className="mt-2 p-3 bg-gray-700/30 rounded-lg"><div className="flex flex-col gap-2">{block.slots.map(slot => { const isBooked = bookedSeats.includes(slot.id); return (<div key={slot.id}><input type="radio" id={`time-${slot.id}`} name="time" value={slot.id} required disabled={isBooked} className="sr-only peer" onChange={() => setFormData(f => ({...f, time: slot.id}))} checked={formData.time === slot.id} /><label htmlFor={`time-${slot.id}`} className={`block text-center py-3 px-2 rounded-lg cursor-pointer transition-all border-2 text-sm font-semibold ${isBooked ? 'bg-gray-800 text-gray-600 cursor-not-allowed line-through border-transparent' : 'bg-gray-700 text-gray-300 border-transparent hover:border-amber-400 peer-checked:bg-amber-500 peer-checked:text-white peer-checked:border-amber-600 peer-checked:shadow-lg'}`}>{t(slot.key)}</label></div>); })}</div></div>)}</div>)))}</div><p className="text-center mt-2 text-xs text-gray-400">{t('timezoneNote')}</p></div>
+                            <div><span className="block text-sm font-medium text-gray-300">{t('quizTimeLabel')}</span><div className="mt-2 rounded-lg bg-gray-900 p-3 space-y-3">{isLoadingSeats ? (<div className="space-y-3">{[...Array(3)].map((_, i) => (<div key={i} className="h-16 bg-gray-800 rounded-lg animate-pulse"></div>))}</div>) : (MAIN_TIME_BLOCKS.map(block => (<div key={block.id}><button type="button" onClick={() => setExpandedBlock(b => b === block.id ? null : block.id)} className="w-full text-left p-4 rounded-lg bg-gray-700/50 hover:bg-gray-700 transition-all shadow-sm flex justify-between items-center"><><div><h4 className="font-semibold text-gray-200">{t(block.key)}</h4><p className="text-xs text-gray-400">{t(block.timeRangeKey)}</p></div><svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 text-stone-500 transform transition-transform ${expandedBlock === block.id ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></></button>{expandedBlock === block.id && (<div className="mt-2 p-3 bg-gray-700/30 rounded-lg"><div className="flex flex-col gap-2">{block.slots.map(slot => { const dayOfWeek = new Date().toLocaleString('en-US', { weekday: 'long' }); const isBooked = allBookings.some(booking => booking.seat_number === slot.intId && booking.booked_day === dayOfWeek); return (<div key={slot.id}><input type="radio" id={`time-${slot.id}`} name="time" value={slot.id} required disabled={isBooked} className="sr-only peer" onChange={() => setFormData(f => ({...f, time: slot.id}))} checked={formData.time === slot.id} /><label htmlFor={`time-${slot.id}`} className={`block text-center py-3 px-2 rounded-lg cursor-pointer transition-all border-2 text-sm font-semibold ${isBooked ? 'bg-gray-800 text-gray-600 cursor-not-allowed line-through border-transparent' : 'bg-gray-700 text-gray-300 border-transparent hover:border-amber-400 peer-checked:bg-amber-500 peer-checked:text-white peer-checked:border-amber-600 peer-checked:shadow-lg'}`}>{t(slot.key)}</label></div>); })}</div></div>)}</div>)))}</div><p className="text-center mt-2 text-xs text-gray-400">{t('timezoneNote')}</p></div>
                             <div><span className="block text-sm font-medium text-gray-300">{t('tajwidLevelLabel')}</span><div className="mt-2 space-y-2">{tajwidLevels.map(level => (<div key={level.key}><input type="radio" id={level.key} name="tajwidLevel" value={t(level.key)} checked={formData.tajwidLevel === t(level.key)} onChange={(e) => setFormData(f => ({...f, tajwidLevel: e.target.value}))} className="sr-only peer" /><label htmlFor={level.key} className="block w-full text-center py-2 px-4 rounded-md cursor-pointer transition-colors bg-gray-900 text-gray-400 peer-checked:bg-gray-700 peer-checked:shadow dark:peer-checked:text-gray-100"><span className="font-semibold">{t(level.key)}</span></label></div>))}</div></div>
                             <div><span className="block text-sm font-medium text-gray-300">{t('subscriptionLengthLabel')}</span><div className="mt-2 grid grid-cols-3 gap-2 rounded-lg bg-gray-900 p-1">{subscriptionOptions.map(days => {const dayToKeyMap: {[k: number]: string} = {15:'subscriptionOption15Days',10:'subscriptionOption10Days',5:'subscriptionOption5Days'};return (<div key={days}><input type="radio" id={`sub-${days}`} name="subscription" value={days} checked={formData.subscription === days} onChange={() => setFormData(f => ({...f, subscription: days}))} className="sr-only peer"/><label htmlFor={`sub-${days}`} className="block w-full text-center py-2 px-2 rounded-md cursor-pointer transition-colors text-gray-400 peer-checked:bg-gray-700 peer-checked:shadow dark:peer-checked:text-gray-100"><span className="font-semibold">{t(dayToKeyMap[days])}</span></label></div>);})}</div><div className="text-center mt-2"><p className="text-sm font-semibold text-gray-300">{t('priceDisplay').replace('{price}', TAJWID_IMPROVEMENT_PRICES[formData.subscription].toLocaleString())}</p></div></div>
                         </Card>

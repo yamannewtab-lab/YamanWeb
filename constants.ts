@@ -25,19 +25,19 @@ export const PATH_TRANSLATION_KEYS: { [key: string]: string } = {
 
 export const TIME_SLOTS = {
   morning: [
-    { id: 'M_0510_0520', key: 'time_m_1' },
-    { id: 'M_0520_0535', key: 'time_m_2' },
-    { id: 'M_0535_0550', key: 'time_m_3' },
+    { id: 'M_0510_0520', key: 'time_m_1', intId: 101 },
+    { id: 'M_0520_0535', key: 'time_m_2', intId: 102 },
+    { id: 'M_0535_0550', key: 'time_m_3', intId: 103 },
   ],
   evening: [
-    { id: 'E_1820_1835', key: 'time_e_1' },
-    { id: 'E_1835_1850', key: 'time_e_2' },
-    { id: 'E_1850_1910', key: 'time_e_3' },
+    { id: 'E_1820_1835', key: 'time_e_1', intId: 201 },
+    { id: 'E_1835_1850', key: 'time_e_2', intId: 202 },
+    { id: 'E_1850_1910', key: 'time_e_3', intId: 203 },
   ],
   afternoon: [
-    { id: 'A_1410_1425', key: 'time_a_1' },
-    { id: 'A_1425_1440', key: 'time_a_2' },
-    { id: 'A_1440_1455', key: 'time_a_3' },
+    { id: 'A_1410_1425', key: 'time_a_1', intId: 301 },
+    { id: 'A_1425_1440', key: 'time_a_2', intId: 302 },
+    { id: 'A_1440_1455', key: 'time_a_3', intId: 303 },
   ]
 };
 
