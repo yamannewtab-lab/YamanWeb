@@ -56,7 +56,7 @@ const DayButton: React.FC<{
 const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, setIjazahApplication, setLastSubmissionType }) => {
     const [step, setStep] = useState(1);
     const [localDetails, setLocalDetails] = useState(ijazahApplication.fullDetails);
-    const [allBookings, setAllBookings] = useState<{ seat_number: number; booked_day: string; }[]>([]);
+    const [allBookings, setAllBookings] = useState<{ time_slot: string; day_number: number; }[]>([]);
     const [isLoadingSeats, setIsLoadingSeats] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [expandedBlock, setExpandedBlock] = useState<string | null>(null);
@@ -67,6 +67,14 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
         2: useRef<HTMLDivElement>(null),
         3: useRef<HTMLDivElement>(null),
         4: useRef<HTMLDivElement>(null),
+    };
+
+    const dayStringToNumber = (day: string): number => {
+        const map: { [key: string]: number } = {
+            'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3,
+            'Thursday': 4, 'Friday': 5, 'Saturday': 6
+        };
+        return map[day] ?? -1;
     };
 
     useEffect(() => {
@@ -87,14 +95,15 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
         setIsLoadingSeats(true);
         try {
             const { data, error } = await supabase
-                .from('seats')
-                .select('seat_number, booked_day');
+                .from('booking')
+                .select('time_slot, day_number')
+                .eq('is_booked', true);
 
             if (error) throw error;
             
             if (data) setAllBookings(data || []);
         } catch (error: any) {
-            console.error('Error fetching booked seats:', error.message || error);
+            console.error('Error fetching booked slots:', error.message || error);
         } finally {
             setIsLoadingSeats(false);
         }
@@ -102,18 +111,18 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
 
     useEffect(() => {
         fetchAllBookings();
-        const channel = supabase.channel('public-seats');
+        const channel = supabase.channel('public-booking');
         const subscription = channel
             .on(
                 'postgres_changes',
-                { event: 'INSERT', schema: 'public', table: 'seats' },
+                { event: 'INSERT', schema: 'public', table: 'booking' },
                 (payload) => {
-                    const newBooking = payload.new as { seat_number: number, booked_day: string };
-                    if (newBooking.seat_number && newBooking.booked_day) {
+                    const newBooking = payload.new as { time_slot: string, day_number: number, is_booked: boolean };
+                    if (newBooking.time_slot && newBooking.day_number !== undefined && newBooking.is_booked) {
                          setAllBookings(currentBookings =>
-                            currentBookings.some(b => b.seat_number === newBooking.seat_number && b.booked_day === newBooking.booked_day)
+                            currentBookings.some(b => b.time_slot === newBooking.time_slot && b.day_number === newBooking.day_number)
                                 ? currentBookings
-                                : [...currentBookings, newBooking]
+                                : [...currentBookings, { time_slot: newBooking.time_slot, day_number: newBooking.day_number }]
                         );
                     }
                 }
@@ -248,13 +257,13 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
             }
 
             const newBookings = daysToBook.map(day => ({
-                seat_number: selectedSlot.intId,
+                time_slot: selectedSlot.id,
+                day_number: dayStringToNumber(day),
                 is_booked: true,
-                booked_day: day,
             }));
 
             if (!isTestModeEnabled()) {
-                const { error } = await supabase.from('seats').insert(newBookings);
+                const { error } = await supabase.from('booking').insert(newBookings);
                 if (error) throw error;
             }
             
@@ -263,7 +272,7 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
             navigateTo('thanks');
 
         } catch (error: any) {
-            console.error('Error booking seat:', error.message || error);
+            console.error('Error booking slot:', error.message || error);
             alert('This time slot was just booked by someone else on one of your selected days. Please select another time or change your days.');
             fetchAllBookings();
         } finally {
@@ -354,7 +363,7 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                                  <div>
                                     <span className="block text-sm font-medium text-gray-300">{t('quizTimeLabel')}</span>
                                     <div className="mt-2 rounded-lg bg-gray-900 p-3 space-y-3">
-                                        {isLoadingSeats ? (<div className="space-y-3">{[...Array(3)].map((_, i) => (<div key={i} className="h-16 bg-gray-800 rounded-lg animate-pulse"></div>))}</div>) : (MAIN_TIME_BLOCKS.map(block => (<div key={block.id}><button type="button" onClick={() => setExpandedBlock(expandedBlock === block.id ? null : block.id)} className="w-full text-left p-4 rounded-lg bg-gray-700/50 hover:bg-gray-700 transition-all duration-200 ease-in-out shadow-sm flex justify-between items-center" aria-expanded={expandedBlock === block.id} aria-controls={`time-slots-${block.id}`}><div><h4 className="font-semibold text-gray-200">{t(block.key)}</h4><p className="text-xs text-gray-400">{t(block.timeRangeKey)}</p></div><svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 text-gray-400 transform transition-transform duration-300 ${expandedBlock === block.id ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></button>{expandedBlock === block.id && (<div id={`time-slots-${block.id}`} className="mt-2 p-3 bg-gray-700/30 rounded-lg"><div className="flex flex-col gap-2">{block.slots.map(slot => { const isBooked = selectedDays.length > 0 && allBookings.some(booking => booking.seat_number === slot.intId && selectedDays.includes(booking.booked_day)); return (<div key={slot.id}><input type="radio" id={`time-${slot.id}`} name="time" value={slot.id} required disabled={isBooked} className="sr-only peer" onChange={() => setSelectedTime(slot.id)} checked={selectedTime === slot.id} /><label htmlFor={`time-${slot.id}`} className={`block text-center py-3 px-2 rounded-lg cursor-pointer transition-all duration-200 ease-in-out border-2 text-xs sm:text-sm font-semibold ${isBooked ? 'bg-gray-800 text-gray-600 cursor-not-allowed line-through border-transparent' : 'bg-gray-700 text-gray-300 border-transparent hover:border-amber-400 peer-checked:bg-amber-500 peer-checked:text-white peer-checked:border-amber-600 peer-checked:shadow-lg'}`}>{t(slot.key)}</label></div>); })}</div></div>)}</div>)))}
+                                        {isLoadingSeats ? (<div className="space-y-3">{[...Array(3)].map((_, i) => (<div key={i} className="h-16 bg-gray-800 rounded-lg animate-pulse"></div>))}</div>) : (MAIN_TIME_BLOCKS.map(block => (<div key={block.id}><button type="button" onClick={() => setExpandedBlock(expandedBlock === block.id ? null : block.id)} className="w-full text-left p-4 rounded-lg bg-gray-700/50 hover:bg-gray-700 transition-all duration-200 ease-in-out shadow-sm flex justify-between items-center" aria-expanded={expandedBlock === block.id} aria-controls={`time-slots-${block.id}`}><div><h4 className="font-semibold text-gray-200">{t(block.key)}</h4><p className="text-xs text-gray-400">{t(block.timeRangeKey)}</p></div><svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 text-gray-400 transform transition-transform duration-300 ${expandedBlock === block.id ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></button>{expandedBlock === block.id && (<div id={`time-slots-${block.id}`} className="mt-2 p-3 bg-gray-700/30 rounded-lg"><div className="flex flex-col gap-2">{block.slots.map(slot => { const isBooked = selectedDays.length > 0 && selectedDays.some(day => allBookings.some(booking => booking.time_slot === slot.id && booking.day_number === dayStringToNumber(day))); return (<div key={slot.id}><input type="radio" id={`time-${slot.id}`} name="time" value={slot.id} required disabled={isBooked} className="sr-only peer" onChange={() => setSelectedTime(slot.id)} checked={selectedTime === slot.id} /><label htmlFor={`time-${slot.id}`} className={`block text-center py-3 px-2 rounded-lg cursor-pointer transition-all duration-200 ease-in-out border-2 text-xs sm:text-sm font-semibold ${isBooked ? 'bg-gray-800 text-gray-600 cursor-not-allowed line-through border-transparent' : 'bg-gray-700 text-gray-300 border-transparent hover:border-amber-400 peer-checked:bg-amber-500 peer-checked:text-white peer-checked:border-amber-600 peer-checked:shadow-lg'}`}>{t(slot.key)}</label></div>); })}</div></div>)}</div>)))}
                                     </div>
                                     <p className="text-center mt-2 text-xs text-gray-400">{t('timezoneNote')}</p>
                                 </div>

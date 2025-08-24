@@ -37,7 +37,7 @@ const TasmiQuizPage: React.FC<TasmiQuizPageProps> = ({ navigateTo, t }) => {
         name: '', age: '', whatsapp: '', sessions: 1, 
         portion: t('tasmiFatihahOption'), time: '', language: 'Arabic', journey: ''
     });
-    const [allBookings, setAllBookings] = useState<{ seat_number: number; booked_day: string | null; }[]>([]);
+    const [allBookings, setAllBookings] = useState<{ time_slot: string; day_number: number; }[]>([]);
     const [isLoadingSeats, setIsLoadingSeats] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [expandedBlock, setExpandedBlock] = useState<string | null>(null);
@@ -61,11 +61,11 @@ const TasmiQuizPage: React.FC<TasmiQuizPageProps> = ({ navigateTo, t }) => {
     const fetchAllBookings = async () => {
         setIsLoadingSeats(true);
         try {
-            const { data, error } = await supabase.from('seats').select('seat_number, booked_day');
+            const { data, error } = await supabase.from('booking').select('time_slot, day_number').eq('is_booked', true);
             if (error) throw error;
             if (data) setAllBookings(data || []);
         } catch (error: any) {
-            console.error('Error fetching booked seats:', error.message || error);
+            console.error('Error fetching booked slots:', error.message || error);
         } finally {
             setIsLoadingSeats(false);
         }
@@ -73,15 +73,15 @@ const TasmiQuizPage: React.FC<TasmiQuizPageProps> = ({ navigateTo, t }) => {
 
     useEffect(() => {
         fetchAllBookings();
-        const channel = supabase.channel('public-seats');
+        const channel = supabase.channel('public-booking');
         const subscription = channel
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'seats' }, (payload) => {
-                const newBooking = payload.new as { seat_number: number, booked_day: string };
-                if (newBooking.seat_number && newBooking.booked_day) {
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'booking' }, (payload) => {
+                const newBooking = payload.new as { time_slot: string, day_number: number, is_booked: boolean };
+                if (newBooking.time_slot && newBooking.day_number !== undefined && newBooking.is_booked) {
                     setAllBookings(currentBookings =>
-                        currentBookings.some(b => b.seat_number === newBooking.seat_number && b.booked_day === newBooking.booked_day)
+                        currentBookings.some(b => b.time_slot === newBooking.time_slot && b.day_number === newBooking.day_number)
                             ? currentBookings
-                            : [...currentBookings, newBooking]
+                            : [...currentBookings, { time_slot: newBooking.time_slot, day_number: newBooking.day_number }]
                     );
                 }
             }).subscribe();
@@ -141,13 +141,13 @@ const TasmiQuizPage: React.FC<TasmiQuizPageProps> = ({ navigateTo, t }) => {
         }
         
         try {
-            const dayOfWeek = new Date().toLocaleString('en-US', { weekday: 'long' });
+            const dayOfWeekNumber = new Date().getDay(); // 0=Sunday, 6=Saturday
 
             if (!isTestModeEnabled()) {
-                const { error: bookingError } = await supabase.from('seats').insert({ 
-                    seat_number: selectedSlot.intId, 
+                const { error: bookingError } = await supabase.from('booking').insert({ 
+                    time_slot: selectedSlot.id, 
+                    day_number: dayOfWeekNumber,
                     is_booked: true,
-                    booked_day: dayOfWeek
                 });
                 if (bookingError) throw bookingError;
             }
@@ -157,7 +157,7 @@ const TasmiQuizPage: React.FC<TasmiQuizPageProps> = ({ navigateTo, t }) => {
             await sendTasmiRequestToDiscord({ ...formData, time: preferredTimeText }, t);
             navigateTo('tasmiInfo');
         } catch (error: any) {
-            console.error('Error booking seat or submitting request:', error.message || error);
+            console.error('Error booking slot or submitting request:', error.message || error);
             alert('This time slot was just booked by someone else, or an error occurred. Please select another time and try again.');
             fetchAllBookings();
         } finally {
@@ -184,7 +184,7 @@ const TasmiQuizPage: React.FC<TasmiQuizPageProps> = ({ navigateTo, t }) => {
                         <Card title={t('cardTitleSessionDetails')}>
                             <div><label className="block text-sm font-medium text-gray-300">{t('tasmiWeeklyLabel')}</label><div className="mt-2 rounded-lg bg-gray-900 p-2"><div className="grid grid-cols-5 gap-2">{[1, 2, 3, 4, 5].map(day => (<div key={day}><input type="radio" id={`session-${day}`} name="sessions" value={day} checked={formData.sessions === day} onChange={() => setFormData(f => ({...f, sessions: day}))} className="sr-only peer" /><label htmlFor={`session-${day}`} className="block text-center py-2 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out peer-checked:bg-gray-700 peer-checked:shadow text-gray-400 peer-checked:text-gray-100"><span className="font-semibold">{day}</span></label></div>))}</div></div></div>
                             <div><label htmlFor="portion" className="block text-sm font-medium text-gray-300">{t('tasmiPortionLabel')}</label><select id="portion" name="portion" value={formData.portion} onChange={handleInputChange} className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-200"><option>{t('tasmiFatihahOption')}</option><option>{t('tasmiJuzAmmaOption')}</option></select></div>
-                            <div><span className="block text-sm font-medium text-gray-300">{t('tasmiTimeLabel')}</span><div className="mt-2 rounded-lg bg-gray-900 p-3 space-y-3">{isLoadingSeats ? (<div className="space-y-3">{[...Array(3)].map((_, i) => (<div key={i} className="h-16 bg-gray-800 rounded-lg animate-pulse"></div>))}</div>) : (MAIN_TIME_BLOCKS.map(block => (<div key={block.id}><button type="button" onClick={() => setExpandedBlock(b => b === block.id ? null : block.id)} className="w-full text-left p-4 rounded-lg bg-gray-700/50 hover:bg-gray-700 transition-all shadow-sm flex justify-between items-center"><><div><h4 className="font-semibold text-gray-200">{t(block.key)}</h4><p className="text-xs text-gray-400">{t(block.timeRangeKey)}</p></div><svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 text-stone-500 transform transition-transform ${expandedBlock === block.id ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></></button>{expandedBlock === block.id && (<div className="mt-2 p-3 bg-gray-700/30 rounded-lg"><div className="flex flex-col gap-2">{block.slots.map(slot => { const dayOfWeek = new Date().toLocaleString('en-US', { weekday: 'long' }); const isBooked = allBookings.some(booking => booking.seat_number === slot.intId && booking.booked_day === dayOfWeek); return (<div key={slot.id}><input type="radio" id={`time-${slot.id}`} name="time" value={slot.id} required disabled={isBooked} className="sr-only peer" onChange={() => setFormData(f => ({...f, time: slot.id}))} checked={formData.time === slot.id} /><label htmlFor={`time-${slot.id}`} className={`block text-center py-3 px-2 rounded-lg cursor-pointer transition-all border-2 text-sm font-semibold ${isBooked ? 'bg-gray-800 text-gray-600 cursor-not-allowed line-through border-transparent' : 'bg-gray-700 text-gray-300 border-transparent hover:border-amber-400 peer-checked:bg-amber-500 peer-checked:text-white peer-checked:border-amber-600 peer-checked:shadow-lg'}`}>{t(slot.key)}</label></div>); })}</div></div>)}</div>)))}</div><p className="text-center mt-2 text-xs text-gray-400">{t('timezoneNote')}</p></div>
+                            <div><span className="block text-sm font-medium text-gray-300">{t('tasmiTimeLabel')}</span><div className="mt-2 rounded-lg bg-gray-900 p-3 space-y-3">{isLoadingSeats ? (<div className="space-y-3">{[...Array(3)].map((_, i) => (<div key={i} className="h-16 bg-gray-800 rounded-lg animate-pulse"></div>))}</div>) : (MAIN_TIME_BLOCKS.map(block => (<div key={block.id}><button type="button" onClick={() => setExpandedBlock(b => b === block.id ? null : block.id)} className="w-full text-left p-4 rounded-lg bg-gray-700/50 hover:bg-gray-700 transition-all shadow-sm flex justify-between items-center"><><div><h4 className="font-semibold text-gray-200">{t(block.key)}</h4><p className="text-xs text-gray-400">{t(block.timeRangeKey)}</p></div><svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 text-stone-500 transform transition-transform ${expandedBlock === block.id ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></></button>{expandedBlock === block.id && (<div className="mt-2 p-3 bg-gray-700/30 rounded-lg"><div className="flex flex-col gap-2">{block.slots.map(slot => { const dayOfWeekNumber = new Date().getDay(); const isBooked = allBookings.some(booking => booking.time_slot === slot.id && booking.day_number === dayOfWeekNumber); return (<div key={slot.id}><input type="radio" id={`time-${slot.id}`} name="time" value={slot.id} required disabled={isBooked} className="sr-only peer" onChange={() => setFormData(f => ({...f, time: slot.id}))} checked={formData.time === slot.id} /><label htmlFor={`time-${slot.id}`} className={`block text-center py-3 px-2 rounded-lg cursor-pointer transition-all border-2 text-sm font-semibold ${isBooked ? 'bg-gray-800 text-gray-600 cursor-not-allowed line-through border-transparent' : 'bg-gray-700 text-gray-300 border-transparent hover:border-amber-400 peer-checked:bg-amber-500 peer-checked:text-white peer-checked:border-amber-600 peer-checked:shadow-lg'}`}>{t(slot.key)}</label></div>); })}</div></div>)}</div>)))}</div><p className="text-center mt-2 text-xs text-gray-400">{t('timezoneNote')}</p></div>
                             <div><span className="block text-sm font-medium text-gray-300">{t('quizLanguageLabel')}</span><div className="mt-2 grid grid-cols-2 gap-1 rounded-lg bg-gray-900 p-1"><div className="col-span-1"><input type="radio" id="lang-ar" name="language" value="Arabic" checked={formData.language === 'Arabic'} onChange={handleInputChange} className="sr-only peer"/><label htmlFor="lang-ar" className="block w-full text-center py-2 px-2 rounded-md cursor-pointer transition-colors text-gray-400 peer-checked:bg-gray-700 peer-checked:shadow dark:peer-checked:text-gray-100"><span className="font-semibold">{t('langArabic')}</span></label></div><div className="col-span-1"><input type="radio" id="lang-en" name="language" value="English" checked={formData.language === 'English'} onChange={handleInputChange} className="sr-only peer"/><label htmlFor="lang-en" className="block w-full text-center py-2 px-2 rounded-md cursor-pointer transition-colors text-gray-400 peer-checked:bg-gray-700 peer-checked:shadow dark:peer-checked:text-gray-100"><span className="font-semibold">{t('langEnglish')}</span></label></div><div className="col-span-2"><input type="radio" id="lang-id" name="language" value="Indonesian" checked={formData.language === 'Indonesian'} onChange={handleInputChange} className="sr-only peer"/><label htmlFor="lang-id" className="block w-full text-center py-2 px-2 rounded-md cursor-pointer transition-colors text-gray-400 peer-checked:bg-gray-700 peer-checked:shadow dark:peer-checked:text-gray-100"><span className="font-semibold">{t('langIndonesian')}</span></label></div></div></div>
                         </Card>
                     </div>
