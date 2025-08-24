@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { TIME_SLOTS, MAIN_TIME_BLOCKS } from '../constants';
+import { TIME_SLOTS, MAIN_TIME_BLOCKS, PATH_TRANSLATION_KEYS } from '../constants';
 
 interface Visitor {
     country: string;
@@ -44,6 +44,13 @@ interface GroupedBookings {
     [time_slot: string]: number[]; // array of day numbers
 }
 
+interface PaymentRecord {
+    id: number;
+    name: string;
+    paid_state: string;
+    last_paid: string | null;
+    next_paid: string | null;
+}
 
 interface AdminPanelProps {
     onClose: () => void;
@@ -54,7 +61,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [password, setPassword] = useState('');
     const [authError, setAuthError] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<'visitors' | 'feedbacks' | 'approvals' | 'settings' | 'bookedSeats'>('visitors');
+    const [activeTab, setActiveTab] = useState<'visitors' | 'feedbacks' | 'approvals' | 'payments' | 'settings' | 'bookedSeats'>('visitors');
 
     const [visitors, setVisitors] = useState<GroupedVisitors>({});
     const [visitorsLoading, setVisitorsLoading] = useState(true);
@@ -68,10 +75,15 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
     const [approvalsLoading, setApprovalsLoading] = useState(true);
     const [approvalsError, setApprovalsError] = useState<string | null>(null);
     const [processingId, setProcessingId] = useState<number | null>(null);
-
+    
     const [bookedSeats, setBookedSeats] = useState<GroupedBookings>({});
     const [bookedSeatsLoading, setBookedSeatsLoading] = useState(true);
     const [bookedSeatsError, setBookedSeatsError] = useState<string | null>(null);
+    
+    const [payments, setPayments] = useState<PaymentRecord[]>([]);
+    const [paymentsLoading, setPaymentsLoading] = useState(true);
+    const [paymentsError, setPaymentsError] = useState<string | null>(null);
+
 
     const [isTestMode, setIsTestMode] = useState<boolean>((window as any).maqraatIsTestMode || false);
 
@@ -89,7 +101,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
         } else {
              const processed = (data as RawApproval[] || []).map(raw => {
                 try {
-                    // Basic validation to ensure fields exist before parsing
                     if (!raw.requested_slots || !raw.application_data) {
                         throw new Error(`Missing data for approval ID ${raw.id}`);
                     }
@@ -109,7 +120,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
         }
         setApprovalsLoading(false);
     };
-
+    
     const fetchBookedSeats = async () => {
         setBookedSeatsLoading(true);
         setBookedSeatsError(null);
@@ -132,6 +143,24 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
             setBookedSeats(grouped);
         }
         setBookedSeatsLoading(false);
+    };
+    
+    const fetchPayments = async () => {
+        setPaymentsLoading(true);
+        setPaymentsError(null);
+        const { data, error } = await supabase
+            .from('passcodes')
+            .select('id, name, paid_state, last_paid, next_paid')
+            .eq('approved', true)
+            .order('name');
+        
+        if (error) {
+            console.error("Error fetching payments:", error.message);
+            setPaymentsError("Failed to fetch payment data.");
+        } else {
+            setPayments(data as PaymentRecord[] || []);
+        }
+        setPaymentsLoading(false);
     };
 
     useEffect(() => {
@@ -173,6 +202,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
             fetchFeedbacks();
         } else if (activeTab === 'approvals') {
             fetchApprovals();
+        } else if (activeTab === 'payments') {
+            fetchPayments();
         } else if (activeTab === 'bookedSeats') {
             fetchBookedSeats();
         }
@@ -200,11 +231,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
         }
         setProcessingId(null);
     };
-
+    
     const handleApprove = async (approval: ProcessedApproval) => {
         setProcessingId(approval.id);
         try {
-            // 1. Check for conflicts
             for (const slot of approval.slots) {
                 const { data, error } = await supabase.from('booking')
                     .select('id').eq('time_slot', slot.time_slot).eq('day_number', slot.day_number).eq('is_booked', true).limit(1);
@@ -214,12 +244,24 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
                 }
             }
 
-            // 2. If no conflicts, insert into booking table
             const newBookings = approval.slots.map(slot => ({ ...slot, is_booked: true }));
             const { error: insertError } = await supabase.from('booking').insert(newBookings);
             if (insertError) throw new Error(`Failed to book slot: ${insertError.message}`);
 
-            // 3. Update approval status
+            const { error: passcodeUpdateError } = await supabase
+                .from('passcodes')
+                .update({ 
+                    approved: true,
+                    paid_state: 'NOT PAID',
+                    date_approved: new Date().toISOString()
+                })
+                .eq('name', approval.name);
+
+            if (passcodeUpdateError) {
+                console.error(`Could not update passcode status: ${passcodeUpdateError.message}`);
+                alert(`Could not update passcode status for ${approval.name}. Please check manually.`);
+            }
+
             const { error: updateError } = await supabase.from('approvals').update({ status: 'approved' }).eq('id', approval.id);
             if (updateError) throw new Error(`Failed to update approval: ${updateError.message}`);
             
@@ -229,6 +271,32 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
         } catch (error: any) {
             alert(`Approval failed: ${error.message}`);
             if (error.message.includes('conflict')) fetchApprovals();
+        } finally {
+            setProcessingId(null);
+        }
+    };
+    
+     const handleMarkAsPaid = async (passcodeId: number) => {
+        setProcessingId(passcodeId);
+        try {
+            const lastPaidDate = new Date();
+            const nextPaidDate = new Date(lastPaidDate);
+            nextPaidDate.setMonth(nextPaidDate.getMonth() + 1);
+
+            const { error } = await supabase
+                .from('passcodes')
+                .update({
+                    paid_state: 'PAID',
+                    last_paid: lastPaidDate.toISOString(),
+                    next_paid: nextPaidDate.toISOString()
+                })
+                .eq('id', passcodeId);
+
+            if (error) throw error;
+            
+            await fetchPayments();
+        } catch (error: any) {
+            alert(`Failed to mark as paid: ${error.message}`);
         } finally {
             setProcessingId(null);
         }
@@ -260,13 +328,76 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
                             <button onClick={() => setActiveTab('visitors')} className={getTabClassName('visitors')}>Visitors</button>
                             <button onClick={() => setActiveTab('feedbacks')} className={getTabClassName('feedbacks')}>Feedbacks</button>
                             <button onClick={() => setActiveTab('approvals')} className={getTabClassName('approvals')}>Approvals</button>
+                            <button onClick={() => setActiveTab('payments')} className={getTabClassName('payments')}>{t('adminTabPayments')}</button>
                             <button onClick={() => setActiveTab('bookedSeats')} className={getTabClassName('bookedSeats')}>{t('adminTabBookedSeats')}</button>
                             <button onClick={() => setActiveTab('settings')} className={getTabClassName('settings')}>Settings</button>
                         </div>
                         <div className="overflow-y-auto custom-scrollbar pr-2 mt-4 flex-grow">
                             {activeTab === 'visitors' && (<div>{visitorsLoading ? <p>Loading visitors...</p> : visitorsError ? <p className="text-red-400">{visitorsError}</p> : <ul className="space-y-2">{Object.entries(visitors).sort((a,b) => b[1].count - a[1].count).map(([country, data]) => (<li key={country} className="bg-gray-700 rounded-md"><details><summary className="p-3 cursor-pointer flex justify-between items-center font-semibold list-none"><span>{country}</span><span className="text-sm bg-gray-600 px-2 py-0.5 rounded-full">{data.count}</span></summary><div className="p-3 border-t border-gray-600">{data.cities.length > 0 ? <ul className="list-disc list-inside pl-2 space-y-1 text-gray-300">{data.cities.sort().map((city, index) => city && <li key={index}>{city}</li>)}</ul> : <p className="text-gray-400 italic">No city data.</p>}</div></details></li>))}</ul>}</div>)}
                             {activeTab === 'feedbacks' && (<div>{feedbacksLoading ? <p>Loading feedbacks...</p> : feedbacksError ? <p className="text-red-400">{feedbacksError}</p> : <ul className="space-y-3">{feedbacks.map((fb, index) => (<li key={index} className="bg-gray-700 p-4 rounded-md shadow"><p className="text-gray-300 whitespace-pre-wrap">{fb.message}</p></li>))}</ul>}</div>)}
-                            {activeTab === 'approvals' && (<div>{approvalsLoading ? <p>Loading approvals...</p> : approvalsError ? <p className="text-red-400">{approvalsError}</p> : approvals.length === 0 ? <p>No pending approvals.</p> : <ul className="space-y-3">{approvals.map(approval => (<li key={approval.id} className="bg-gray-700/80 p-4 rounded-lg"><div className="flex justify-between items-start"><div><h4 className="font-bold text-lg">{approval.name}</h4><p className="text-sm text-amber-400">{approval.type} Application</p></div><div className="flex gap-2">{<button onClick={() => handleApprove(approval)} disabled={processingId===approval.id} className="bg-green-600 text-white px-3 py-1 rounded-md text-sm font-semibold hover:bg-green-500 disabled:bg-gray-500">Approve</button>}<button onClick={() => handleReject(approval.id)} disabled={processingId===approval.id} className="bg-red-600 text-white px-3 py-1 rounded-md text-sm font-semibold hover:bg-red-500 disabled:bg-gray-500">Reject</button></div></div><div className="mt-3 border-t border-gray-600 pt-3"><p className="font-semibold text-gray-300 text-sm mb-1">Requested Slots:</p><ul className="list-disc list-inside pl-2 space-y-1 text-sm">{approval.slots?.map((slot, i) => (<li key={i}>{t('day' + dayNumberToString(slot.day_number))} @ {t(timeSlotToKey(slot.time_slot))}</li>))}</ul></div><details className="mt-3"><summary className="cursor-pointer text-sm text-gray-400 hover:text-white">View Full Details</summary><pre className="mt-2 p-2 bg-gray-900 rounded-md text-xs overflow-x-auto custom-scrollbar"><code>{JSON.stringify(approval.data, null, 2)}</code></pre></details></li>))}</ul>}</div>)}
+                            {activeTab === 'approvals' && (<div>{approvalsLoading ? <p>Loading approvals...</p> : approvalsError ? <p className="text-red-400">{approvalsError}</p> : approvals.length === 0 ? <p>No pending approvals.</p> : <ul className="space-y-3">{approvals.map(approval => {
+                                const selectedDays = approval.data?.fullDetails?.selectedDays || approval.data?.selectedDays;
+                                return (
+                                <li key={approval.id} className="bg-gray-700/80 p-4 rounded-lg">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <h4 className="font-bold text-lg">{approval.name}</h4>
+                                            <p className="text-sm text-amber-400">{approval.type} Application</p>
+                                        </div>
+                                        <div className="flex gap-2">{<button onClick={() => handleApprove(approval)} disabled={processingId===approval.id} className="bg-green-600 text-white px-3 py-1 rounded-md text-sm font-semibold hover:bg-green-500 disabled:bg-gray-500">Approve</button>}<button onClick={() => handleReject(approval.id)} disabled={processingId===approval.id} className="bg-red-600 text-white px-3 py-1 rounded-md text-sm font-semibold hover:bg-red-500 disabled:bg-gray-500">Reject</button></div>
+                                    </div>
+                                    <div className="mt-3 border-t border-gray-600 pt-3">
+                                        {selectedDays && Array.isArray(selectedDays) && selectedDays.length > 0 && (
+                                            <div className="mb-3">
+                                                <p className="font-semibold text-gray-300 text-sm mb-1">selected_weekly:</p>
+                                                <p className="text-sm text-gray-200">{selectedDays.map(day => t(`day${day}`)).join(' - ')}</p>
+                                            </div>
+                                        )}
+                                        <p className="font-semibold text-gray-300 text-sm mb-1">Requested Slots:</p>
+                                        <ul className="list-disc list-inside pl-2 space-y-1 text-sm">{approval.slots?.map((slot, i) => (<li key={i}>{t('day' + dayNumberToString(slot.day_number))} @ {t(timeSlotToKey(slot.time_slot))}</li>))}</ul>
+                                    </div>
+                                    <details className="mt-3"><summary className="cursor-pointer text-sm text-gray-400 hover:text-white">View Full Details</summary><pre className="mt-2 p-2 bg-gray-900 rounded-md text-xs overflow-x-auto custom-scrollbar"><code>{JSON.stringify(approval.data, null, 2)}</code></pre></details>
+                                </li>
+                                )
+                            })}</ul>}</div>)}
+                             {activeTab === 'payments' && (
+                                <div>
+                                    {paymentsLoading ? <p>Loading payments...</p> :
+                                    paymentsError ? <p className="text-red-400">{paymentsError}</p> :
+                                    payments.length === 0 ? <p>No approved students found.</p> :
+                                    <ul className="space-y-3">
+                                        {payments.map(payment => (
+                                            <li key={payment.id} className="bg-gray-700/80 p-4 rounded-lg">
+                                                <div className="flex justify-between items-center">
+                                                    <h4 className="font-bold text-lg">{payment.name}</h4>
+                                                    {payment.paid_state === 'PAID' ? (
+                                                        <span className="text-sm bg-green-600 px-3 py-1 rounded-full font-semibold">{t('statusPaid')}</span>
+                                                    ) : (
+                                                        <button 
+                                                            onClick={() => handleMarkAsPaid(payment.id)} 
+                                                            disabled={processingId === payment.id}
+                                                            className="bg-blue-600 text-white px-3 py-1 rounded-md text-sm font-semibold hover:bg-blue-500 disabled:bg-gray-500"
+                                                        >
+                                                            {t('markAsPaid')}
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                <div className="mt-3 border-t border-gray-600 pt-3 text-sm text-gray-400">
+                                                    {payment.paid_state === 'PAID' && payment.last_paid && payment.next_paid ? (
+                                                        <div>
+                                                            <p>{t('paidOn').replace('{date}', new Date(payment.last_paid).toLocaleDateString())}</p>
+                                                            <p className="font-semibold text-gray-200">{t('nextPaymentDue').replace('{date}', new Date(payment.next_paid).toLocaleDateString())}</p>
+                                                        </div>
+                                                    ) : (
+                                                        <p className="font-semibold text-red-400">{t('statusUnpaid')}</p>
+                                                    )}
+                                                </div>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                    }
+                                </div>
+                            )}
                             {activeTab === 'bookedSeats' && (
                                 <div>
                                     {bookedSeatsLoading ? <p>Loading booked seats...</p> :

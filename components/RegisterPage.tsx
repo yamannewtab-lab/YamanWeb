@@ -1,14 +1,17 @@
 import React from 'react';
 import { Page, SubmissionType } from '../types';
 import { sendCourseRegistrationToDiscord } from '../discordService';
+import { supabase } from '../supabaseClient';
 
 interface RegisterPageProps {
     navigateTo: (page: Page) => void;
     t: (key: string) => string;
     setLastSubmissionType: (type: SubmissionType) => void;
+    setLastSubmittedName: (name: string) => void;
+    universalPasscode: string;
 }
 
-const RegisterPage: React.FC<RegisterPageProps> = ({ navigateTo, t, setLastSubmissionType }) => {
+const RegisterPage: React.FC<RegisterPageProps> = ({ navigateTo, t, setLastSubmissionType, setLastSubmittedName, universalPasscode }) => {
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -20,6 +23,22 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ navigateTo, t, setLastSubmi
         const source = formData.get('source') as string;
         const about = formData.get('about') as string;
 
+        // Store name and passcode
+        const { error: passcodeError } = await supabase
+            .from('passcodes')
+            .insert([{
+                name: name,
+                code: universalPasscode,
+                path: 'General Course Registration',
+                start_time_id: null,
+                selected_days: null
+            }]);
+
+        if (passcodeError) {
+            console.error("Failed to store passcode:", passcodeError.message, passcodeError.details);
+            // Non-critical error, so we continue
+        }
+
         try {
             await sendCourseRegistrationToDiscord({ name, age, whatsapp, source, about }, t);
         } catch (error) {
@@ -27,6 +46,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ navigateTo, t, setLastSubmi
             // We can decide to show an error to the user here, but for now we'll proceed
         }
 
+        setLastSubmittedName(name);
         setLastSubmissionType('free');
         navigateTo('thanks');
     };

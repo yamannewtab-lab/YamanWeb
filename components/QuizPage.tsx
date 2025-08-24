@@ -10,6 +10,8 @@ interface QuizPageProps {
     ijazahApplication: IjazahApplication;
     setIjazahApplication: React.Dispatch<React.SetStateAction<IjazahApplication>>;
     setLastSubmissionType: (type: SubmissionType) => void;
+    setLastSubmittedName: (name: string) => void;
+    universalPasscode: string;
 }
 
 const Card = ({ title, children }: { title: string, children: React.ReactNode }) => (
@@ -55,7 +57,7 @@ const DayButton: React.FC<{
     );
 });
 
-const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, setIjazahApplication, setLastSubmissionType }) => {
+const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, setIjazahApplication, setLastSubmissionType, setLastSubmittedName, universalPasscode }) => {
     const [step, setStep] = useState(1);
     const [localDetails, setLocalDetails] = useState(ijazahApplication.fullDetails);
     const [allBookings, setAllBookings] = useState<{ time_slot: string; day_number: number; }[]>([]);
@@ -285,7 +287,24 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                 const { error } = await supabase.from('approvals').insert([approvalRequest]);
                 if (error) throw error;
             }
+
+            // Store name and passcode with all details
+            const { error: passcodeError } = await supabase
+                .from('passcodes')
+                .insert([{ 
+                    name: localDetails.name, 
+                    code: universalPasscode,
+                    path: ijazahApplication.path,
+                    start_time_id: selectedTime,
+                    selected_days: daysToBook.join(', ')
+                }]);
             
+            if (passcodeError) {
+                console.error("Failed to store passcode:", passcodeError.message, passcodeError.details);
+                // Non-critical error
+            }
+            
+            setLastSubmittedName(localDetails.name || '');
             await sendIjazahApplicationToDiscord({ ...ijazahApplication, fullDetails: localDetails }, priceString, t);
             setLastSubmissionType('paid');
             navigateTo('thanks');

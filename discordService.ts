@@ -12,6 +12,7 @@ const WEBHOOK_URLS = {
     TAJWID: 'https://discord.com/api/webhooks/1407932319620137031/gYkAY-HsdOymfN5UH5Xg0szhESYwwtb-iOTs3G61dcVNKOaz90MfaZ20-kG1lxdcJpal',
     COURSE_REGISTRATION: 'https://discord.com/api/webhooks/1407929481943060521/ptt6k-9KH-ZoNsxdj6x1N0rUbIprbTYYiOwTl59gE9k6nFL93ZhYOlBJlljLXDXAKw5t',
     AI_QUESTIONS: 'https://discord.com/api/webhooks/1408380025983602688/9wlOyBOt0RYed0ftJVXjRhNelhcIjECYzKSOnIaa0JyxnSrCQYQ-W3geQrKcivpjsqfL',
+    FORGOT_PASSCODE: 'https://discord.com/api/webhooks/1409207667360010421/IY9TSrUhUniyhuLRVRtDDneMw-e_ozf8LKG7y7GelYlgM1A-96VK9mfA-srFSBMz8FtB',
 };
 
 type WebhookType = keyof typeof WEBHOOK_URLS;
@@ -70,6 +71,11 @@ interface CourseRegistration {
     whatsapp: string;
     source: string;
     about: string;
+}
+
+interface ForgotPasscodeRequest {
+    name: string;
+    whatsapp: string;
 }
 
 const getIjazahWebhookType = (path: string): WebhookType => {
@@ -357,5 +363,42 @@ export async function sendAiQuestionToDiscord(question: string) {
         }
     } catch (error) {
         console.error('Error sending AI question to Discord:', error);
+    }
+}
+
+/**
+ * Sends a "Forgot Passcode" request to Discord.
+ */
+export async function sendForgotPasscodeToDiscord(request: ForgotPasscodeRequest) {
+    const embed = {
+        title: isTestModeEnabled() ? "[TEST] User Forgot Passcode" : "User Forgot Passcode",
+        color: 15158332, // Red
+        fields: [
+            { name: "Name", value: request.name, inline: true },
+            { name: "WhatsApp", value: request.whatsapp, inline: true },
+        ],
+        description: "A user has requested assistance with their passcode.",
+        footer: { text: "Submitted via Maqra'at Al-Huda App" },
+        timestamp: new Date().toISOString()
+    };
+    
+    const payload = {
+        username: "Maqra'at Al-Huda Bot",
+        avatar_url: "https://i.imgur.com/uFPNd22.png",
+        embeds: [embed]
+    };
+
+    try {
+        const response = await fetch(getWebhookUrl('FORGOT_PASSCODE'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (!response.ok) {
+            const errorBody = await response.text();
+            console.error('Failed to send message to Discord:', response.status, response.statusText, errorBody);
+        }
+    } catch (error) {
+        console.error('Error sending message to Discord:', error);
     }
 }

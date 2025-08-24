@@ -1,53 +1,294 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Page } from '../types';
+import { supabase } from '../supabaseClient';
+import { TIME_SLOTS, PATH_TRANSLATION_KEYS } from '../constants';
+import { sendForgotPasscodeToDiscord } from '../discordService';
 
 interface JoinClassPageProps {
     navigateTo: (page: Page) => void;
     t: (key: string) => string;
 }
 
-const JoinClassPage: React.FC<JoinClassPageProps> = ({ navigateTo, t }) => {
-    const [passcode, setPasscode] = useState('');
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+interface ClassDetails {
+    name: string;
+    path: string;
+    start_time_id: string;
+    selected_days: string;
+    paid_state: string | null;
+    next_paid: string | null;
+    date_approved: string | null;
+}
 
-    const correctPasscode = '0000';
+// Helper to get current time in Jakarta (GMT+7)
+function getJakartaTime() {
+    const now = new Date();
+    const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
+    return new Date(utcTime + (3600000 * 7));
+}
+
+const dayStringToNumber = (day: string): number => {
+    const map: { [key: string]: number } = {
+        'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3,
+        'Thursday': 4, 'Friday': 5, 'Saturday': 6
+    };
+    return map[day] ?? -1;
+};
+
+const ClassDetailsView: React.FC<{ classDetails: ClassDetails; t: (key: string) => string; navigateTo: (page: Page) => void; }> = ({ classDetails, t, navigateTo }) => {
+    const [countdown, setCountdown] = useState<string>('');
+    const [expirationCountdown, setExpirationCountdown] = useState<string>('');
     const zoomLink = 'https://us05web.zoom.us/j/87607823870?pwd=b88XoZwoa7FnRphA2rb60yL5FbjXem.1';
 
-    const handlePasscodeSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    useEffect(() => {
+        const calculateNextSession = () => {
+            const { start_time_id, selected_days } = classDetails;
+            if (!start_time_id || !selected_days) return null;
+
+            const timeIdParts = start_time_id.split('_');
+            if (timeIdParts.length < 2) return null;
+
+            const timeStr = timeIdParts[1];
+            const startHour = parseInt(timeStr.substring(0, 2), 10);
+            const startMinute = parseInt(timeStr.substring(2, 4), 10);
+
+            const scheduledDays = selected_days.split(', ').map(day => dayStringToNumber(day.trim())).filter(d => d !== -1);
+            if (scheduledDays.length === 0) return null;
+            
+            const nowJakarta = getJakartaTime();
+            
+            // Check for the next session in the coming 7 days
+            for (let i = 0; i < 7; i++) {
+                const checkDate = new Date(nowJakarta);
+                checkDate.setDate(nowJakarta.getDate() + i);
+                
+                if (scheduledDays.includes(checkDate.getDay())) {
+                    const potentialSession = new Date(checkDate);
+                    potentialSession.setHours(startHour, startMinute, 0, 0);
+
+                    // A session's active window ends 16 minutes after its start time.
+                    // If this potential session has already ended, skip it and look for the next one.
+                    if (potentialSession.getTime() + (16 * 60 * 1000) < nowJakarta.getTime()) {
+                        continue;
+                    }
+                    
+                    // This is the next valid upcoming session
+                    return potentialSession;
+                }
+            }
+            return null; // No upcoming session found
+        };
+
+        const interval = setInterval(() => {
+            const nextSessionDate = calculateNextSession();
+            
+            if (nextSessionDate) {
+                const now = getJakartaTime();
+                const diff = nextSessionDate.getTime() - now.getTime();
+                
+                const sessionStartTime = nextSessionDate.getTime();
+                const sessionWindowEnd = sessionStartTime + 16 * 60 * 1000;
+                const sessionJoinTime = sessionStartTime - 5 * 60 * 1000;
+
+                // State 1: In the active session/join window
+                if (now.getTime() >= sessionJoinTime && now.getTime() < sessionWindowEnd) {
+                    const remaining = sessionWindowEnd - now.getTime();
+                    const minutes = Math.floor(remaining / (1000 * 60));
+                    const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+                    setCountdown(`${t('joinClassStartsNow')} (${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')})`);
+                
+                // State 2: Before the join window
+                } else if (diff > 0) {
+                    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                    setCountdown(`${days}d ${hours}h ${minutes}m ${seconds}s`);
+                
+                // State 3: Session has passed, but calculateNextSession hasn't found the next one yet (should be a transient state)
+                } else {
+                     setCountdown(t('joinClassNoUpcoming'));
+                }
+            } else {
+                setCountdown(t('joinClassNoUpcoming'));
+            }
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [classDetails, t]);
+
+    useEffect(() => {
+        if (classDetails.paid_state === 'NOT PAID' && classDetails.date_approved) {
+            const approvalDate = new Date(classDetails.date_approved);
+            const expirationDate = new Date(approvalDate);
+            expirationDate.setMonth(expirationDate.getMonth() + 1);
+
+            const interval = setInterval(() => {
+                const now = new Date();
+                const diff = expirationDate.getTime() - now.getTime();
+
+                if (diff <= 0) {
+                    setExpirationCountdown(t('cardExpired'));
+                    clearInterval(interval);
+                    return;
+                }
+
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+                setExpirationCountdown(`${days}d ${hours}h ${minutes}m ${seconds}s`);
+            }, 1000);
+
+            return () => clearInterval(interval);
+        }
+    }, [classDetails.paid_state, classDetails.date_approved, t]);
+
+    const timeSlot = Object.values(TIME_SLOTS).flat().find(s => s.id === classDetails.start_time_id);
+    const scheduledTime = timeSlot ? t(timeSlot.key) : 'N/A';
+    const programName = PATH_TRANSLATION_KEYS[classDetails.path] ? t(PATH_TRANSLATION_KEYS[classDetails.path]) : classDetails.path;
+
+    return (
+        <div className="page-transition">
+            <h2 className="text-3xl font-bold text-gray-100">{t('joinClassWelcomeTitle').replace('{name}', classDetails.name)}</h2>
+            <div className="mt-8 max-w-md mx-auto bg-gray-800/50 border border-amber-500/30 p-6 rounded-2xl shadow-lg">
+                <h3 className="text-xl font-bold text-gray-100 mb-6 border-b border-gray-700 pb-3">{t('joinClassDetailsTitle')}</h3>
+                <div className="space-y-4 text-left">
+                    <div>
+                        <p className="text-sm text-gray-400">{t('joinClassSelectedIjazah')}</p>
+                        <p className="font-semibold text-gray-200 text-lg">{programName}</p>
+                    </div>
+                    <div>
+                        <p className="text-sm text-gray-400">{t('joinClassSelectedTime')}</p>
+                        <p className="font-semibold text-gray-200 text-lg">{scheduledTime}</p>
+                    </div>
+                    {classDetails.selected_days && (
+                         <div>
+                            <p className="text-sm text-gray-400">{t('summaryPreferredDays')}</p>
+                            <p className="font-semibold text-gray-200 text-lg">
+                                {classDetails.selected_days.split(', ').map(day => t(`day${day}`)).join(' - ')}
+                            </p>
+                        </div>
+                    )}
+                    <div>
+                        <p className="text-sm text-gray-400">{t('joinClassNextSession')}</p>
+                        <p className="font-mono text-amber-400 text-2xl tracking-wider">{countdown}</p>
+                    </div>
+                    <div className="border-t border-gray-700 pt-4">
+                        <p className="text-sm text-gray-400">{t('joinClassPaymentStatus')}</p>
+                        {classDetails.paid_state === 'PAID' ? (
+                            <>
+                                <div className="text-lg font-bold p-2 rounded-md text-center bg-green-500/20 text-green-300">
+                                    {t('statusPaid')}
+                                </div>
+                                {classDetails.next_paid && (
+                                    <p className="text-center text-sm text-red-400 mt-2">
+                                        {t('nextPaymentDue').replace('{date}', new Date(classDetails.next_paid).toLocaleDateString())}
+                                    </p>
+                                )}
+                            </>
+                        ) : (
+                            <>
+                                <div className="text-lg font-bold p-2 rounded-md text-center bg-red-500/20 text-red-300">
+                                    {t('statusUnpaid')}
+                                </div>
+                                {expirationCountdown && (
+                                     <p className="text-center text-sm text-yellow-300 mt-2">
+                                        {t('cardExpirationInfo').replace('{time}', expirationCountdown)}
+                                    </p>
+                                )}
+                                <button
+                                    className="mt-4 w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300"
+                                >
+                                    {t('payNowButton')}
+                                </button>
+                            </>
+                        )}
+                    </div>
+                </div>
+                <div className="mt-6 bg-yellow-900/50 border border-yellow-500/30 p-3 rounded-lg text-center">
+                    <p className="text-sm font-semibold text-yellow-300">{t('joinClassZoomNote')}</p>
+                </div>
+                <a
+                    href={zoomLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-6 inline-block w-full bg-gradient-to-r from-blue-500 to-sky-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300"
+                >
+                    {t('joinClassJoinButton')}
+                </a>
+            </div>
+            <div className="mt-12 text-center">
+                <button onClick={() => navigateTo('home')} className="text-sm font-semibold text-gray-400 hover:text-amber-400 transition-colors">{t('backToHome')}</button>
+            </div>
+        </div>
+    );
+};
+
+const JoinClassPage: React.FC<JoinClassPageProps> = ({ navigateTo, t }) => {
+    const [name, setName] = useState('');
+    const [passcode, setPasscode] = useState('');
+    const [classDetails, setClassDetails] = useState<ClassDetails | null>(null);
+    const [error, setError] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [showForgotPasscodeForm, setShowForgotPasscodeForm] = useState(false);
+    const [forgotPasscodeSuccess, setForgotPasscodeSuccess] = useState(false);
+    const [forgotPasscodeName, setForgotPasscodeName] = useState('');
+    const [forgotPasscodeWhatsapp, setForgotPasscodeWhatsapp] = useState('');
+
+    const handleJoinSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        if (passcode === correctPasscode) {
-            setIsAuthenticated(true);
-            setError(null);
-        } else {
-            setError(t('joinClassInvalidPasscode'));
-            setPasscode('');
+        if (!name.trim() || !passcode.trim() || isLoading) return;
+
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            const { data, error: queryError } = await supabase
+                .from('passcodes')
+                .select('name, path, start_time_id, selected_days, paid_state, next_paid, date_approved')
+                .eq('name', name.trim())
+                .eq('code', passcode.trim())
+                .limit(1);
+
+            if (queryError) {
+                throw queryError;
+            }
+
+            if (data && data.length > 0) {
+                setClassDetails(data[0]);
+            } else {
+                setError(t('joinClassInvalidCredentials'));
+                setName('');
+                setPasscode('');
+            }
+        } catch (err: any) {
+            console.error("Error during class join authentication:", JSON.stringify(err, null, 2));
+            setError("An unexpected error occurred. Please try again.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
+    const handleForgotPasscodeSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (!forgotPasscodeName.trim() || !forgotPasscodeWhatsapp.trim()) return;
+
+        try {
+            await sendForgotPasscodeToDiscord({ 
+                name: forgotPasscodeName, 
+                whatsapp: forgotPasscodeWhatsapp 
+            });
+            setForgotPasscodeSuccess(true);
+            setShowForgotPasscodeForm(false);
+        } catch (err) {
+            console.error("Failed to send forgot passcode request", err);
         }
     };
 
-    if (isAuthenticated) {
-        return (
-            <div className="text-center page-transition">
-                <h2 className="text-3xl font-bold text-gray-100">{t('joinClassWelcomeTitle')}</h2>
-                <div className="mt-8 max-w-md mx-auto bg-gray-800 p-6 rounded-lg shadow-lg">
-                    <p className="text-gray-300">{t('joinClassWelcomeText')}</p>
-                    <div className="mt-6 bg-yellow-900/50 border border-yellow-500/30 p-3 rounded-lg text-center">
-                        <p className="text-sm font-semibold text-yellow-300">{t('joinClassZoomNote')}</p>
-                    </div>
-                    <a
-                        href={zoomLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-6 inline-block w-full bg-gradient-to-r from-blue-500 to-sky-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300"
-                    >
-                        {t('joinClassJoinButton')}
-                    </a>
-                </div>
-                 <div className="mt-12 text-center">
-                    <button onClick={() => navigateTo('home')} className="text-sm font-semibold text-gray-400 hover:text-amber-400 transition-colors">{t('backToHome')}</button>
-                </div>
-            </div>
-        );
+
+    if (classDetails) {
+        return <ClassDetailsView classDetails={classDetails} t={t} navigateTo={navigateTo} />;
     }
 
     return (
@@ -55,30 +296,117 @@ const JoinClassPage: React.FC<JoinClassPageProps> = ({ navigateTo, t }) => {
             <div className="text-center mb-8">
                 <h2 className="text-3xl font-bold text-gray-100">{t('joinClassPageTitle')}</h2>
             </div>
-            <form onSubmit={handlePasscodeSubmit} className="max-w-sm mx-auto">
-                <div className="space-y-4">
-                    <div>
-                        <label htmlFor="passcode" className="block text-sm font-medium text-gray-300 sr-only">{t('joinClassPasscodeLabel')}</label>
-                        <input
-                            type="password"
-                            id="passcode"
-                            name="passcode"
-                            value={passcode}
-                            onChange={(e) => setPasscode(e.target.value)}
-                            placeholder={t('joinClassPasscodeLabel')}
-                            required
-                            autoFocus
-                            className="mt-1 block w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-amber-500 focus:border-amber-500 text-gray-200 text-center text-lg tracking-widest"
-                        />
+            
+            {!showForgotPasscodeForm && !forgotPasscodeSuccess && (
+                 <form onSubmit={handleJoinSubmit} className="max-w-sm mx-auto">
+                    <div className="space-y-4">
+                        <div>
+                            <label htmlFor="name" className="block text-sm font-medium text-gray-300 sr-only">{t('joinClassNameLabel')}</label>
+                            <input
+                                type="text"
+                                id="name"
+                                name="name"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                placeholder={t('joinClassNameLabel')}
+                                required
+                                autoFocus
+                                className="mt-1 block w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-amber-500 focus:border-amber-500 text-gray-200 text-center text-lg"
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="passcode" className="block text-sm font-medium text-gray-300 sr-only">{t('joinClassPasscodeLabel')}</label>
+                            <input
+                                type="password"
+                                id="passcode"
+                                name="passcode"
+                                value={passcode}
+                                onChange={(e) => setPasscode(e.target.value)}
+                                placeholder={t('joinClassPasscodeLabel')}
+                                required
+                                className="mt-1 block w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-amber-500 focus:border-amber-500 text-gray-200 text-center text-lg tracking-widest"
+                            />
+                        </div>
+                         {error && (
+                             <div className="text-center pt-2">
+                                <p className="text-red-400 text-sm">{error}</p>
+                                <button 
+                                    type="button" 
+                                    onClick={() => {
+                                        setShowForgotPasscodeForm(true);
+                                        setError(null);
+                                    }} 
+                                    className="mt-2 text-sm font-semibold text-amber-400 hover:text-amber-300 underline"
+                                >
+                                    {t('forgotPasscodeLink')}
+                                </button>
+                            </div>
+                        )}
                     </div>
-                    {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+                    <div className="mt-6">
+                        <button 
+                            type="submit" 
+                            disabled={isLoading}
+                            className="w-full flex justify-center items-center bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300 ease-in-out disabled:opacity-60 disabled:cursor-wait"
+                        >
+                            {isLoading ? (
+                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                            ) : (
+                                t('joinClassSubmitButton')
+                            )}
+                        </button>
+                    </div>
+                </form>
+            )}
+
+            {showForgotPasscodeForm && (
+                <div className="max-w-sm mx-auto page-transition">
+                    <h3 className="text-xl font-bold text-center text-gray-100 mb-4">{t('forgotPasscodeTitle')}</h3>
+                    <form onSubmit={handleForgotPasscodeSubmit}>
+                        <div className="space-y-4">
+                            <div>
+                                <label htmlFor="forgot-name" className="sr-only">{t('forgotPasscodeNameLabel')}</label>
+                                <input
+                                    type="text"
+                                    id="forgot-name"
+                                    value={forgotPasscodeName}
+                                    onChange={(e) => setForgotPasscodeName(e.target.value)}
+                                    placeholder={t('forgotPasscodeNameLabel')}
+                                    required
+                                    className="mt-1 block w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-amber-500 focus:border-amber-500 text-gray-200 text-center"
+                                />
+                            </div>
+                            <div>
+                                <label htmlFor="forgot-whatsapp" className="sr-only">{t('forgotPasscodeWhatsappLabel')}</label>
+                                <input
+                                    type="tel"
+                                    id="forgot-whatsapp"
+                                    value={forgotPasscodeWhatsapp}
+                                    onChange={(e) => setForgotPasscodeWhatsapp(e.target.value)}
+                                    placeholder={t('forgotPasscodeWhatsappLabel')}
+                                    required
+                                    className="mt-1 block w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-amber-500 focus:border-amber-500 text-gray-200 text-center"
+                                />
+                            </div>
+                        </div>
+                        <div className="mt-6">
+                            <button type="submit" className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-3 px-6 rounded-lg">
+                                {t('forgotPasscodeSendButton')}
+                            </button>
+                        </div>
+                    </form>
                 </div>
-                <div className="mt-6">
-                    <button type="submit" className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300 ease-in-out">
-                        {t('joinClassSubmitButton')}
-                    </button>
+            )}
+            
+            {forgotPasscodeSuccess && (
+                <div className="max-w-sm mx-auto text-center page-transition bg-green-900/50 border border-green-500/30 p-6 rounded-lg">
+                    <p className="text-green-300 font-semibold">{t('forgotPasscodeSuccessMessage')}</p>
                 </div>
-            </form>
+            )}
+
              <div className="mt-12 text-center">
                 <button onClick={() => navigateTo('home')} className="text-sm font-semibold text-gray-400 hover:text-amber-400 transition-colors">{t('backToHome')}</button>
             </div>

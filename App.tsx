@@ -38,6 +38,8 @@ const App: React.FC = () => {
     const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
     const [isAiChatOpen, setIsAiChatOpen] = useState(false);
     const [lastSubmissionType, setLastSubmissionType] = useState<SubmissionType>(null);
+    const [lastSubmittedName, setLastSubmittedName] = useState<string>('');
+    const [universalPasscode] = useState(() => Math.floor(10000 + Math.random() * 90000).toString());
     const mainContentRef = useRef<HTMLElement>(null);
     
     const currentLanguage = LANGUAGES[currentLanguageIndex];
@@ -91,7 +93,7 @@ const App: React.FC = () => {
             case 'home':
                 return <HomePage navigateTo={navigateTo} t={t} />;
             case 'register':
-                return <RegisterPage navigateTo={navigateTo} t={t} setLastSubmissionType={setLastSubmissionType} />;
+                return <RegisterPage navigateTo={navigateTo} t={t} setLastSubmissionType={setLastSubmissionType} setLastSubmittedName={setLastSubmittedName} universalPasscode={universalPasscode} />;
             case 'courses':
                 return <CoursesPage navigateTo={navigateTo} t={t} onImageClick={setImageModalSrc} />;
             case 'ijazah':
@@ -99,15 +101,15 @@ const App: React.FC = () => {
             case 'ijazahPreview':
                 return <IjazahPreviewPage navigateTo={navigateTo} t={t} onImageClick={setImageModalSrc} />;
             case 'quiz':
-                return <QuizPage navigateTo={navigateTo} t={t} ijazahApplication={ijazahApplication} setIjazahApplication={setIjazahApplication} setLastSubmissionType={setLastSubmissionType} />;
+                return <QuizPage navigateTo={navigateTo} t={t} ijazahApplication={ijazahApplication} setIjazahApplication={setIjazahApplication} setLastSubmissionType={setLastSubmissionType} setLastSubmittedName={setLastSubmittedName} universalPasscode={universalPasscode} />;
             case 'tasmiQuiz':
                 return <TasmiQuizPage navigateTo={navigateTo} t={t} />;
             case 'tajwidImprovement':
-                return <TajwidQuizPage navigateTo={navigateTo} t={t} setLastSubmissionType={setLastSubmissionType} />;
+                return <TajwidQuizPage navigateTo={navigateTo} t={t} setLastSubmissionType={setLastSubmissionType} setLastSubmittedName={setLastSubmittedName} universalPasscode={universalPasscode} />;
             case 'tasmiInfo':
                 return <TasmiInfoPage navigateTo={navigateTo} t={t} />;
             case 'thanks':
-                return <ThanksPage navigateTo={navigateTo} t={t} registerAgainTarget={registerAgainTarget} ijazahApplication={ijazahApplication} lastSubmissionType={lastSubmissionType} />;
+                return <ThanksPage navigateTo={navigateTo} t={t} registerAgainTarget={registerAgainTarget} ijazahApplication={ijazahApplication} lastSubmissionType={lastSubmissionType} lastSubmittedName={lastSubmittedName} universalPasscode={universalPasscode} />;
             case 'about':
                 return <AboutPage navigateTo={navigateTo} t={t} />;
             case 'teachers':

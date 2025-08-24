@@ -8,6 +8,8 @@ interface TajwidQuizPageProps {
     navigateTo: (page: Page) => void;
     t: (key: string) => string;
     setLastSubmissionType: (type: SubmissionType) => void;
+    setLastSubmittedName: (name: string) => void;
+    universalPasscode: string;
 }
 
 interface TajwidFormData {
@@ -32,7 +34,14 @@ const Card = ({ title, children }: { title: string, children: React.ReactNode })
 );
 
 const FormProgress = ({ currentStep, totalSteps, t }: { currentStep: number, totalSteps: number, t: (key: string) => string }) => (
-    <div className="mb-6 text-center"><p className="text-sm font-semibold text-gray-400">{t('stepIndicator').replace('{current}', String(currentStep)).replace('{total}', String(totalSteps))}</p><div className="mt-2 flex justify-center items-center gap-2">{[...Array(totalSteps)].map((_, i) => (<div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i + 1 <= currentStep ? 'bg-amber-500' : 'bg-gray-600'}`} style={{ width: `${100 / totalSteps}%`}}></div>))}</div></div>
+    <div className="mb-6 text-center">
+        <p className="text-sm font-semibold text-gray-400">{t('stepIndicator').replace('{current}', String(currentStep)).replace('{total}', String(totalSteps))}</p>
+        <div className="mt-2 flex justify-center items-center gap-2">
+            {[...Array(totalSteps)].map((_, i) => (
+                <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i + 1 <= currentStep ? 'bg-amber-500' : 'bg-gray-600'}`} style={{ width: `${100 / totalSteps}%`}}></div>
+            ))}
+        </div>
+    </div>
 );
 
 const DayButton: React.FC<{
@@ -59,7 +68,7 @@ const DayButton: React.FC<{
 });
 
 
-const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t, setLastSubmissionType }) => {
+const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t, setLastSubmissionType, setLastSubmittedName, universalPasscode }) => {
     const weekdays = ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState<TajwidFormData>({
@@ -236,6 +245,22 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t, setLastS
                 if (error) throw error;
             }
 
+            // Store name and passcode with all details
+            const { error: passcodeError } = await supabase
+                .from('passcodes')
+                .insert([{ 
+                    name: formData.name, 
+                    code: universalPasscode,
+                    path: t('tajwidQuizTitle'),
+                    start_time_id: formData.time,
+                    selected_days: daysToBook.join(', ')
+                }]);
+
+            if (passcodeError) {
+                console.error("Failed to store passcode:", passcodeError.message, passcodeError.details);
+                // Non-critical error
+            }
+
             const preferredTimeText = t(selectedSlot.key);
             const priceText = TAJWID_IMPROVEMENT_PRICES[formData.daysPerWeek].toLocaleString() + " IDR";
 
@@ -246,6 +271,7 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t, setLastS
                 priceText,
             }, t);
             
+            setLastSubmittedName(formData.name);
             setLastSubmissionType('paid');
             navigateTo('thanks');
         } catch (error: any) {
@@ -345,7 +371,7 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t, setLastS
                                     </div>
                                     <div>
                                         <p className="text-sm text-gray-400">{t('summaryTime')}</p>
-                                        <p className="font-semibold text-gray-200">{formData.time ? t(TIME_SLOTS.morning.find(s=>s.id===formData.time)?.key || TIME_SLOTS.afternoon.find(s=>s.id===formData.time)?.key || TIME_SLOTS.evening.find(s=>s.id===formData.time)?.key || '') : ''}</p>
+                                        <p className="font-semibold text-gray-200">{formData.time ? t(Object.values(TIME_SLOTS).flat().find(s=>s.id===formData.time)?.key || '') : ''}</p>
                                     </div>
                                     <div>
                                         <p className="text-sm text-gray-400">{t('tajwidLevelLabel')}</p>
@@ -419,7 +445,7 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t, setLastS
                 <div className="mt-8 flex gap-4">
                     {step > 1 && <button type="button" onClick={handleBack} className="w-full bg-gray-700 text-gray-200 font-bold py-3 px-6 rounded-lg shadow-sm hover:shadow-md">{t('backButton')}</button>}
                     {step < 5 && <button type="button" onClick={handleNext} className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg">{t('nextButton')}</button>}
-                    {step === 5 && <button type="submit" disabled={isSubmitting || !formData.agreedToTerms} className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg disabled:opacity-50">{t('submitButton')}</button>}
+                    {step === 5 && <button type="submit" disabled={isSubmitting || !formData.agreedToTerms} className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg disabled:opacity-50">{isSubmitting ? '...' : t('submitButton')}</button>}
                 </div>
             </form>
             <div className="mt-12 text-center"><button onClick={() => navigateTo('home')} className="text-sm font-semibold text-gray-400 hover:text-amber-400">{t('backToHome')}</button></div>
