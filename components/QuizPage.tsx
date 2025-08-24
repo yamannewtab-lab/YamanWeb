@@ -41,7 +41,17 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
     const [expandedBlock, setExpandedBlock] = useState<string | null>(null);
     const [selectedTime, setSelectedTime] = useState<string | null>(null);
     const formRef = useRef<HTMLFormElement>(null);
-    const pageTopRef = useRef<HTMLDivElement>(null);
+
+    const scrollToTop = () => {
+        const mainContent = document.querySelector('main');
+        if (mainContent) {
+            mainContent.scrollTop = 0;
+        }
+    };
+    
+    useEffect(() => {
+        scrollToTop();
+    }, [step]);
 
     const fetchBookedSeats = async () => {
         setIsLoadingSeats(true);
@@ -77,20 +87,11 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                 }
             )
             .subscribe();
-
-        const timer = setTimeout(() => {
-            pageTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 100);
             
         return () => { 
             supabase.removeChannel(channel); 
-            clearTimeout(timer);
         };
     }, []);
-
-    const scrollToTop = () => {
-        pageTopRef.current?.scrollIntoView({ behavior: 'smooth' });
-    };
 
     const handleDaySelection = (days: number) => {
         setIjazahApplication(prev => ({ 
@@ -226,7 +227,6 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
             }));
 
             setStep(s => s + 1);
-            scrollToTop();
         } else {
             form.reportValidity();
         }
@@ -234,7 +234,6 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
 
     const handleBack = () => {
         setStep(s => s - 1);
-        scrollToTop();
     };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -299,7 +298,7 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
     const selectedDays = ijazahApplication.fullDetails.selectedDays || [];
 
     return (
-        <div ref={pageTopRef}>
+        <div>
             <div className="text-center mb-6">
                 <h2 className="text-3xl font-bold text-gray-100">{t('quizTitle')}</h2>
             </div>

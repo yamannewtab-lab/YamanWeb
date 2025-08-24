@@ -31,8 +31,18 @@ const TasmiQuizPage: React.FC<TasmiQuizPageProps> = ({ navigateTo, t }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [expandedBlock, setExpandedBlock] = useState<string | null>(null);
     const formRef = useRef<HTMLFormElement>(null);
-    const pageTopRef = useRef<HTMLDivElement>(null);
 
+    const scrollToTop = () => {
+        const mainContent = document.querySelector('main');
+        if (mainContent) {
+            mainContent.scrollTop = 0;
+        }
+    };
+
+    useEffect(() => {
+        scrollToTop();
+    }, [step]);
+    
     const fetchBookedSeats = async () => {
         setIsLoadingSeats(true);
         try {
@@ -57,20 +67,11 @@ const TasmiQuizPage: React.FC<TasmiQuizPageProps> = ({ navigateTo, t }) => {
                 }
             }).subscribe();
         
-        const timer = setTimeout(() => {
-            pageTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 100);
-
         return () => { 
             supabase.removeChannel(channel); 
-            clearTimeout(timer);
         };
     }, []);
     
-    const scrollToTop = () => {
-        pageTopRef.current?.scrollIntoView({ behavior: 'smooth' });
-    };
-
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({...prev, [name]: value}));
@@ -93,7 +94,6 @@ const TasmiQuizPage: React.FC<TasmiQuizPageProps> = ({ navigateTo, t }) => {
 
         if (areFieldsValid) {
             setStep(s => s + 1);
-            scrollToTop();
         } else {
             form.reportValidity();
         }
@@ -101,7 +101,6 @@ const TasmiQuizPage: React.FC<TasmiQuizPageProps> = ({ navigateTo, t }) => {
 
     const handleBack = () => {
         setStep(s => s - 1);
-        scrollToTop();
     };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -155,7 +154,7 @@ const TasmiQuizPage: React.FC<TasmiQuizPageProps> = ({ navigateTo, t }) => {
     );
 
     return (
-        <div ref={pageTopRef}>
+        <div>
             <div className="text-center mb-6"><h2 className="text-3xl font-bold text-gray-100">{t('tasmiQuizTitle')}</h2></div>
             <form ref={formRef} onSubmit={handleSubmit} className="max-w-2xl mx-auto">
                 <FormProgress currentStep={step} totalSteps={3} />

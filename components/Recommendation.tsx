@@ -14,7 +14,7 @@ const Recommendation: React.FC<RecommendationProps> = ({ onOpenAdminPanel }) => 
             .select('*', { count: 'exact', head: true });
 
         if (error) {
-            console.error("Error fetching visitor count:", error.message);
+            // console.error("Error fetching visitor count:", error.message);
             setViewers(null); 
         } else {
             setViewers(count);
@@ -35,7 +35,7 @@ const Recommendation: React.FC<RecommendationProps> = ({ onOpenAdminPanel }) => 
               isp: data.org
             };
           } catch (e: any) {
-            console.error("Could not get visitor info:", e.message);
+            // console.error("Could not get visitor info:", e.message);
             return null;
           }
         }
@@ -51,7 +51,7 @@ const Recommendation: React.FC<RecommendationProps> = ({ onOpenAdminPanel }) => 
                   // This will insert a new record or update the existing one based on the ip_address.
                   const { error } = await supabase.from("visitors").upsert([visitor], { onConflict: 'ip_address' });
                   if (error) {
-                    console.error("Error logging visitor:", error.message);
+                    // console.error("Error logging visitor:", error.message);
                   } else {
                     sessionStorage.setItem(visitorKey, 'true');
                   }

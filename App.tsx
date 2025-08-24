@@ -1,6 +1,6 @@
 
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Page, IjazahApplication, SubmissionType } from './types';
 import { LANGUAGE_DATA, LANGUAGES } from './constants';
 import Header from './components/Header';
@@ -37,6 +37,7 @@ const App: React.FC = () => {
     const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
     const [isAiChatOpen, setIsAiChatOpen] = useState(false);
     const [lastSubmissionType, setLastSubmissionType] = useState<SubmissionType>(null);
+    const mainContentRef = useRef<HTMLElement>(null);
     
     const currentLanguage = LANGUAGES[currentLanguageIndex];
 
@@ -45,6 +46,12 @@ const App: React.FC = () => {
         document.documentElement.lang = currentLanguage;
         document.documentElement.dir = currentLanguage === 'ar' ? 'rtl' : 'ltr';
     }, [currentLanguage]);
+
+    useEffect(() => {
+        if (mainContentRef.current) {
+            mainContentRef.current.scrollTop = 0;
+        }
+    }, [currentPage]);
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
@@ -72,7 +79,6 @@ const App: React.FC = () => {
             setRegisterAgainTarget('ijazah');
         }
         setCurrentPage(page);
-        window.scrollTo(0, 0);
     };
     
     const handleLanguageToggle = () => {
@@ -129,7 +135,7 @@ const App: React.FC = () => {
                             onNavigateHome={() => navigateTo('home')}
                             isHomePage={currentPage === 'home'}
                         />
-                        <main className={`overflow-y-auto ${currentPage === 'home' ? '' : 'p-6 sm:p-8 md:p-12'}`}>
+                        <main ref={mainContentRef} className={`overflow-y-auto ${currentPage === 'home' ? '' : 'p-6 sm:p-8 md:p-12'}`}>
                             <div key={currentPage}>
                                 {renderPage()}
                             </div>

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Page, IjazahApplication, SubmissionType } from '../types';
 import { IJAZAH_PRICES, PATH_TRANSLATION_KEYS } from '../constants';
 import { sendIjazahApplicationToDiscord } from '../discordService';
@@ -12,15 +12,21 @@ interface PaymentPageProps {
 
 const PaymentPage: React.FC<PaymentPageProps> = ({ navigateTo, t, ijazahApplication, setLastSubmissionType }) => {
     const [showPaymentDetails, setShowPaymentDetails] = useState(false);
-    const pageTopRef = useRef<HTMLDivElement>(null);
 
     const { path, daysPerWeek, fullDetails, memorization } = ijazahApplication;
     const price = IJAZAH_PRICES[path]?.[daysPerWeek] || 0;
     const priceString = `${price.toLocaleString()} IDR`;
     
     const scrollToTop = () => {
-        pageTopRef.current?.scrollIntoView({ behavior: 'smooth' });
+        const mainContent = document.querySelector('main');
+        if (mainContent) {
+            mainContent.scrollTop = 0;
+        }
     };
+
+    useEffect(() => {
+        scrollToTop();
+    }, [showPaymentDetails]);
 
     const handlePay = async () => {
         try {
@@ -35,17 +41,15 @@ const PaymentPage: React.FC<PaymentPageProps> = ({ navigateTo, t, ijazahApplicat
 
     const handleContinue = () => {
         setShowPaymentDetails(true);
-        scrollToTop();
     };
     
     const handleBack = () => {
         setShowPaymentDetails(false);
-        scrollToTop();
     };
 
 
     return (
-        <div className="py-10" ref={pageTopRef}>
+        <div className="py-10">
             {!showPaymentDetails ? (
                 <div key="info" className="page-transition text-center">
                     <h2 className="text-3xl font-bold text-gray-100">{t('ijazahInfoRequirementsTitle')}</h2>
