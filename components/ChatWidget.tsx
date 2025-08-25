@@ -40,10 +40,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ isOpen, setIsOpen, t }) => {
 
     useEffect(() => {
         if (isOpen && userName) {
-            let channel: import('@supabase/supabase-js').RealtimeChannel | null = null;
-
-            const setupChat = async () => {
-                // 1. Fetch existing messages first.
+            const fetchMessages = async () => {
                 const { data, error } = await supabase
                     .from('chat_messages')
                     .select('*')
@@ -56,38 +53,37 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ isOpen, setIsOpen, t }) => {
                 }
                 
                 setMessages(data || []);
-
-                // 2. After fetching is complete, subscribe to real-time updates.
-                channel = supabase.channel(`chat_${userName}`);
-                channel
-                    .on(
-                        'postgres_changes',
-                        { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `session_id=eq.${userName}` },
-                        (payload) => {
-                            const newMessage = payload.new as Message;
-                            // Use a callback to ensure we don't add duplicates if a message arrives while fetching
-                            setMessages(currentMessages => {
-                                if (currentMessages.some(m => m.id === newMessage.id)) {
-                                    return currentMessages;
-                                }
-                                return [...currentMessages, newMessage];
-                            });
-
-                            if (newMessage.sender_name === 'Admin') {
-                                setIsWaitingForReply(false);
-                            }
-                        }
-                    )
-                    .subscribe();
             };
 
-            setupChat();
+            fetchMessages();
+            const intervalId = setInterval(fetchMessages, 2000);
+
+            const channel = supabase.channel(`chat_${userName}`);
+            channel
+                .on(
+                    'postgres_changes',
+                    { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `session_id=eq.${userName}` },
+                    (payload) => {
+                        const newMessage = payload.new as Message;
+                        // Use a callback to ensure we don't add duplicates if a message arrives while fetching
+                        setMessages(currentMessages => {
+                            if (currentMessages.some(m => m.id === newMessage.id)) {
+                                return currentMessages;
+                            }
+                            return [...currentMessages, newMessage];
+                        });
+
+                        if (newMessage.sender_name === 'Admin') {
+                            setIsWaitingForReply(false);
+                        }
+                    }
+                )
+                .subscribe();
 
             // Cleanup function
             return () => {
-                if (channel) {
-                    supabase.removeChannel(channel);
-                }
+                clearInterval(intervalId);
+                supabase.removeChannel(channel);
             };
         }
     }, [isOpen, userName]);
@@ -137,16 +133,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ isOpen, setIsOpen, t }) => {
     };
 
     const WaitingIndicator = () => (
-        <div className="flex items-end gap-2 justify-start mt-2">
-            <div className="bg-gray-700 rounded-2xl rounded-bl-none shadow-sm p-3">
-                 <div className="flex items-center space-x-1.5">
-                    <div className="h-2 w-2 bg-stone-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                    <div className="h-2 w-2 bg-stone-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                    <div className="h-2 w-2 bg-stone-500 rounded-full animate-bounce"></div>
-                </div>
-                 <p className="text-xs text-gray-400 mt-2">{t('chatWaitingMessage')}</p>
-            </div>
-        </div>
+        <p className="text-center text-xs text-gray-400 italic py-2">{t('chatWaitingMessage')}</p>
     );
     
     return (
@@ -171,7 +158,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ isOpen, setIsOpen, t }) => {
                         className="absolute top-1/2 -translate-y-1/2 right-2 p-1.5 rounded-full text-gray-400 hover:text-white hover:bg-gray-600/50 transition-all"
                         aria-label="Close chat"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                     </button>
                 </div>
 

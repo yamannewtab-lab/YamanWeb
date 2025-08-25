@@ -310,12 +310,20 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
                 { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `session_id=eq.${selectedSessionId}` },
                 (payload) => {
                     const newMessage = payload.new as ChatMessage;
-                    setChatMessages(currentMessages => [...currentMessages, newMessage]);
+                    setChatMessages(currentMessages => {
+                        if (currentMessages.some(m => m.id === newMessage.id)) {
+                            return currentMessages;
+                        }
+                        return [...currentMessages, newMessage];
+                    });
                 }
             )
             .subscribe();
             
+        const intervalId = setInterval(fetchMessages, 2000);
+
         return () => { 
+            clearInterval(intervalId);
             supabase.removeChannel(channel); 
         };
     }, [selectedSessionId]);
