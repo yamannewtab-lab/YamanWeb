@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabaseClient';
 import { TIME_SLOTS, MAIN_TIME_BLOCKS, PATH_TRANSLATION_KEYS } from '../constants';
-import { AttendanceCalendar } from './JoinClassPage'; // Import the new component
+import { AttendanceCalendar } from './AttendanceCalendar';
 
 interface Visitor {
     country: string;
