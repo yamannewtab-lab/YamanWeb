@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Page } from '../types';
 import { GoogleGenAI, Chat } from '@google/genai';
 import { sendAiQuestionToDiscord } from '../discordService';
-import { API_KEY } from '../constants';
 
 interface AskAiPageProps {
     navigateTo: (page: Page) => void;
@@ -33,10 +32,7 @@ const AskAiPage: React.FC<AskAiPageProps> = ({ navigateTo, t }) => {
 
     const initializeChat = () => {
         try {
-            if (!API_KEY) {
-                throw new Error("API key is not configured in constants.ts");
-            }
-            const ai = new GoogleGenAI({ apiKey: API_KEY });
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             
             const systemInstruction = "You are a helpful and friendly AI assistant for 'Maqra'at Al-Huda', an online platform for learning the Qur'an. Your purpose is to answer user questions about the platform, its courses, Ijazah programs, teachers, schedules, and payment. Be polite, concise, and informative. The platform is run by Qari Yaman Darwish. Always answer in the language of the user's question.";
             

@@ -10,10 +10,9 @@
   },
   "dependencies": {
     "react": "^19.1.1",
+    "@google/genai": "^1.15.0",
     "react-dom": "^19.1.1",
-    "@supabase/supabase-js": "2",
-    "@google/generative-ai": "latest",
-    "@google/genai": "^1.15.0"
+    "@supabase/supabase-js": "^2.56.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

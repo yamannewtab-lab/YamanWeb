@@ -1,7 +1,5 @@
 import { Language, LanguageData, IjazahPrices } from './types';
 
-export const API_KEY = 'AIzaSyDYIxCWBClgnNT4rCyrwT3CDyL1ck_LZZ4';
-
 export const LOCK_CHECK = true;
 export const LANGUAGES: Language[] = ['en', 'ar', 'id'];
 
