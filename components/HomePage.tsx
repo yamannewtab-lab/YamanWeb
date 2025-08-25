@@ -1,3 +1,4 @@
+
 import React, { useRef } from 'react';
 import { Page } from '../types';
 import ActionCard from './ActionCard';
@@ -67,7 +68,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigateTo, t }) => {
         <div>
             <div 
                 className="relative h-[65vh] min-h-[500px] flex items-center justify-center text-center bg-cover bg-center" 
-                style={{ backgroundImage: "url('https://i.imgur.com/K9c7R6l.jpeg')" }}
+                style={{ backgroundImage: "url('https://i.imgur.com/rR0ktO0.jpeg')" }}
             >
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-black/40"></div>
                 <div className="relative z-10 px-4 py-8 sm:py-16">
