@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Page, AttendanceStatus, AttendanceRecord } from '../types';
+import { Page } from '../types';
 import { supabase } from '../supabaseClient';
 import { TIME_SLOTS, PATH_TRANSLATION_KEYS } from '../constants';
 import { sendForgotPasscodeToDiscord, sendTeacherNotification } from '../discordService';
-import { AttendanceCalendar } from './AttendanceCalendar';
 
 // --- Main Component Logic ---
 interface ClassDetails {
@@ -24,7 +23,6 @@ const ClassDetailsView: React.FC<{ classDetails: ClassDetails; t: (key: string) 
     const [currentMeetingUrl, setCurrentMeetingUrl] = useState<string>('#');
     const [showNotifyButton, setShowNotifyButton] = useState<boolean>(false);
     const [notificationStatus, setNotificationStatus] = useState<'ready' | 'notifying' | 'notified'>('ready');
-    const [showCalendar, setShowCalendar] = useState(false);
     
     useEffect(() => {
         const fetchMeetingLink = async () => {
@@ -153,13 +151,9 @@ const ClassDetailsView: React.FC<{ classDetails: ClassDetails; t: (key: string) 
             
             {classDetails.isApproved ? (
                 <div className="mt-6 max-w-md mx-auto space-y-4">
-                     <button onClick={() => setShowCalendar(p => !p)} className="w-full bg-gray-700/80 border border-gray-600 hover:border-amber-500 text-amber-300 font-bold py-2 px-4 rounded-lg transition-all duration-300">
-                        {showCalendar ? 'Hide Lessons' : t('viewLessonsButton')}
-                    </button>
-                    {showCalendar && <AttendanceCalendar studentName={classDetails.name} scheduledDays={classDetails.selected_days} isAdmin={false} t={t} />}
-                    <div className="flex items-stretch justify-center gap-4">
+                     <div className="flex items-stretch justify-center gap-4">
                         {showNotifyButton && (<button onClick={handleNotifyTeacher} disabled={notificationStatus !== 'ready'} className="flex-grow bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-60 disabled:cursor-wait">{notifyButtonText}</button>)}
-                        <div className="relative flex-shrink-0"><button onClick={() => onOpenChat(classDetails.name)} className="h-full bg-gray-700/80 text-gray-200 p-3 rounded-lg hover:bg-gray-600 transition-colors" aria-label="Open Live Chat"><svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg></button>{unreadCount > 0 && (<span className="absolute top-[-4px] right-[-4px] w-5 h-5 bg-red-500 rounded-full text-white text-[10px] flex items-center justify-center font-bold border-2 border-gray-800">{unreadCount}</span>)}</div>
+                        <div className="relative flex-shrink-0"><button onClick={() => onOpenChat(classDetails.name)} className="h-full bg-gray-700/80 text-gray-200 p-3 rounded-lg hover:bg-gray-600 transition-colors" aria-label="Open Live Chat"><svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg></button>{unreadCount > 0 && (<span className="absolute top-[-4px] right-[-4px] w-5 h-5 bg-red-500 rounded-full text-white text-[10px] flex items-center justify-center font-bold border-2 border-gray-800">{unreadCount}</span>)}</div>
                     </div>
                     <a href={currentMeetingUrl} target="_blank" rel="noopener noreferrer" className={`inline-block w-full text-center bg-gradient-to-r from-blue-500 to-sky-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300 ${currentMeetingUrl === '#' ? 'opacity-50 cursor-not-allowed' : ''}`} onClick={(e) => { if (currentMeetingUrl === '#') e.preventDefault(); }}>{t('joinClassJoinButton')}</a>
                 </div>

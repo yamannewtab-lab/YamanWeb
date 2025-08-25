@@ -315,12 +315,7 @@ export const LANGUAGE_DATA: LanguageData = {
         startChatButton: "Start Chat",
         chatPlaceholder: "Type your message...",
         chatWaitingMessage: "We'll reply as soon as we can.",
-        adminChatTab: "Chats",
-        viewLessonsButton: "View My Monthly Lessons",
-        adminTrackerTab: "Tracker",
-        attendanceTitle: "Monthly Attendance",
-        attendanceStatusAttended: "Attended",
-        attendanceStatusMissed: "Missed"
+        adminChatTab: "Chats"
     },
     'ar': {
         headerTitle: "مقرأة الهدى",
@@ -577,12 +572,7 @@ export const LANGUAGE_DATA: LanguageData = {
         startChatButton: "بدء الدردشة",
         chatPlaceholder: "اكتب رسالتك...",
         chatWaitingMessage: "سنرد عليك في أقرب وقت ممكن.",
-        adminChatTab: "المحادثات",
-        viewLessonsButton: "عرض دروسي الشهرية",
-        adminTrackerTab: "المتتبع",
-        attendanceTitle: "الحضور الشهري",
-        attendanceStatusAttended: "حضر",
-        attendanceStatusMissed: "غاب"
+        adminChatTab: "المحادثات"
     },
     'id': {
         headerTitle: "Maqra'at Al-Huda",
@@ -839,11 +829,6 @@ export const LANGUAGE_DATA: LanguageData = {
         startChatButton: "Mulai Obrolan",
         chatPlaceholder: "Ketik pesan Anda...",
         chatWaitingMessage: "Kami akan membalas sesegera mungkin.",
-        adminChatTab: "Obrolan",
-        viewLessonsButton: "Lihat Pelajaran Bulanan Saya",
-        adminTrackerTab: "Pelacak",
-        attendanceTitle: "Kehadiran Bulanan",
-        attendanceStatusAttended: "Hadir",
-        attendanceStatusMissed: "Absen"
+        adminChatTab: "Obrolan"
     }
 };
