@@ -277,7 +277,6 @@ export const LANGUAGE_DATA: LanguageData = {
         joinClassSubmitButton: "Enter Class",
         joinClassWelcomeTitle: "Welcome, {name}!",
         joinClassWelcomeText: "The session is about to begin. Please click the button below to join.",
-        joinClassZoomNote: "Make sure to have ZOOM downloaded",
         joinClassJoinButton: "Join Class Now",
         joinClassInvalidCredentials: "Invalid name or passcode. Please check your details and try again.",
         helloUser: "Hello, {name}!",
@@ -308,6 +307,7 @@ export const LANGUAGE_DATA: LanguageData = {
         forgotPasscodeWhatsappLabel: "Your WhatsApp Number",
         forgotPasscodeSendButton: "Send Request",
         forgotPasscodeSuccessMessage: "We will contact you as soon as possible.",
+        pendingApproval: "Pending approval from admin, stay tuned."
     },
     'ar': {
         headerTitle: "مقرأة الهدى",
@@ -524,7 +524,6 @@ export const LANGUAGE_DATA: LanguageData = {
         joinClassSubmitButton: "دخول الصف",
         joinClassWelcomeTitle: "أهلاً بك، {name}!",
         joinClassWelcomeText: "الجلسة على وشك البدء. يرجى الضغط على الزر أدناه للانضمام.",
-        joinClassZoomNote: "تأكد من تحميل برنامج ZOOM",
         joinClassJoinButton: "انضم إلى الصف الآن",
         joinClassInvalidCredentials: "الاسم أو رمز المرور غير صالح. يرجى التحقق من التفاصيل والمحاولة مرة أخرى.",
         helloUser: "مرحباً، {name}!",
@@ -555,6 +554,7 @@ export const LANGUAGE_DATA: LanguageData = {
         forgotPasscodeWhatsappLabel: "رقم الواتساب الخاص بك",
         forgotPasscodeSendButton: "إرسال الطلب",
         forgotPasscodeSuccessMessage: "سوف نتصل بك في أقرب وقت ممكن.",
+        pendingApproval: "في انتظار موافقة المسؤول، يرجى الانتظار."
     },
     'id': {
         headerTitle: "Maqra'at Al-Huda",
@@ -771,7 +771,6 @@ export const LANGUAGE_DATA: LanguageData = {
         joinClassSubmitButton: "Masuk Kelas",
         joinClassWelcomeTitle: "Selamat Datang, {name}!",
         joinClassWelcomeText: "Sesi akan segera dimulai. Silakan klik tombol di bawah untuk bergabung.",
-        joinClassZoomNote: "Pastikan Anda sudah mengunduh ZOOM",
         joinClassJoinButton: "Gabung Kelas Sekarang",
         joinClassInvalidCredentials: "Nama atau kode sandi tidak valid. Silakan periksa detail Anda dan coba lagi.",
         helloUser: "Halo, {name}!",
@@ -802,5 +801,6 @@ export const LANGUAGE_DATA: LanguageData = {
         forgotPasscodeWhatsappLabel: "Nomor WhatsApp Anda",
         forgotPasscodeSendButton: "Kirim Permintaan",
         forgotPasscodeSuccessMessage: "Kami akan menghubungi Anda sesegera mungkin.",
+        pendingApproval: "Menunggu persetujuan dari admin, harap tunggu."
     }
 };

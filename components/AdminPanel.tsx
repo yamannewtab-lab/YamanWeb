@@ -84,8 +84,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
     const [paymentsLoading, setPaymentsLoading] = useState(true);
     const [paymentsError, setPaymentsError] = useState<string | null>(null);
 
-
     const [isTestMode, setIsTestMode] = useState<boolean>((window as any).maqraatIsTestMode || false);
+    
+    const [approvalForLink, setApprovalForLink] = useState<ProcessedApproval | null>(null);
+    const [zoomLinkInput, setZoomLinkInput] = useState('');
+
 
     const fetchApprovals = async () => {
         setApprovalsLoading(true);
@@ -151,7 +154,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
         const { data, error } = await supabase
             .from('passcodes')
             .select('id, name, paid_state, last_paid, next_paid')
-            .eq('approved', true)
+            .not('date_approved', 'is', null)
             .order('name');
         
         if (error) {
@@ -223,7 +226,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
 
     const handleReject = async (approvalId: number) => {
         setProcessingId(approvalId);
-        const { error } = await supabase.from('approvals').update({ status: 'rejected' }).eq('id', approvalId);
+        const { error } = await supabase.from('approvals').delete().eq('id', approvalId);
         if (error) {
             alert(`Failed to reject: ${error.message}`);
         } else {
@@ -232,45 +235,74 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
         setProcessingId(null);
     };
     
-    const handleApprove = async (approval: ProcessedApproval) => {
-        setProcessingId(approval.id);
+    const handleApproveClick = (approval: ProcessedApproval) => {
+        setZoomLinkInput('');
+        setApprovalForLink(approval);
+    };
+
+    const handleCancelApproval = () => {
+        setApprovalForLink(null);
+        setZoomLinkInput('');
+    };
+
+    const handleConfirmApproval = async () => {
+        if (!approvalForLink) return;
+        
+        setProcessingId(approvalForLink.id);
         try {
-            for (const slot of approval.slots) {
-                const { data, error } = await supabase.from('booking')
-                    .select('id').eq('time_slot', slot.time_slot).eq('day_number', slot.day_number).eq('is_booked', true).limit(1);
-                if (error) throw new Error(`DB check failed: ${error.message}`);
-                if (data && data.length > 0) {
-                    throw new Error(`Slot conflict found for ${t('day' + dayNumberToString(slot.day_number))} at ${t(timeSlotToKey(slot.time_slot))}.`);
+            if (zoomLinkInput && zoomLinkInput.trim() !== '') {
+                // Fetch passcode
+                const { data: passcodeData, error: passcodeFetchError } = await supabase
+                    .from('passcodes')
+                    .select('code')
+                    .eq('name', approvalForLink.name)
+                    .limit(1)
+                    .single();
+
+                if (passcodeFetchError || !passcodeData) {
+                    throw new Error(`Could not fetch passcode for ${approvalForLink.name}. Error: ${passcodeFetchError?.message}`);
                 }
+
+                // Insert into links table
+                const { error: linkInsertError } = await supabase
+                    .from('links')
+                    .insert([{
+                        name: approvalForLink.name,
+                        passcode: passcodeData.code,
+                        zoom_link: zoomLinkInput.trim()
+                    }]);
+                
+                if (linkInsertError) {
+                    throw new Error(`Failed to store Zoom link: ${linkInsertError.message}`);
+                }
+
+                // Update the student's record in 'passcodes' to mark as approved.
+                const { error: passcodeUpdateError } = await supabase
+                    .from('passcodes')
+                    .update({ 
+                        date_approved: new Date().toISOString(),
+                        paid_state: 'unpaid',
+                    })
+                    .eq('name', approvalForLink.name);
+
+                if (passcodeUpdateError) {
+                    console.error(`CRITICAL: Failed to update passcode for ${approvalForLink.name}.`, passcodeUpdateError.message);
+                    throw new Error(`Could not update passcode status: ${passcodeUpdateError.message}. Please check manually.`);
+                }
+
+                // Update the approval request status to 'approved'.
+                const { error: updateError } = await supabase.from('approvals').update({ status: 'approved' }).eq('id', approvalForLink.id);
+                if (updateError) throw new Error(`Failed to update approval status: ${updateError.message}`);
+                
+                alert('Application approved and Zoom link stored successfully!');
+                setApprovals(current => current.filter(a => a.id !== approvalForLink.id));
+                handleCancelApproval();
+            } else {
+                alert('Please provide a valid Zoom link.');
             }
-
-            const newBookings = approval.slots.map(slot => ({ ...slot, is_booked: true }));
-            const { error: insertError } = await supabase.from('booking').insert(newBookings);
-            if (insertError) throw new Error(`Failed to book slot: ${insertError.message}`);
-
-            const { error: passcodeUpdateError } = await supabase
-                .from('passcodes')
-                .update({ 
-                    approved: true,
-                    paid_state: 'NOT PAID',
-                    date_approved: new Date().toISOString()
-                })
-                .eq('name', approval.name);
-
-            if (passcodeUpdateError) {
-                console.error(`Could not update passcode status: ${passcodeUpdateError.message}`);
-                alert(`Could not update passcode status for ${approval.name}. Please check manually.`);
-            }
-
-            const { error: updateError } = await supabase.from('approvals').update({ status: 'approved' }).eq('id', approval.id);
-            if (updateError) throw new Error(`Failed to update approval: ${updateError.message}`);
-            
-            alert('Application approved and slot booked successfully!');
-            setApprovals(current => current.filter(a => a.id !== approval.id));
-
         } catch (error: any) {
             alert(`Approval failed: ${error.message}`);
-            if (error.message.includes('conflict')) fetchApprovals();
+            fetchApprovals();
         } finally {
             setProcessingId(null);
         }
@@ -314,7 +346,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
     
     return (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="admin-panel-title">
-            <div className="bg-gray-800 rounded-lg shadow-xl p-6 max-w-2xl w-full text-gray-200 max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-gray-800 rounded-lg shadow-xl p-6 max-w-2xl w-full text-gray-200 max-h-[80vh] flex flex-col relative" onClick={(e) => e.stopPropagation()}>
                 <div className="flex justify-between items-center mb-4 pb-4 border-b border-gray-600">
                     <h2 id="admin-panel-title" className="text-2xl font-bold">Admin Panel</h2>
                     <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-700 transition-colors -m-2" aria-label="Close admin panel"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg></button>
@@ -344,13 +376,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
                                             <h4 className="font-bold text-lg">{approval.name}</h4>
                                             <p className="text-sm text-amber-400">{approval.type} Application</p>
                                         </div>
-                                        <div className="flex gap-2">{<button onClick={() => handleApprove(approval)} disabled={processingId===approval.id} className="bg-green-600 text-white px-3 py-1 rounded-md text-sm font-semibold hover:bg-green-500 disabled:bg-gray-500">Approve</button>}<button onClick={() => handleReject(approval.id)} disabled={processingId===approval.id} className="bg-red-600 text-white px-3 py-1 rounded-md text-sm font-semibold hover:bg-red-500 disabled:bg-gray-500">Reject</button></div>
+                                        <div className="flex gap-2">{<button onClick={() => handleApproveClick(approval)} disabled={processingId===approval.id} className="bg-green-600 text-white px-3 py-1 rounded-md text-sm font-semibold hover:bg-green-500 disabled:bg-gray-500">Approve</button>}<button onClick={() => handleReject(approval.id)} disabled={processingId===approval.id} className="bg-red-600 text-white px-3 py-1 rounded-md text-sm font-semibold hover:bg-red-500 disabled:bg-gray-500">Reject</button></div>
                                     </div>
                                     <div className="mt-3 border-t border-gray-600 pt-3">
                                         {selectedDays && Array.isArray(selectedDays) && selectedDays.length > 0 && (
                                             <div className="mb-3">
                                                 <p className="font-semibold text-gray-300 text-sm mb-1">selected_weekly:</p>
-                                                <p className="text-sm text-gray-200">{selectedDays.map(day => t(`day${day}`)).join(' - ')}</p>
+                                                <p className="text-sm text-gray-200">{selectedDays.map((day:string) => t(`day${day}`)).join(' - ')}</p>
                                             </div>
                                         )}
                                         <p className="font-semibold text-gray-300 text-sm mb-1">Requested Slots:</p>
@@ -437,9 +469,63 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
                                     }
                                 </div>
                             )}
-                            {activeTab === 'settings' && (<div className="space-y-4"><div><h3 className="text-lg font-bold mb-2">Application Settings</h3><div className="bg-gray-700 p-4 rounded-lg flex items-center justify-between"><div><label htmlFor="test-mode-toggle" className="font-semibold text-gray-200">Test Mode</label><p className="text-sm text-gray-400">Route all notifications to a test webhook.</p></div><label htmlFor="test-mode-toggle" className="flex items-center cursor-pointer"><div className="relative"><input type="checkbox" id="test-mode-toggle" className="sr-only" checked={isTestMode} onChange={() => {const newMode=!isTestMode; setIsTestMode(newMode); (window as any).maqraatIsTestMode=newMode;}}/><div className={`block w-14 h-8 rounded-full transition ${isTestMode ? 'bg-amber-500' : 'bg-gray-600'}`}></div><div className={`dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform ${isTestMode ? 'translate-x-6' : 'translate-x-0'}`}></div></div></label></div></div></div>)}
+                            {activeTab === 'settings' && (
+                                <div className="space-y-4">
+                                    <div>
+                                        <h3 className="text-lg font-bold mb-2">Application Settings</h3>
+                                        <div className="bg-gray-700 p-4 rounded-lg flex items-center justify-between">
+                                            <div>
+                                                <label htmlFor="test-mode-toggle" className="font-semibold text-gray-200">Test Mode</label>
+                                                <p className="text-sm text-gray-400">Route all notifications to a test webhook.</p>
+                                            </div>
+                                            <label htmlFor="test-mode-toggle" className="flex items-center cursor-pointer">
+                                                <div className="relative">
+                                                    <input type="checkbox" id="test-mode-toggle" className="sr-only" checked={isTestMode} onChange={() => {
+                                                        const newMode = !isTestMode;
+                                                        setIsTestMode(newMode);
+                                                        (window as any).maqraatIsTestMode = newMode;
+                                                    }} />
+                                                    <div className={`block w-14 h-8 rounded-full transition ${isTestMode ? 'bg-amber-500' : 'bg-gray-600'}`}></div>
+                                                    <div className={`dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform ${isTestMode ? 'translate-x-6' : 'translate-x-0'}`}></div>
+                                                </div>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </>
+                )}
+
+                {approvalForLink && (
+                    <div className="absolute inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-10 rounded-lg">
+                        <div className="bg-gray-700 p-6 rounded-lg shadow-xl w-full max-w-md">
+                            <h3 className="text-lg font-bold mb-4">Enter Zoom Link for {approvalForLink.name}</h3>
+                            <input
+                                type="url"
+                                value={zoomLinkInput}
+                                onChange={(e) => setZoomLinkInput(e.target.value)}
+                                placeholder="https://zoom.us/j/..."
+                                autoFocus
+                                className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-amber-500 focus:border-amber-500 text-gray-200"
+                            />
+                            <div className="mt-6 flex justify-end gap-4">
+                                <button
+                                    onClick={handleCancelApproval}
+                                    className="px-4 py-2 bg-gray-600 text-gray-200 font-semibold rounded-md hover:bg-gray-500"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleConfirmApproval}
+                                    disabled={processingId === approvalForLink.id || !zoomLinkInput.trim()}
+                                    className="px-4 py-2 bg-green-600 text-white font-semibold rounded-md hover:bg-green-500 disabled:bg-gray-500"
+                                >
+                                    {processingId === approvalForLink.id ? 'Processing...' : 'Confirm & Approve'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 )}
             </div>
         </div>

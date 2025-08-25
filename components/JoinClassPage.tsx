@@ -4,19 +4,16 @@ import { supabase } from '../supabaseClient';
 import { TIME_SLOTS, PATH_TRANSLATION_KEYS } from '../constants';
 import { sendForgotPasscodeToDiscord } from '../discordService';
 
-interface JoinClassPageProps {
-    navigateTo: (page: Page) => void;
-    t: (key: string) => string;
-}
-
 interface ClassDetails {
+    id: string; // passcode_id (uuid)
     name: string;
     path: string;
     start_time_id: string;
-    selected_days: string;
+    selected_days: string[];
     paid_state: string | null;
     next_paid: string | null;
     date_approved: string | null;
+    isApproved: boolean;
 }
 
 // Helper to get current time in Jakarta (GMT+7)
@@ -37,26 +34,42 @@ const dayStringToNumber = (day: string): number => {
 const ClassDetailsView: React.FC<{ classDetails: ClassDetails; t: (key: string) => string; navigateTo: (page: Page) => void; }> = ({ classDetails, t, navigateTo }) => {
     const [countdown, setCountdown] = useState<string>('');
     const [expirationCountdown, setExpirationCountdown] = useState<string>('');
-    const zoomLink = 'https://us05web.zoom.us/j/87607823870?pwd=b88XoZwoa7FnRphA2rb60yL5FbjXem.1';
+    const [currentMeetingUrl, setCurrentMeetingUrl] = useState<string>('#');
+    
+    useEffect(() => {
+        const fetchMeetingLink = async () => {
+            if (!classDetails.isApproved) return;
+            const { data, error } = await supabase
+                .from('links')
+                .select('zoom_link')
+                .eq('name', classDetails.name)
+                .limit(1)
+                .single();
+            
+            if (error) {
+                console.error("Failed to fetch meeting link:", error);
+            } else if (data && data.zoom_link) {
+                setCurrentMeetingUrl(data.zoom_link);
+            }
+        };
+        fetchMeetingLink();
+    }, [classDetails.name, classDetails.isApproved]);
+
 
     useEffect(() => {
         const calculateNextSession = () => {
             const { start_time_id, selected_days } = classDetails;
-            if (!start_time_id || !selected_days) return null;
-
-            const timeIdParts = start_time_id.split('_');
-            if (timeIdParts.length < 2) return null;
-
-            const timeStr = timeIdParts[1];
-            const startHour = parseInt(timeStr.substring(0, 2), 10);
-            const startMinute = parseInt(timeStr.substring(2, 4), 10);
-
-            const scheduledDays = selected_days.split(', ').map(day => dayStringToNumber(day.trim())).filter(d => d !== -1);
+            if (!start_time_id || !selected_days || selected_days.length === 0) return null;
+            
+            const timePart = start_time_id.split('_')[1];
+            if (!timePart || timePart.length < 4) return null;
+            
+            const [startHour, startMinute] = [parseInt(timePart.substring(0, 2)), parseInt(timePart.substring(2, 4))];
+            const scheduledDays = selected_days.map(day => dayStringToNumber(day.trim())).filter(d => d !== -1);
             if (scheduledDays.length === 0) return null;
             
             const nowJakarta = getJakartaTime();
             
-            // Check for the next session in the coming 7 days
             for (let i = 0; i < 7; i++) {
                 const checkDate = new Date(nowJakarta);
                 checkDate.setDate(nowJakarta.getDate() + i);
@@ -65,13 +78,10 @@ const ClassDetailsView: React.FC<{ classDetails: ClassDetails; t: (key: string) 
                     const potentialSession = new Date(checkDate);
                     potentialSession.setHours(startHour, startMinute, 0, 0);
 
-                    // A session's active window ends 16 minutes after its start time.
-                    // If this potential session has already ended, skip it and look for the next one.
                     if (potentialSession.getTime() + (16 * 60 * 1000) < nowJakarta.getTime()) {
                         continue;
                     }
                     
-                    // This is the next valid upcoming session
                     return potentialSession;
                 }
             }
@@ -89,14 +99,12 @@ const ClassDetailsView: React.FC<{ classDetails: ClassDetails; t: (key: string) 
                 const sessionWindowEnd = sessionStartTime + 16 * 60 * 1000;
                 const sessionJoinTime = sessionStartTime - 5 * 60 * 1000;
 
-                // State 1: In the active session/join window
                 if (now.getTime() >= sessionJoinTime && now.getTime() < sessionWindowEnd) {
                     const remaining = sessionWindowEnd - now.getTime();
                     const minutes = Math.floor(remaining / (1000 * 60));
                     const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
                     setCountdown(`${t('joinClassStartsNow')} (${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')})`);
                 
-                // State 2: Before the join window
                 } else if (diff > 0) {
                     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
                     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -104,7 +112,6 @@ const ClassDetailsView: React.FC<{ classDetails: ClassDetails; t: (key: string) 
                     const seconds = Math.floor((diff % (1000 * 60)) / 1000);
                     setCountdown(`${days}d ${hours}h ${minutes}m ${seconds}s`);
                 
-                // State 3: Session has passed, but calculateNextSession hasn't found the next one yet (should be a transient state)
                 } else {
                      setCountdown(t('joinClassNoUpcoming'));
                 }
@@ -117,7 +124,7 @@ const ClassDetailsView: React.FC<{ classDetails: ClassDetails; t: (key: string) 
     }, [classDetails, t]);
 
     useEffect(() => {
-        if (classDetails.paid_state === 'NOT PAID' && classDetails.date_approved) {
+        if (classDetails.isApproved && classDetails.paid_state === 'unpaid' && classDetails.date_approved) {
             const approvalDate = new Date(classDetails.date_approved);
             const expirationDate = new Date(approvalDate);
             expirationDate.setMonth(expirationDate.getMonth() + 1);
@@ -142,10 +149,10 @@ const ClassDetailsView: React.FC<{ classDetails: ClassDetails; t: (key: string) 
 
             return () => clearInterval(interval);
         }
-    }, [classDetails.paid_state, classDetails.date_approved, t]);
-
-    const timeSlot = Object.values(TIME_SLOTS).flat().find(s => s.id === classDetails.start_time_id);
-    const scheduledTime = timeSlot ? t(timeSlot.key) : 'N/A';
+    }, [classDetails.isApproved, classDetails.paid_state, classDetails.date_approved, t]);
+    
+    const timeSlotKey = classDetails.start_time_id ? Object.values(TIME_SLOTS).flat().find(s => s.id === classDetails.start_time_id)?.key : null;
+    const scheduledTime = timeSlotKey ? t(timeSlotKey) : classDetails.start_time_id;
     const programName = PATH_TRANSLATION_KEYS[classDetails.path] ? t(PATH_TRANSLATION_KEYS[classDetails.path]) : classDetails.path;
 
     return (
@@ -166,7 +173,7 @@ const ClassDetailsView: React.FC<{ classDetails: ClassDetails; t: (key: string) 
                          <div>
                             <p className="text-sm text-gray-400">{t('summaryPreferredDays')}</p>
                             <p className="font-semibold text-gray-200 text-lg">
-                                {classDetails.selected_days.split(', ').map(day => t(`day${day}`)).join(' - ')}
+                                {classDetails.selected_days.map(day => t(`day${day}`)).join(' - ')}
                             </p>
                         </div>
                     )}
@@ -174,49 +181,58 @@ const ClassDetailsView: React.FC<{ classDetails: ClassDetails; t: (key: string) 
                         <p className="text-sm text-gray-400">{t('joinClassNextSession')}</p>
                         <p className="font-mono text-amber-400 text-2xl tracking-wider">{countdown}</p>
                     </div>
-                    <div className="border-t border-gray-700 pt-4">
-                        <p className="text-sm text-gray-400">{t('joinClassPaymentStatus')}</p>
-                        {classDetails.paid_state === 'PAID' ? (
-                            <>
-                                <div className="text-lg font-bold p-2 rounded-md text-center bg-green-500/20 text-green-300">
-                                    {t('statusPaid')}
-                                </div>
-                                {classDetails.next_paid && (
-                                    <p className="text-center text-sm text-red-400 mt-2">
-                                        {t('nextPaymentDue').replace('{date}', new Date(classDetails.next_paid).toLocaleDateString())}
-                                    </p>
-                                )}
-                            </>
-                        ) : (
-                            <>
-                                <div className="text-lg font-bold p-2 rounded-md text-center bg-red-500/20 text-red-300">
-                                    {t('statusUnpaid')}
-                                </div>
-                                {expirationCountdown && (
-                                     <p className="text-center text-sm text-yellow-300 mt-2">
-                                        {t('cardExpirationInfo').replace('{time}', expirationCountdown)}
-                                    </p>
-                                )}
-                                <button
-                                    className="mt-4 w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300"
-                                >
-                                    {t('payNowButton')}
-                                </button>
-                            </>
-                        )}
+                     {classDetails.isApproved && (
+                        <div className="border-t border-gray-700 pt-4">
+                            <p className="text-sm text-gray-400">{t('joinClassPaymentStatus')}</p>
+                            {classDetails.paid_state === 'PAID' ? (
+                                <>
+                                    <div className="text-lg font-bold p-2 rounded-md text-center bg-green-500/20 text-green-300">
+                                        {t('statusPaid')}
+                                    </div>
+                                    {classDetails.next_paid && (
+                                        <p className="text-center text-sm text-red-400 mt-2">
+                                            {t('nextPaymentDue').replace('{date}', new Date(classDetails.next_paid).toLocaleDateString())}
+                                        </p>
+                                    )}
+                                </>
+                            ) : (
+                                <>
+                                    <div className="text-lg font-bold p-2 rounded-md text-center bg-red-500/20 text-red-300">
+                                        {t('statusUnpaid')}
+                                    </div>
+                                    {expirationCountdown && (
+                                        <p className="text-center text-sm text-yellow-300 mt-2">
+                                            {t('cardExpirationInfo').replace('{time}', expirationCountdown)}
+                                        </p>
+                                    )}
+                                    <button
+                                        className="mt-4 w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300"
+                                    >
+                                        {t('payNowButton')}
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                {classDetails.isApproved ? (
+                    <>
+                        <a
+                            href={currentMeetingUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`mt-6 inline-block w-full bg-gradient-to-r from-blue-500 to-sky-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300 ${currentMeetingUrl === '#' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            onClick={(e) => { if (currentMeetingUrl === '#') e.preventDefault(); }}
+                        >
+                            {t('joinClassJoinButton')}
+                        </a>
+                    </>
+                ) : (
+                    <div className="mt-6 text-center bg-gray-700 p-4 rounded-lg">
+                        <p className="font-semibold text-yellow-300">{t('pendingApproval')}</p>
                     </div>
-                </div>
-                <div className="mt-6 bg-yellow-900/50 border border-yellow-500/30 p-3 rounded-lg text-center">
-                    <p className="text-sm font-semibold text-yellow-300">{t('joinClassZoomNote')}</p>
-                </div>
-                <a
-                    href={zoomLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-6 inline-block w-full bg-gradient-to-r from-blue-500 to-sky-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300"
-                >
-                    {t('joinClassJoinButton')}
-                </a>
+                )}
             </div>
             <div className="mt-12 text-center">
                 <button onClick={() => navigateTo('home')} className="text-sm font-semibold text-gray-400 hover:text-amber-400 transition-colors">{t('backToHome')}</button>
@@ -224,6 +240,11 @@ const ClassDetailsView: React.FC<{ classDetails: ClassDetails; t: (key: string) 
         </div>
     );
 };
+
+interface JoinClassPageProps {
+    navigateTo: (page: Page) => void;
+    t: (key: string) => string;
+}
 
 const JoinClassPage: React.FC<JoinClassPageProps> = ({ navigateTo, t }) => {
     const [name, setName] = useState('');
@@ -246,21 +267,34 @@ const JoinClassPage: React.FC<JoinClassPageProps> = ({ navigateTo, t }) => {
         try {
             const { data, error: queryError } = await supabase
                 .from('passcodes')
-                .select('name, path, start_time_id, selected_days, paid_state, next_paid, date_approved')
+                .select('id, name, path, start_time_id, selected_days, paid_state, next_paid, date_approved')
                 .eq('name', name.trim())
                 .eq('code', passcode.trim())
-                .limit(1);
+                .limit(1)
+                .single();
 
             if (queryError) {
+                 if (queryError.code === 'PGRST116') { // "Not a single row was found"
+                    setError(t('joinClassInvalidCredentials'));
+                    setName('');
+                    setPasscode('');
+                    return;
+                }
                 throw queryError;
             }
 
-            if (data && data.length > 0) {
-                setClassDetails(data[0]);
+            if (data) {
+                setClassDetails({
+                    ...data,
+                    isApproved: !!data.date_approved,
+                    selected_days: typeof data.selected_days === 'string' 
+                        ? data.selected_days.split(',').map((d: string) => d.trim()) 
+                        : (data.selected_days || []),
+                });
             } else {
-                setError(t('joinClassInvalidCredentials'));
-                setName('');
-                setPasscode('');
+                 setError(t('joinClassInvalidCredentials'));
+                 setName('');
+                 setPasscode('');
             }
         } catch (err: any) {
             console.error("Error during class join authentication:", JSON.stringify(err, null, 2));
