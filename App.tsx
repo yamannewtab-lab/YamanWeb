@@ -39,12 +39,34 @@ const App: React.FC = () => {
     const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
     const [isAiChatOpen, setIsAiChatOpen] = useState(false);
     const [isChatOpen, setIsChatOpen] = useState(false);
+    const [chatUserName, setChatUserName] = useState<string>('');
+    const [unreadCount, setUnreadCount] = useState(0);
     const [lastSubmissionType, setLastSubmissionType] = useState<SubmissionType>(null);
     const [lastSubmittedName, setLastSubmittedName] = useState<string>('');
     const [universalPasscode] = useState(() => Math.floor(10000 + Math.random() * 90000).toString());
     const mainContentRef = useRef<HTMLElement>(null);
     
     const currentLanguage = LANGUAGES[currentLanguageIndex];
+    
+    useEffect(() => {
+        window.history.scrollRestoration = 'manual';
+    }, []);
+
+    useEffect(() => {
+        const currentCount = parseInt(localStorage.getItem('unread_messages_count') || '0', 10);
+        setUnreadCount(currentCount);
+
+        const handleStorageChange = (e: StorageEvent) => {
+            if (e.key === 'unread_messages_count') {
+                setUnreadCount(parseInt(e.newValue || '0', 10));
+            }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+        };
+    }, []);
 
     useEffect(() => {
         // Handle language and text direction
@@ -53,6 +75,7 @@ const App: React.FC = () => {
     }, [currentLanguage]);
 
     useEffect(() => {
+        window.scrollTo(0, 0);
         if (mainContentRef.current) {
             mainContentRef.current.scrollTop = 0;
         }
@@ -90,6 +113,13 @@ const App: React.FC = () => {
         setCurrentLanguageIndex((prevIndex) => (prevIndex + 1) % LANGUAGES.length);
     };
 
+    const handleOpenChat = (name: string) => {
+        localStorage.setItem('unread_messages_count', '0');
+        setUnreadCount(0);
+        setChatUserName(name);
+        setIsChatOpen(true);
+    };
+
     const renderPage = () => {
         switch (currentPage) {
             case 'home':
@@ -121,7 +151,7 @@ const App: React.FC = () => {
             case 'feedbackThanks':
                 return <FeedbackThanksPage navigateTo={navigateTo} t={t} />;
             case 'joinClass':
-                return <JoinClassPage navigateTo={navigateTo} t={t} />;
+                return <JoinClassPage navigateTo={navigateTo} t={t} onOpenChat={handleOpenChat} unreadCount={unreadCount} />;
             default:
                 return <HomePage navigateTo={navigateTo} t={t} />;
         }
@@ -141,7 +171,6 @@ const App: React.FC = () => {
                             onLanguageToggle={handleLanguageToggle}
                             onNavigateHome={() => navigateTo('home')}
                             isHomePage={currentPage === 'home'}
-                            onOpenChat={() => setIsChatOpen(true)}
                         />
                         <main ref={mainContentRef} className={`overflow-y-auto ${currentPage === 'home' ? '' : 'p-6 sm:p-8 md:p-12'}`}>
                             <div key={currentPage}>
@@ -158,7 +187,7 @@ const App: React.FC = () => {
                 {imageModalSrc && <ImageModal src={imageModalSrc} onClose={() => setImageModalSrc(null)} />}
                 {isAdminPanelOpen && <AdminPanel onClose={() => setIsAdminPanelOpen(false)} t={t} />}
                 {showAiChat && <AiChatWidget isOpen={isAiChatOpen} setIsOpen={setIsAiChatOpen} t={t} />}
-                <ChatWidget isOpen={isChatOpen} setIsOpen={setIsChatOpen} t={t} />
+                <ChatWidget isOpen={isChatOpen} setIsOpen={setIsChatOpen} t={t} userNameProp={chatUserName} />
             </div>
         </>
     );

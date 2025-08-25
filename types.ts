@@ -4,6 +4,15 @@ export type Language = 'en' | 'ar' | 'id';
 
 export type SubmissionType = 'paid' | 'free' | null;
 
+export type AttendanceStatus = 'attended' | 'missed';
+
+export interface AttendanceRecord {
+    id: number;
+    student_name: string;
+    lesson_date: string; // YYYY-MM-DD
+    status: AttendanceStatus;
+}
+
 export interface IjazahApplication {
     path: string;
     daysPerWeek: number;

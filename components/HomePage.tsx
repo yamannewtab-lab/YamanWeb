@@ -75,27 +75,20 @@ const HomePage: React.FC<HomePageProps> = ({ navigateTo, t }) => {
                     <p className="mt-4 max-w-3xl mx-auto text-lg text-stone-200 drop-shadow-md">
                         {t('heroSubtitle')}
                     </p>
-                    <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+                    <div className="mt-8 flex flex-row items-center justify-center gap-4">
                         <button 
                             onClick={handleScrollToSections}
-                            className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold text-lg rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 ease-in-out focus:outline-none focus:ring-4 focus:ring-amber-800"
+                            className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold text-base rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 ease-in-out focus:outline-none focus:ring-4 focus:ring-amber-800"
                         >
                             {t('heroButton')}
                         </button>
                          <button 
                             onClick={() => navigateTo('joinClass')}
-                            className="w-full sm:w-auto px-8 py-4 bg-gray-700/80 backdrop-blur-sm text-gray-200 font-bold text-lg rounded-lg shadow-md hover:shadow-lg hover:bg-gray-600 transform hover:scale-105 transition-all duration-300 ease-in-out focus:outline-none focus:ring-4 focus:ring-gray-600 border border-gray-600"
+                            className="w-full sm:w-auto px-6 py-3 bg-gray-700/80 backdrop-blur-sm text-gray-200 font-bold text-base rounded-lg shadow-md hover:shadow-lg hover:bg-gray-600 transform hover:scale-105 transition-all duration-300 ease-in-out focus:outline-none focus:ring-4 focus:ring-gray-600 border border-gray-600"
                         >
                             {t('heroJoinButton')}
                         </button>
                     </div>
-                </div>
-                 <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10">
-                    <button onClick={handleScrollToSections} className="animate-bounce p-2 group" aria-label="Scroll down">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white opacity-70 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                        </svg>
-                    </button>
                 </div>
             </div>
             

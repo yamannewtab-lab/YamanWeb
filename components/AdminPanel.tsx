@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabaseClient';
 import { TIME_SLOTS, MAIN_TIME_BLOCKS, PATH_TRANSLATION_KEYS } from '../constants';
+import { AttendanceCalendar } from './JoinClassPage'; // Import the new component
 
 interface Visitor {
     country: string;
@@ -65,6 +66,11 @@ interface ChatSession {
     created_at: string;
 }
 
+interface ApprovedStudent {
+    name: string;
+    selected_days: string[];
+}
+
 
 interface AdminPanelProps {
     onClose: () => void;
@@ -75,7 +81,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [password, setPassword] = useState('');
     const [authError, setAuthError] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<'visitors' | 'feedbacks' | 'approvals' | 'payments' | 'settings' | 'bookedSeats' | 'chats'>('visitors');
+    const [activeTab, setActiveTab] = useState<'visitors' | 'feedbacks' | 'approvals' | 'payments' | 'settings' | 'bookedSeats' | 'chats' | 'tracker'>('visitors');
 
     const [visitors, setVisitors] = useState<GroupedVisitors>({});
     const [visitorsLoading, setVisitorsLoading] = useState(true);
@@ -111,6 +117,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
     const [chatsLoading, setChatsLoading] = useState(true);
     const [chatsError, setChatsError] = useState<string | null>(null);
     const chatMessagesEndRef = useRef<null | HTMLDivElement>(null);
+    
+    // Tracker states
+    const [approvedStudents, setApprovedStudents] = useState<ApprovedStudent[]>([]);
+    const [selectedStudent, setSelectedStudent] = useState<ApprovedStudent | null>(null);
+    const [trackerLoading, setTrackerLoading] = useState(true);
+    const [trackerError, setTrackerError] = useState<string | null>(null);
 
 
     const fetchApprovals = async () => {
@@ -202,6 +214,27 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
         }
         setChatsLoading(false);
     };
+    
+    const fetchApprovedStudents = async () => {
+        setTrackerLoading(true);
+        setTrackerError(null);
+        setSelectedStudent(null);
+        const { data, error } = await supabase
+            .from('passcodes')
+            .select('name, selected_days')
+            .not('date_approved', 'is', null)
+            .order('name');
+        if (error) {
+            setTrackerError('Failed to fetch students.');
+        } else {
+            const students = data.map(s => ({
+                name: s.name,
+                selected_days: s.selected_days ? s.selected_days.split(',').map(d => d.trim()) : []
+            }));
+            setApprovedStudents(students);
+        }
+        setTrackerLoading(false);
+    };
 
     useEffect(() => {
         if (!isAuthenticated) return;
@@ -248,6 +281,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
             fetchBookedSeats();
         } else if (activeTab === 'chats') {
             fetchChatSessions();
+        } else if (activeTab === 'tracker') {
+            fetchApprovedStudents();
         }
     }, [isAuthenticated, activeTab]);
 
@@ -514,6 +549,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
                             <button onClick={() => setActiveTab('payments')} className={getTabClassName('payments')}>{t('adminTabPayments')}</button>
                             <button onClick={() => setActiveTab('bookedSeats')} className={getTabClassName('bookedSeats')}>{t('adminTabBookedSeats')}</button>
                             <button onClick={() => setActiveTab('chats')} className={getTabClassName('chats')}>{t('adminChatTab')}</button>
+                            <button onClick={() => setActiveTab('tracker')} className={getTabClassName('tracker')}>{t('adminTrackerTab')}</button>
                             <button onClick={() => setActiveTab('settings')} className={getTabClassName('settings')}>Settings</button>
                         </div>
                         <div className="overflow-y-auto custom-scrollbar pr-2 mt-4 flex-grow">
@@ -665,6 +701,36 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
                                             <div className="flex items-center justify-center h-full"><p className="text-gray-400">Select a conversation to start chatting.</p></div>
                                         )}
                                     </div>
+                                </div>
+                            )}
+                            {activeTab === 'tracker' && (
+                                <div>
+                                    {trackerLoading ? <p>Loading students...</p> : 
+                                    trackerError ? <p className="text-red-400">{trackerError}</p> : 
+                                    !selectedStudent ? (
+                                        <>
+                                            <h3 className="text-lg font-bold mb-3">Approved Students</h3>
+                                            <ul className="space-y-2">
+                                                {approvedStudents.map(student => (
+                                                    <li key={student.name}>
+                                                        <button onClick={() => setSelectedStudent(student)} className="w-full text-left p-3 bg-gray-700 rounded-md hover:bg-gray-600 transition-colors">
+                                                            {student.name}
+                                                        </button>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </>
+                                    ) : (
+                                        <div>
+                                            <button onClick={() => setSelectedStudent(null)} className="mb-4 text-sm font-semibold text-gray-400 hover:text-amber-400">&larr; Back to Student List</button>
+                                            <AttendanceCalendar 
+                                                studentName={selectedStudent.name} 
+                                                scheduledDays={selectedStudent.selected_days} 
+                                                isAdmin={true} 
+                                                t={t} 
+                                            />
+                                        </div>
+                                    )}
                                 </div>
                             )}
                             {activeTab === 'settings' && (

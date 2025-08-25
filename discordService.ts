@@ -1,6 +1,6 @@
 import { IjazahApplication } from './types';
 import { PATH_TRANSLATION_KEYS } from './constants';
-import { supabase } from './supabaseClient';
+import { supabase } from '../supabaseClient';
 
 const TEST_WEBHOOK_URL = 'https://discord.com/api/webhooks/1408380291806138459/YpjqWWyp8TnsjFHFuHf_w6wZJHRMYaGEgoQ3HxNHQspv4Q2rJiI1c_VYXmOtjcw4T4hp';
 
