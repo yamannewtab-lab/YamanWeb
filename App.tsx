@@ -22,6 +22,7 @@ import AdminPanel from './components/AdminPanel';
 import FeedbackPage from './components/FeedbackPage';
 import FeedbackThanksPage from './components/FeedbackThanksPage';
 import AiChatWidget from './components/AiChatWidget';
+import ChatWidget from './components/ChatWidget';
 import JoinClassPage from './components/JoinClassPage';
 
 const App: React.FC = () => {
@@ -37,6 +38,7 @@ const App: React.FC = () => {
     const [registerAgainTarget, setRegisterAgainTarget] = useState<Page>('ijazah');
     const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
     const [isAiChatOpen, setIsAiChatOpen] = useState(false);
+    const [isChatOpen, setIsChatOpen] = useState(false);
     const [lastSubmissionType, setLastSubmissionType] = useState<SubmissionType>(null);
     const [lastSubmittedName, setLastSubmittedName] = useState<string>('');
     const [universalPasscode] = useState(() => Math.floor(10000 + Math.random() * 90000).toString());
@@ -139,6 +141,7 @@ const App: React.FC = () => {
                             onLanguageToggle={handleLanguageToggle}
                             onNavigateHome={() => navigateTo('home')}
                             isHomePage={currentPage === 'home'}
+                            onOpenChat={() => setIsChatOpen(true)}
                         />
                         <main ref={mainContentRef} className={`overflow-y-auto ${currentPage === 'home' ? '' : 'p-6 sm:p-8 md:p-12'}`}>
                             <div key={currentPage}>
@@ -155,6 +158,7 @@ const App: React.FC = () => {
                 {imageModalSrc && <ImageModal src={imageModalSrc} onClose={() => setImageModalSrc(null)} />}
                 {isAdminPanelOpen && <AdminPanel onClose={() => setIsAdminPanelOpen(false)} t={t} />}
                 {showAiChat && <AiChatWidget isOpen={isAiChatOpen} setIsOpen={setIsAiChatOpen} t={t} />}
+                <ChatWidget isOpen={isChatOpen} setIsOpen={setIsChatOpen} t={t} />
             </div>
         </>
     );

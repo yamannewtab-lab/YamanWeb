@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Page } from '../types';
 import { supabase } from '../supabaseClient';
 import { TIME_SLOTS, PATH_TRANSLATION_KEYS } from '../constants';
-import { sendForgotPasscodeToDiscord } from '../discordService';
+import { sendForgotPasscodeToDiscord, sendTeacherNotification } from '../discordService';
 
 interface ClassDetails {
     id: string; // passcode_id (uuid)
@@ -35,6 +35,8 @@ const ClassDetailsView: React.FC<{ classDetails: ClassDetails; t: (key: string) 
     const [countdown, setCountdown] = useState<string>('');
     const [expirationCountdown, setExpirationCountdown] = useState<string>('');
     const [currentMeetingUrl, setCurrentMeetingUrl] = useState<string>('#');
+    const [showNotifyButton, setShowNotifyButton] = useState<boolean>(false);
+    const [notificationStatus, setNotificationStatus] = useState<'ready' | 'notifying' | 'notified'>('ready');
     
     useEffect(() => {
         const fetchMeetingLink = async () => {
@@ -94,6 +96,12 @@ const ClassDetailsView: React.FC<{ classDetails: ClassDetails; t: (key: string) 
             if (nextSessionDate) {
                 const now = getJakartaTime();
                 const diff = nextSessionDate.getTime() - now.getTime();
+
+                if (diff > 0 && diff <= 10 * 60 * 1000) {
+                    setShowNotifyButton(true);
+                } else {
+                    setShowNotifyButton(false);
+                }
                 
                 const sessionStartTime = nextSessionDate.getTime();
                 const sessionWindowEnd = sessionStartTime + 16 * 60 * 1000;
@@ -155,6 +163,29 @@ const ClassDetailsView: React.FC<{ classDetails: ClassDetails; t: (key: string) 
     const scheduledTime = timeSlotKey ? t(timeSlotKey) : classDetails.start_time_id;
     const programName = PATH_TRANSLATION_KEYS[classDetails.path] ? t(PATH_TRANSLATION_KEYS[classDetails.path]) : classDetails.path;
 
+    const handleNotifyTeacher = async () => {
+        if (notificationStatus !== 'ready') return;
+        setNotificationStatus('notifying');
+        try {
+            await sendTeacherNotification({
+                name: classDetails.name,
+                program: programName,
+                time: scheduledTime
+            });
+            setNotificationStatus('notified');
+        } catch (error) {
+            console.error("Failed to send notification:", error);
+            setNotificationStatus('ready'); // Reset on error
+        }
+    };
+    
+    let notifyButtonText = t('notifyTeacherButtonReady');
+    if (notificationStatus === 'notifying') {
+        notifyButtonText = t('notifyTeacherButtonNotifying');
+    } else if (notificationStatus === 'notified') {
+        notifyButtonText = t('notifyTeacherButtonNotified');
+    }
+
     return (
         <div className="page-transition">
             <h2 className="text-3xl font-bold text-gray-100">{t('joinClassWelcomeTitle').replace('{name}', classDetails.name)}</h2>
@@ -177,10 +208,12 @@ const ClassDetailsView: React.FC<{ classDetails: ClassDetails; t: (key: string) 
                             </p>
                         </div>
                     )}
-                    <div>
-                        <p className="text-sm text-gray-400">{t('joinClassNextSession')}</p>
-                        <p className="font-mono text-amber-400 text-2xl tracking-wider">{countdown}</p>
-                    </div>
+                    {classDetails.isApproved && (
+                        <div>
+                            <p className="text-sm text-gray-400">{t('joinClassNextSession')}</p>
+                            <p className="font-mono text-amber-400 text-2xl tracking-wider">{countdown}</p>
+                        </div>
+                    )}
                      {classDetails.isApproved && (
                         <div className="border-t border-gray-700 pt-4">
                             <p className="text-sm text-gray-400">{t('joinClassPaymentStatus')}</p>
@@ -218,11 +251,20 @@ const ClassDetailsView: React.FC<{ classDetails: ClassDetails; t: (key: string) 
 
                 {classDetails.isApproved ? (
                     <>
+                        {showNotifyButton && (
+                            <button
+                                onClick={handleNotifyTeacher}
+                                disabled={notificationStatus !== 'ready'}
+                                className="mt-6 inline-block w-full bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-60 disabled:cursor-wait"
+                            >
+                                {notifyButtonText}
+                            </button>
+                        )}
                         <a
                             href={currentMeetingUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className={`mt-6 inline-block w-full bg-gradient-to-r from-blue-500 to-sky-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300 ${currentMeetingUrl === '#' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            className={`inline-block w-full bg-gradient-to-r from-blue-500 to-sky-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300 ${currentMeetingUrl === '#' ? 'opacity-50 cursor-not-allowed' : ''} ${showNotifyButton ? 'mt-4' : 'mt-6'}`}
                             onClick={(e) => { if (currentMeetingUrl === '#') e.preventDefault(); }}
                         >
                             {t('joinClassJoinButton')}

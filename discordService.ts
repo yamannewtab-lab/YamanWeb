@@ -13,6 +13,8 @@ const WEBHOOK_URLS = {
     COURSE_REGISTRATION: 'https://discord.com/api/webhooks/1407929481943060521/ptt6k-9KH-ZoNsxdj6x1N0rUbIprbTYYiOwTl59gE9k6nFL93ZhYOlBJlljLXDXAKw5t',
     AI_QUESTIONS: 'https://discord.com/api/webhooks/1408380025983602688/9wlOyBOt0RYed0ftJVXjRhNelhcIjECYzKSOnIaa0JyxnSrCQYQ-W3geQrKcivpjsqfL',
     FORGOT_PASSCODE: 'https://discord.com/api/webhooks/1409207667360010421/IY9TSrUhUniyhuLRVRtDDneMw-e_ozf8LKG7y7GelYlgM1A-96VK9mfA-srFSBMz8FtB',
+    TEACHER_NOTIFICATION: 'https://discord.com/api/webhooks/1409537105243279442/3X_LGP8m9cPv3Z5Yp5uPkoFlNRjKIdQxkt_m7odxFfn3UFqtnB3D4QfoKhXqDp5nCPHm',
+    CHAT_MESSAGES: 'https://discord.com/api/webhooks/1409537105243279442/3X_LGP8m9cPv3Z5Yp5uPkoFlNRjKIdQxkt_m7odxFfn3UFqtnB3D4QfoKhXqDp5nCPHm', // Reusing teacher webhook, can be changed.
 };
 
 type WebhookType = keyof typeof WEBHOOK_URLS;
@@ -77,6 +79,18 @@ interface ForgotPasscodeRequest {
     name: string;
     whatsapp: string;
 }
+
+interface TeacherNotificationRequest {
+    name: string;
+    program: string;
+    time: string;
+}
+
+interface ChatMessageRequest {
+    name: string;
+    message: string;
+}
+
 
 const getIjazahWebhookType = (path: string): WebhookType => {
     switch (path) {
@@ -400,5 +414,81 @@ export async function sendForgotPasscodeToDiscord(request: ForgotPasscodeRequest
         }
     } catch (error) {
         console.error('Error sending message to Discord:', error);
+    }
+}
+
+/**
+ * Sends a notification to the teacher that a student is ready.
+ */
+export async function sendTeacherNotification(request: TeacherNotificationRequest) {
+    const embed = {
+        title: isTestModeEnabled() ? "[TEST] Student is Ready for Class" : "Student is Ready for Class",
+        color: 3447003, // Blue
+        fields: [
+            { name: "Student Name", value: request.name, inline: true },
+            { name: "Program", value: request.program, inline: true },
+            { name: "Scheduled Time", value: request.time, inline: false },
+        ],
+        description: `**${request.name}** has clicked the 'Notify Teacher' button and is waiting to start the session.`,
+        footer: { text: "Notification from Maqra'at Al-Huda App" },
+        timestamp: new Date().toISOString()
+    };
+    
+    const payload = {
+        username: "Class Notifier Bot",
+        avatar_url: "https://i.imgur.com/uFPNd22.png",
+        content: `🔔 Student **${request.name}** is ready for their session!`,
+        embeds: [embed]
+    };
+
+    try {
+        const response = await fetch(getWebhookUrl('TEACHER_NOTIFICATION'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (!response.ok) {
+            const errorBody = await response.text();
+            console.error('Failed to send teacher notification to Discord:', response.status, response.statusText, errorBody);
+        }
+    } catch (error) {
+        console.error('Error sending teacher notification to Discord:', error);
+    }
+}
+
+/**
+ * Sends a chat message to Discord.
+ */
+export async function sendChatMessageToDiscord(request: ChatMessageRequest) {
+    const embed = {
+        title: isTestModeEnabled() ? `[TEST] New Chat Message` : `New Chat Message`,
+        color: 3447003, // Blue
+        fields: [
+            { name: "From", value: request.name, inline: false },
+            { name: "Message", value: request.message, inline: false },
+        ],
+        footer: { text: "Sent via Maqra'at Al-Huda Live Chat" },
+        timestamp: new Date().toISOString()
+    };
+    
+    const payload = {
+        username: "Live Chat Bot",
+        avatar_url: "https://i.imgur.com/uFPNd22.png",
+        content: `💬 New message from **${request.name}**`,
+        embeds: [embed]
+    };
+
+    try {
+        const response = await fetch(getWebhookUrl('CHAT_MESSAGES'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (!response.ok) {
+            const errorBody = await response.text();
+            console.error('Failed to send chat message to Discord:', response.status, response.statusText, errorBody);
+        }
+    } catch (error) {
+        console.error('Error sending chat message to Discord:', error);
     }
 }

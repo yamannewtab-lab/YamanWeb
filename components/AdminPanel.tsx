@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabaseClient';
 import { TIME_SLOTS, MAIN_TIME_BLOCKS, PATH_TRANSLATION_KEYS } from '../constants';
 
@@ -52,6 +52,20 @@ interface PaymentRecord {
     next_paid: string | null;
 }
 
+interface ChatMessage {
+    id: number;
+    created_at: string;
+    session_id: string;
+    sender_name: string;
+    message: string;
+}
+
+interface ChatSession {
+    session_id: string;
+    created_at: string;
+}
+
+
 interface AdminPanelProps {
     onClose: () => void;
     t: (key: string) => string;
@@ -61,7 +75,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [password, setPassword] = useState('');
     const [authError, setAuthError] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<'visitors' | 'feedbacks' | 'approvals' | 'payments' | 'settings' | 'bookedSeats'>('visitors');
+    const [activeTab, setActiveTab] = useState<'visitors' | 'feedbacks' | 'approvals' | 'payments' | 'settings' | 'bookedSeats' | 'chats'>('visitors');
 
     const [visitors, setVisitors] = useState<GroupedVisitors>({});
     const [visitorsLoading, setVisitorsLoading] = useState(true);
@@ -88,6 +102,15 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
     
     const [approvalForLink, setApprovalForLink] = useState<ProcessedApproval | null>(null);
     const [zoomLinkInput, setZoomLinkInput] = useState('');
+
+    // Chat states
+    const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
+    const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+    const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+    const [adminMessage, setAdminMessage] = useState('');
+    const [chatsLoading, setChatsLoading] = useState(true);
+    const [chatsError, setChatsError] = useState<string | null>(null);
+    const chatMessagesEndRef = useRef<null | HTMLDivElement>(null);
 
 
     const fetchApprovals = async () => {
@@ -166,6 +189,20 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
         setPaymentsLoading(false);
     };
 
+    const fetchChatSessions = async () => {
+        setChatsLoading(true);
+        setChatsError(null);
+        const { data, error } = await supabase.from('chat_messages').select('session_id, created_at').order('created_at', { ascending: false });
+        if (error) {
+            setChatsError("Failed to fetch chat sessions.");
+            console.error(error);
+        } else if (data) {
+            const uniqueSessions = [...new Map((data as ChatSession[]).map(item => [item.session_id, item])).values()];
+            setChatSessions(uniqueSessions);
+        }
+        setChatsLoading(false);
+    };
+
     useEffect(() => {
         if (!isAuthenticated) return;
 
@@ -209,6 +246,35 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
             fetchPayments();
         } else if (activeTab === 'bookedSeats') {
             fetchBookedSeats();
+        } else if (activeTab === 'chats') {
+            fetchChatSessions();
+        }
+    }, [isAuthenticated, activeTab]);
+
+    // Real-time listener for new chat sessions
+    useEffect(() => {
+        if (isAuthenticated && activeTab === 'chats') {
+            const chatListener = supabase.channel('public-chat-messages-listener')
+                .on(
+                    'postgres_changes',
+                    { event: 'INSERT', schema: 'public', table: 'chat_messages' },
+                    (payload) => {
+                        const newMessage = payload.new as ChatMessage;
+                        setChatSessions(currentSessions => {
+                             const existingSessionIndex = currentSessions.findIndex(s => s.session_id === newMessage.session_id);
+                             const filteredSessions = existingSessionIndex > -1
+                                 ? currentSessions.filter((_, index) => index !== existingSessionIndex)
+                                 : currentSessions;
+
+                             const updatedSession = { session_id: newMessage.session_id, created_at: newMessage.created_at };
+                             return [updatedSession, ...filteredSessions];
+                        });
+                    }
+                ).subscribe();
+
+            return () => {
+                supabase.removeChannel(chatListener);
+            };
         }
     }, [isAuthenticated, activeTab]);
     
@@ -217,6 +283,46 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
         window.addEventListener('keydown', handleEsc);
         return () => window.removeEventListener('keydown', handleEsc);
     }, [onClose]);
+
+    // Effect for real-time chat messages
+    useEffect(() => {
+        if (!selectedSessionId) return;
+
+        const fetchMessages = async () => {
+            const { data, error } = await supabase
+                .from('chat_messages')
+                .select('*')
+                .eq('session_id', selectedSessionId)
+                .order('created_at', { ascending: true });
+            if (error) {
+                console.error("Error fetching chat messages:", error);
+                setChatsError("Failed to load messages.");
+            } else {
+                setChatMessages(data || []);
+            }
+        };
+        fetchMessages();
+
+        const channel = supabase.channel(`chat_${selectedSessionId}`);
+        const subscription = channel
+            .on(
+                'postgres_changes',
+                { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `session_id=eq.${selectedSessionId}` },
+                (payload) => {
+                    const newMessage = payload.new as ChatMessage;
+                    setChatMessages(currentMessages => [...currentMessages, newMessage]);
+                }
+            )
+            .subscribe();
+            
+        return () => { 
+            supabase.removeChannel(channel); 
+        };
+    }, [selectedSessionId]);
+
+    useEffect(() => {
+        chatMessagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [chatMessages]);
 
     const handlePasswordSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -351,6 +457,26 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
         }
     };
 
+     const handleSendAdminMessage = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!adminMessage.trim() || !selectedSessionId) return;
+
+        const { error } = await supabase
+            .from('chat_messages')
+            .insert([{
+                session_id: selectedSessionId,
+                sender_name: 'Admin',
+                message: adminMessage.trim(),
+            }]);
+
+        if (error) {
+            console.error("Error sending admin message:", error);
+            alert("Failed to send message.");
+        } else {
+            setAdminMessage('');
+        }
+    };
+
     const getTabClassName = (tabName: string) => `px-4 py-2 text-sm font-medium rounded-t-md transition-colors focus:outline-none ${activeTab === tabName ? 'bg-gray-700 text-white' : 'text-gray-400 hover:bg-gray-700/50 hover:text-gray-200'}`;
     const dayNumberToString = (num: number) => ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][num];
     const timeSlotToKey = (slotId: string): string => {
@@ -366,7 +492,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
             <div className="bg-gray-800 rounded-lg shadow-xl p-6 max-w-2xl w-full text-gray-200 max-h-[80vh] flex flex-col relative" onClick={(e) => e.stopPropagation()}>
                 <div className="flex justify-between items-center mb-4 pb-4 border-b border-gray-600">
                     <h2 id="admin-panel-title" className="text-2xl font-bold">Admin Panel</h2>
-                    <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-700 transition-colors -m-2" aria-label="Close admin panel"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                    <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-700 transition-colors -m-2" aria-label="Close admin panel"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg></button>
                 </div>
 
                 {!isAuthenticated ? (
@@ -379,6 +505,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
                             <button onClick={() => setActiveTab('approvals')} className={getTabClassName('approvals')}>Approvals</button>
                             <button onClick={() => setActiveTab('payments')} className={getTabClassName('payments')}>{t('adminTabPayments')}</button>
                             <button onClick={() => setActiveTab('bookedSeats')} className={getTabClassName('bookedSeats')}>{t('adminTabBookedSeats')}</button>
+                            <button onClick={() => setActiveTab('chats')} className={getTabClassName('chats')}>{t('adminChatTab')}</button>
                             <button onClick={() => setActiveTab('settings')} className={getTabClassName('settings')}>Settings</button>
                         </div>
                         <div className="overflow-y-auto custom-scrollbar pr-2 mt-4 flex-grow">
@@ -484,6 +611,52 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
                                         </div>
                                     )
                                     }
+                                </div>
+                            )}
+                             {activeTab === 'chats' && (
+                                <div className="flex h-full">
+                                    <div className="w-1/3 border-r border-gray-600 pr-2 overflow-y-auto custom-scrollbar">
+                                        <h3 className="text-lg font-bold mb-3">Conversations</h3>
+                                        {chatsLoading ? <p>Loading chats...</p> : chatsError ? <p className="text-red-400">{chatsError}</p> : (
+                                            <ul className="space-y-1">
+                                                {chatSessions.map(session => (
+                                                    <li key={session.session_id}>
+                                                        <button 
+                                                            onClick={() => setSelectedSessionId(session.session_id)}
+                                                            className={`w-full text-left p-2 rounded-md transition-colors ${selectedSessionId === session.session_id ? 'bg-amber-600/50' : 'hover:bg-gray-700'}`}
+                                                        >
+                                                            <p className="font-semibold text-gray-200 truncate">{session.session_id}</p>
+                                                            <p className="text-xs text-gray-400">{new Date(session.created_at).toLocaleString()}</p>
+                                                        </button>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                    </div>
+                                    <div className="w-2/3 pl-2 flex flex-col">
+                                        {selectedSessionId ? (
+                                            <>
+                                                <div className="flex-grow overflow-y-auto custom-scrollbar p-2 space-y-4">
+                                                    {chatMessages.map(msg => (
+                                                        <div key={msg.id} className={`flex items-end gap-2 ${msg.sender_name === 'Admin' ? 'justify-end' : 'justify-start'}`}>
+                                                            <div className={`max-w-[85%] px-3 py-2 rounded-2xl shadow-sm whitespace-pre-wrap text-sm ${msg.sender_name === 'Admin' ? 'bg-gradient-to-br from-blue-500 to-sky-500 text-white rounded-br-none' : 'bg-gray-700 text-gray-200 rounded-bl-none'}`}>
+                                                                <p className="font-bold text-xs mb-1">{msg.sender_name}</p>
+                                                                {msg.message}
+                                                                <p className="text-right text-[10px] text-gray-400 mt-1">{new Date(msg.created_at).toLocaleTimeString()}</p>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                     <div ref={chatMessagesEndRef} />
+                                                </div>
+                                                <form onSubmit={handleSendAdminMessage} className="mt-2 flex items-center gap-2">
+                                                    <input type="text" value={adminMessage} onChange={e => setAdminMessage(e.target.value)} placeholder="Type your reply..." className="flex-grow w-full px-4 py-2 text-sm bg-gray-600 border border-gray-500 rounded-full focus:outline-none focus:ring-2 focus:ring-amber-500 text-gray-200"/>
+                                                    <button type="submit" disabled={!adminMessage.trim()} className="bg-amber-500 text-white rounded-full p-2.5 hover:bg-amber-600 disabled:bg-gray-500 transition-all"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg></button>
+                                                </form>
+                                            </>
+                                        ) : (
+                                            <div className="flex items-center justify-center h-full"><p className="text-gray-400">Select a conversation to start chatting.</p></div>
+                                        )}
+                                    </div>
                                 </div>
                             )}
                             {activeTab === 'settings' && (
