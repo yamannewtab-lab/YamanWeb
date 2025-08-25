@@ -307,7 +307,8 @@ export const LANGUAGE_DATA: LanguageData = {
         forgotPasscodeWhatsappLabel: "Your WhatsApp Number",
         forgotPasscodeSendButton: "Send Request",
         forgotPasscodeSuccessMessage: "We will contact you as soon as possible.",
-        pendingApproval: "Pending approval from admin, stay tuned."
+        pendingApproval: "Pending approval from admin, stay tuned.",
+        screenshotNote: "Important: Please take a screenshot of this page for your records."
     },
     'ar': {
         headerTitle: "مقرأة الهدى",
@@ -554,7 +555,8 @@ export const LANGUAGE_DATA: LanguageData = {
         forgotPasscodeWhatsappLabel: "رقم الواتساب الخاص بك",
         forgotPasscodeSendButton: "إرسال الطلب",
         forgotPasscodeSuccessMessage: "سوف نتصل بك في أقرب وقت ممكن.",
-        pendingApproval: "في انتظار موافقة المسؤول، يرجى الانتظار."
+        pendingApproval: "في انتظار موافقة المسؤول، يرجى الانتظار.",
+        screenshotNote: "هام: يرجى أخذ لقطة شاشة لهذه الصفحة والاحتفاظ بها."
     },
     'id': {
         headerTitle: "Maqra'at Al-Huda",
@@ -801,6 +803,7 @@ export const LANGUAGE_DATA: LanguageData = {
         forgotPasscodeWhatsappLabel: "Nomor WhatsApp Anda",
         forgotPasscodeSendButton: "Kirim Permintaan",
         forgotPasscodeSuccessMessage: "Kami akan menghubungi Anda sesegera mungkin.",
-        pendingApproval: "Menunggu persetujuan dari admin, harap tunggu."
+        pendingApproval: "Menunggu persetujuan dari admin, harap tunggu.",
+        screenshotNote: "Penting: Harap ambil tangkapan layar halaman ini untuk catatan Anda."
     }
 };

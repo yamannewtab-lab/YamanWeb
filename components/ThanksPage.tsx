@@ -53,8 +53,17 @@ const ThanksPage: React.FC<ThanksPageProps> = ({ navigateTo, t, registerAgainTar
             <h2 className="mt-6 text-3xl font-bold text-gray-100">{t('thanksMessage')}</h2>
             <p className="mt-2 text-gray-400">{t('thanksText')}</p>
 
+            <div className="mt-6 max-w-md mx-auto bg-blue-900/50 p-4 rounded-lg border border-blue-500/30">
+                <p className="text-sm text-blue-200 font-semibold flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                       <path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zm4 1a1 1 0 100 2h8a1 1 0 100-2H6z" />
+                    </svg>
+                    {t('screenshotNote')}
+                </p>
+            </div>
+            
             {lastSubmittedName && (
-                <div className="mt-8 max-w-md mx-auto bg-gray-800/50 border border-amber-500/30 p-6 rounded-2xl shadow-lg text-center page-transition">
+                <div className="mt-4 max-w-md mx-auto bg-gray-800/50 border border-amber-500/30 p-6 rounded-2xl shadow-lg text-center page-transition">
                     
                     <div className="bg-gray-900 rounded-lg p-4">
                          <p className="text-xs text-gray-500 uppercase font-semibold tracking-wider">{t('nameLabel')}</p>

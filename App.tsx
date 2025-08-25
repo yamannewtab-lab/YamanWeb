@@ -29,7 +29,7 @@ const App: React.FC = () => {
     const [currentLanguageIndex, setCurrentLanguageIndex] = useState(2);
     const [ijazahApplication, setIjazahApplication] = useState<IjazahApplication>({
         path: '',
-        daysPerWeek: 7,
+        daysPerWeek: 0,
         memorization: undefined,
         fullDetails: {}
     });

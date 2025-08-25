@@ -74,8 +74,8 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t, setLastS
     const [formData, setFormData] = useState<TajwidFormData>({
         name: '', age: '', whatsapp: '', time: '', 
         tajwidLevel: t('tajwidLevelNormal'), 
-        daysPerWeek: 7,
-        selectedDays: weekdays,
+        daysPerWeek: 0,
+        selectedDays: [],
         additionalNotes: '',
         agreedToTerms: false,
     });
@@ -190,6 +190,10 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t, setLastS
         }
 
         if (step === 2) {
+             if (formData.daysPerWeek === 0 || !formData.daysPerWeek) {
+                alert(`Please select your ${t('quizWeeklyLabel').toLowerCase().replace(':', '')}.`);
+                return;
+             }
              if (formData.daysPerWeek < 7 && (formData.selectedDays?.length ?? 0) !== formData.daysPerWeek) {
                 alert(t('daysSelected').replace('{count}', String(formData.selectedDays?.length ?? 0)).replace('{total}', String(formData.daysPerWeek)) + `. Please select exactly ${formData.daysPerWeek} days.`);
                 return;
@@ -322,27 +326,29 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t, setLastS
                                 <div className="mt-2 rounded-lg bg-gray-900 p-2"><div className="grid grid-cols-12 gap-2">{[1, 2, 3, 4, 5, 6, 7].map(day => (<div key={day} className={day <= 4 ? 'col-span-3' : 'col-span-4'}><input type="radio" id={`day-${day}`} name="daysPerWeek" value={day} checked={formData.daysPerWeek === day} onChange={() => handleDaySelection(day)} className="sr-only peer" /><label htmlFor={`day-${day}`} className={`block text-center py-2 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out peer-checked:shadow text-gray-400 ${getDayButtonColors(day)}`}><span className="font-semibold">{day}</span></label></div>))}</div></div>
                                 <div className="text-center mt-2"><p className="text-sm text-gray-400">{`Price: ${priceString} / month`}</p></div>
                             </div>
-
-                             <div>
-                                <span className="block text-sm font-medium text-gray-300">{t('selectDaysOfWeek')}</span>
-                                <div className="mt-2 p-2 rounded-lg bg-gray-900">
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                        {weekdays.map(day => (
-                                            <DayButton
-                                                key={day}
-                                                day={day}
-                                                t={t}
-                                                isSelected={formData.selectedDays.includes(day)}
-                                                onClick={handleDayToggle}
-                                                disabled={formData.daysPerWeek === 7}
-                                            />
-                                        ))}
+                             
+                             {formData.daysPerWeek > 0 && formData.daysPerWeek !== 7 && (
+                                <div>
+                                    <span className="block text-sm font-medium text-gray-300">{t('selectDaysOfWeek')}</span>
+                                    <div className="mt-2 p-2 rounded-lg bg-gray-900">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                            {weekdays.map(day => (
+                                                <DayButton
+                                                    key={day}
+                                                    day={day}
+                                                    t={t}
+                                                    isSelected={formData.selectedDays.includes(day)}
+                                                    onClick={handleDayToggle}
+                                                    disabled={formData.daysPerWeek === 7}
+                                                />
+                                            ))}
+                                        </div>
+                                        <p className="text-center text-xs text-gray-400 mt-2">
+                                            {t('daysSelected').replace('{count}', String(formData.selectedDays.length)).replace('{total}', String(formData.daysPerWeek))}
+                                        </p>
                                     </div>
-                                    <p className="text-center text-xs text-gray-400 mt-2">
-                                        {t('daysSelected').replace('{count}', String(formData.selectedDays.length)).replace('{total}', String(formData.daysPerWeek))}
-                                    </p>
                                 </div>
-                            </div>
+                             )}
                             
                             <div><span className="block text-sm font-medium text-gray-300">{t('quizTimeLabel')}</span><div className="mt-2 rounded-lg bg-gray-900 p-3 space-y-3">{isLoadingSeats ? (<div className="space-y-3">{[...Array(3)].map((_, i) => (<div key={i} className="h-16 bg-gray-800 rounded-lg animate-pulse"></div>))}</div>) : (MAIN_TIME_BLOCKS.map(block => (<div key={block.id}><button type="button" onClick={() => setExpandedBlock(b => b === block.id ? null : block.id)} className="w-full text-left p-4 rounded-lg bg-gray-700/50 hover:bg-gray-700 transition-all shadow-sm flex justify-between items-center"><><div><h4 className="font-semibold text-gray-200">{t(block.key)}</h4><p className="text-xs text-gray-400">{t(block.timeRangeKey)}</p></div><svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 text-stone-500 transform transition-transform ${expandedBlock === block.id ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></></button>{expandedBlock === block.id && (<div className="mt-2 p-3 bg-gray-700/30 rounded-lg"><div className="flex flex-col gap-2">{block.slots.map(slot => { const bookingsForSlot = allBookings.filter(b => b.time_slot === slot.id); const bookedDayNumbers = new Set(bookingsForSlot.map(b => b.day_number)); const isFullyBooked = bookedDayNumbers.size >= 7; let conflictDays: string[] = []; if (formData.selectedDays.length > 0) { conflictDays = formData.selectedDays.filter(day => bookedDayNumbers.has(dayStringToNumber(day))); } const isBookedOnSelectedDays = conflictDays.length > 0; const isDisabled = isFullyBooked || isBookedOnSelectedDays; return (<div key={slot.id}><div className="relative"><input type="radio" id={`time-${slot.id}`} name="time" value={slot.id} required disabled={isDisabled} className="sr-only peer" onChange={() => setFormData(f => ({...f, time: slot.id}))} checked={formData.time === slot.id} /><label htmlFor={`time-${slot.id}`} className={`block text-center py-3 px-2 rounded-lg cursor-pointer transition-all border-2 text-sm font-semibold ${isDisabled ? 'bg-gray-800 text-gray-600 cursor-not-allowed border-transparent' : 'bg-gray-700 text-gray-300 border-transparent hover:border-amber-400 peer-checked:bg-amber-500 peer-checked:text-white peer-checked:border-amber-600 peer-checked:shadow-lg'}`}><span className={isDisabled ? 'line-through' : ''}>{t(slot.key)}</span></label></div>{isDisabled && (<p className="text-xs text-red-400 text-center mt-1">{isFullyBooked ? t('fullyBooked') : t('bookedOnYourSelectedDays').replace('{days}', conflictDays.map(d => t(`day${d}`)).join(', '))}</p>)}</div>); })}</div></div>)}</div>)))}</div><p className="text-center mt-2 text-xs text-gray-400">{t('timezoneNote')}</p></div>
                             <div><span className="block text-sm font-medium text-gray-300">{t('tajwidLevelLabel')}</span><div className="mt-2 space-y-2">{tajwidLevels.map(level => (<div key={level.key}><input type="radio" id={level.key} name="tajwidLevel" value={t(level.key)} checked={formData.tajwidLevel === t(level.key)} onChange={(e) => setFormData(f => ({...f, tajwidLevel: e.target.value}))} className="sr-only peer" /><label htmlFor={level.key} className="block w-full text-center py-2 px-4 rounded-md cursor-pointer transition-colors bg-gray-900 text-gray-400 peer-checked:bg-gray-700 peer-checked:shadow dark:peer-checked:text-gray-100"><span className="font-semibold">{t(level.key)}</span></label></div>))}</div></div>

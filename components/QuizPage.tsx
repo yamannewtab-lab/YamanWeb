@@ -199,6 +199,11 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
             form?.reportValidity();
             return;
         }
+
+        if (step === 2 && (ijazahApplication.daysPerWeek === 0 || !ijazahApplication.daysPerWeek)) {
+            alert(`Please select your ${t('quizWeeklyLabel').toLowerCase().replace(':', '')}.`);
+            return;
+        }
         
         if (ijazahApplication.daysPerWeek < 7 && (localDetails.selectedDays?.length ?? 0) !== ijazahApplication.daysPerWeek) {
             alert(t('daysSelected').replace('{count}', String(localDetails.selectedDays?.length ?? 0)).replace('{total}', String(ijazahApplication.daysPerWeek)) + `. Please select exactly ${ijazahApplication.daysPerWeek} days.`);
@@ -376,6 +381,7 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                                     <div className="mt-2 rounded-lg bg-gray-900 p-2"><div className="grid grid-cols-12 gap-2">{[1, 2, 3, 4, 5, 6, 7].map(day => (<div key={day} className={day <= 4 ? 'col-span-3' : 'col-span-4'}><input type="radio" id={`day-${day}`} name="daysPerWeek" value={day} checked={ijazahApplication.daysPerWeek === day} onChange={() => handleDaySelection(day)} className="sr-only peer" /><label htmlFor={`day-${day}`} className={`block text-center py-2 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out peer-checked:shadow text-gray-400 ${getDayButtonColors(day)}`}><span className="font-semibold">{day}</span></label></div>))}</div></div>
                                     <div className="text-center mt-2"><p className="text-sm text-gray-400">{`Price: ${priceString} / month`}</p><div className="mt-2 inline-block relative px-3 py-1.5"><div className="absolute inset-0 bg-gray-800 opacity-50 rounded-md"></div><div className="relative z-10 text-xs text-gray-300"><p><span className="font-semibold">{t('ijazahTimeEstimationTitle')}</span> {timeEstimationText}</p>{showSpeedNote && <p className="italic">{t('ijazahTimeNoteSpeed')}</p>}</div></div></div>
                                 </div>
+                                {ijazahApplication.daysPerWeek > 0 && ijazahApplication.daysPerWeek !== 7 && (
                                 <div>
                                     <span className="block text-sm font-medium text-gray-300">{t('selectDaysOfWeek')}</span>
                                     <div className="mt-2 p-2 rounded-lg bg-gray-900">
@@ -396,6 +402,7 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                                         </p>
                                     </div>
                                 </div>
+                                )}
                                  <div>
                                     <span className="block text-sm font-medium text-gray-300">{t('quizTimeLabel')}</span>
                                     <div className="mt-2 rounded-lg bg-gray-900 p-3 space-y-3">

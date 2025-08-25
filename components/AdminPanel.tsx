@@ -251,6 +251,23 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
         setProcessingId(approvalForLink.id);
         try {
             if (zoomLinkInput && zoomLinkInput.trim() !== '') {
+                 // 1. Book the requested slots in the 'booking' table.
+                if (approvalForLink.slots && approvalForLink.slots.length > 0) {
+                    const bookingsToInsert = approvalForLink.slots.map(slot => ({
+                        time_slot: slot.time_slot,
+                        day_number: slot.day_number,
+                        is_booked: true
+                    }));
+
+                    const { error: bookingError } = await supabase
+                        .from('booking')
+                        .insert(bookingsToInsert);
+
+                    if (bookingError) {
+                        throw new Error(`Failed to book the required slots: ${bookingError.message}`);
+                    }
+                }
+                
                 // Fetch passcode
                 const { data: passcodeData, error: passcodeFetchError } = await supabase
                     .from('passcodes')
@@ -294,7 +311,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
                 const { error: updateError } = await supabase.from('approvals').update({ status: 'approved' }).eq('id', approvalForLink.id);
                 if (updateError) throw new Error(`Failed to update approval status: ${updateError.message}`);
                 
-                alert('Application approved and Zoom link stored successfully!');
+                alert('Application approved, slots booked, and Zoom link stored successfully!');
                 setApprovals(current => current.filter(a => a.id !== approvalForLink.id));
                 handleCancelApproval();
             } else {
