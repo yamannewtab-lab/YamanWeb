@@ -11,7 +11,6 @@ interface QuizPageProps {
     setIjazahApplication: React.Dispatch<React.SetStateAction<IjazahApplication>>;
     setLastSubmissionType: (type: SubmissionType) => void;
     setLastSubmittedName: (name: string) => void;
-    universalPasscode: string;
 }
 
 const Card = ({ title, children }: { title: string, children: React.ReactNode }) => (
@@ -57,9 +56,11 @@ const DayButton: React.FC<{
     );
 });
 
-const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, setIjazahApplication, setLastSubmissionType, setLastSubmittedName, universalPasscode }) => {
+const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, setIjazahApplication, setLastSubmissionType, setLastSubmittedName }) => {
     const [step, setStep] = useState(1);
     const [localDetails, setLocalDetails] = useState(ijazahApplication.fullDetails);
+    const [accountName, setAccountName] = useState('');
+    const [accountPassword, setAccountPassword] = useState('');
     const [allBookings, setAllBookings] = useState<{ time_slot: string; day_number: number; }[]>([]);
     const [isLoadingSeats, setIsLoadingSeats] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -72,6 +73,7 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
         3: useRef<HTMLDivElement>(null),
         4: useRef<HTMLDivElement>(null),
         5: useRef<HTMLDivElement>(null),
+        6: useRef<HTMLDivElement>(null),
     };
 
     const weekdays = ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
@@ -255,6 +257,10 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
             alert("Please select a time slot.");
             return;
         }
+         if (!accountName.trim() || !accountPassword.trim()) {
+            alert("Please create an account name and password.");
+            return;
+        }
         setIsSubmitting(true);
        
         try {
@@ -271,6 +277,38 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
             const selectedSlot = Object.values(TIME_SLOTS).flat().find(s => s.id === selectedTime);
             if (!selectedSlot) {
                 throw new Error("Selected time slot details could not be found.");
+            }
+            
+            // Check if account name already exists
+            const { data: existingUser, error: selectError } = await supabase
+                .from('passcodes')
+                .select('name')
+                .eq('name', accountName.trim())
+                .single();
+
+            if (selectError && selectError.code !== 'PGRST116') { // PGRST116 means no rows found, which is good
+                throw selectError;
+            }
+
+            if (existingUser) {
+                alert('This account name is already taken. Please choose another one.');
+                setIsSubmitting(false);
+                return;
+            }
+
+            // Store name and passcode with all details
+            const { error: passcodeError } = await supabase
+                .from('passcodes')
+                .insert([{ 
+                    name: accountName.trim(), 
+                    code: accountPassword.trim(),
+                    path: ijazahApplication.path,
+                    start_time_id: selectedTime,
+                    selected_days: daysToBook.join(', ')
+                }]);
+            
+            if (passcodeError) {
+                throw passcodeError;
             }
 
             const slotsToBook = daysToBook.map(day => ({
@@ -292,24 +330,8 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                 const { error } = await supabase.from('approvals').insert([approvalRequest]);
                 if (error) throw error;
             }
-
-            // Store name and passcode with all details
-            const { error: passcodeError } = await supabase
-                .from('passcodes')
-                .insert([{ 
-                    name: localDetails.name, 
-                    code: universalPasscode,
-                    path: ijazahApplication.path,
-                    start_time_id: selectedTime,
-                    selected_days: daysToBook.join(', ')
-                }]);
             
-            if (passcodeError) {
-                console.error("Failed to store passcode:", passcodeError.message, passcodeError.details);
-                // Non-critical error
-            }
-            
-            setLastSubmittedName(localDetails.name || '');
+            setLastSubmittedName(accountName.trim());
             await sendIjazahApplicationToDiscord({ ...ijazahApplication, fullDetails: localDetails }, priceString, t);
             setLastSubmissionType('paid');
             navigateTo('thanks');
@@ -343,7 +365,7 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
             </div>
             
             <form ref={formRef} onSubmit={handleSubmit} className="max-w-2xl mx-auto">
-                <FormProgress currentStep={step} totalSteps={5} t={t} />
+                <FormProgress currentStep={step} totalSteps={6} t={t} />
                 <div className="relative">
                     {step === 1 && (
                         <div ref={stepRefs[1]}>
@@ -412,11 +434,11 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                                 </div>
                                  <div>
                                     <span className="block text-sm font-medium text-gray-300">{t('quizLanguageLabel')}</span>
-                                    <div className="mt-2 grid grid-cols-2 gap-1 rounded-lg bg-gray-900 p-1"><div className="col-span-1"><input type="radio" id="lang-ar" name="language" value="Arabic" className="sr-only peer" checked={localDetails.language === "Arabic" || !localDetails.language} onChange={handleDetailChange} /><label htmlFor="lang-ar" className="block w-full text-center py-2 px-2 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-gray-400 peer-checked:bg-gray-700 peer-checked:text-gray-100 peer-checked:shadow"><span className="font-semibold">{t('langArabic')}</span></label></div><div className="col-span-1"><input type="radio" id="lang-en" name="language" value="English" className="sr-only peer" checked={localDetails.language === "English"} onChange={handleDetailChange}/><label htmlFor="lang-en" className="block w-full text-center py-2 px-2 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-gray-400 peer-checked:bg-gray-700 peer-checked:text-gray-100 peer-checked:shadow"><span className="font-semibold">{t('langEnglish')}</span></label></div><div className="col-span-2"><input type="radio" id="lang-id" name="language" value="Indonesian" className="sr-only peer" checked={localDetails.language === "Indonesian"} onChange={handleDetailChange}/><label htmlFor="lang-id" className="block w-full text-center py-2 px-2 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-gray-400 peer-checked:bg-gray-700 peer-checked:text-gray-100 peer-checked:shadow"><span className="font-semibold">{t('langIndonesian')}</span></label></div></div>
+                                    <div className="mt-2 grid grid-cols-2 gap-1 rounded-lg bg-gray-900 p-1"><div className="col-span-1"><input type="radio" id="lang-ar" name="language" value="Arabic" required className="sr-only peer" checked={localDetails.language === "Arabic"} onChange={handleDetailChange} /><label htmlFor="lang-ar" className="block w-full text-center py-2 px-2 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-gray-400 peer-checked:bg-gray-700 peer-checked:text-gray-100 peer-checked:shadow"><span className="font-semibold">{t('langArabic')}</span></label></div><div className="col-span-1"><input type="radio" id="lang-en" name="language" value="English" className="sr-only peer" checked={localDetails.language === "English"} onChange={handleDetailChange}/><label htmlFor="lang-en" className="block w-full text-center py-2 px-2 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-gray-400 peer-checked:bg-gray-700 peer-checked:text-gray-100 peer-checked:shadow"><span className="font-semibold">{t('langEnglish')}</span></label></div><div className="col-span-2"><input type="radio" id="lang-id" name="language" value="Indonesian" className="sr-only peer" checked={localDetails.language === "Indonesian"} onChange={handleDetailChange}/><label htmlFor="lang-id" className="block w-full text-center py-2 px-2 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-gray-400 peer-checked:bg-gray-700 peer-checked:text-gray-100 peer-checked:shadow"><span className="font-semibold">{t('langIndonesian')}</span></label></div></div>
                                 </div>
                                 <div>
                                     <span className="block text-sm font-medium text-gray-300">{t('quizSheikhLabel')}</span>
-                                    <div className="mt-2 grid grid-cols-2 gap-2 rounded-lg bg-gray-900 p-1"><div><input type="radio" id="sheikh-yes" name="sheikh" value="yes" className="sr-only peer" checked={localDetails.sheikh === 'yes'} onChange={handleDetailChange}/><label htmlFor="sheikh-yes" className="block w-full text-center py-2 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-gray-400 peer-checked:bg-gray-700 peer-checked:text-gray-100 peer-checked:shadow"><span className="font-semibold">{t('yes')}</span></label></div><div><input type="radio" id="sheikh-no" name="sheikh" value="no" className="sr-only peer" checked={localDetails.sheikh !== 'yes'} onChange={handleDetailChange}/><label htmlFor="sheikh-no" className="block w-full text-center py-2 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-gray-400 peer-checked:bg-gray-700 peer-checked:text-gray-100 peer-checked:shadow"><span className="font-semibold">{t('no')}</span></label></div></div>
+                                    <div className="mt-2 grid grid-cols-2 gap-2 rounded-lg bg-gray-900 p-1"><div><input type="radio" id="sheikh-yes" name="sheikh" value="yes" required className="sr-only peer" checked={localDetails.sheikh === 'yes'} onChange={handleDetailChange}/><label htmlFor="sheikh-yes" className="block w-full text-center py-2 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-gray-400 peer-checked:bg-gray-700 peer-checked:text-gray-100 peer-checked:shadow"><span className="font-semibold">{t('yes')}</span></label></div><div><input type="radio" id="sheikh-no" name="sheikh" value="no" className="sr-only peer" checked={localDetails.sheikh === 'no'} onChange={handleDetailChange}/><label htmlFor="sheikh-no" className="block w-full text-center py-2 px-4 rounded-md cursor-pointer transition-colors duration-200 ease-in-out text-gray-400 peer-checked:bg-gray-700 peer-checked:text-gray-100 peer-checked:shadow"><span className="font-semibold">{t('no')}</span></label></div></div>
                                 </div>
                             </Card>
                         </div>
@@ -504,12 +526,39 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                             </Card>
                         </div>
                     )}
+                    {step === 6 && (
+                        <div ref={stepRefs[6]}>
+                            <Card title={t('cardTitleAccount')}>
+                                <div>
+                                    <label htmlFor="accountName" className="block text-sm font-medium text-gray-300">{t('accountNameLabel')}</label>
+                                    <input type="text" id="accountName" name="accountName" value={accountName} onChange={(e) => setAccountName(e.target.value)} required placeholder={t('accountNameLabel')} className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-200 placeholder-gray-400" />
+                                </div>
+                                <div>
+                                    <label htmlFor="accountPassword" className="block text-sm font-medium text-gray-300">{t('passwordLabel')}</label>
+                                    <input
+                                        type="password"
+                                        id="accountPassword"
+                                        name="accountPassword"
+                                        value={accountPassword}
+                                        onChange={(e) => setAccountPassword(e.target.value)}
+                                        required
+                                        placeholder="•••"
+                                        maxLength={3}
+                                        pattern="[0-9]*"
+                                        inputMode="numeric"
+                                        className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-200 placeholder-gray-400 text-center tracking-[0.5em]"
+                                    />
+                                    <p className="mt-2 text-xs text-gray-400 text-center">{t('passwordNote')}</p>
+                                </div>
+                            </Card>
+                        </div>
+                    )}
                 </div>
                 
                 <div className="mt-8 flex gap-4">
                     {step > 1 && <button type="button" onClick={handleBack} className="w-full bg-gray-700 text-gray-200 font-bold py-3 px-6 rounded-lg shadow-sm hover:shadow-md hover:bg-gray-600 transition-all">{t('backButton')}</button>}
-                    {step < 5 && <button type="button" onClick={handleNext} className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all">{t('nextButton')}</button>}
-                    {step === 5 && <button type="submit" disabled={isSubmitting || !localDetails.agreedToTerms} className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-wait">{isSubmitting ? '...' : t('payButton')}</button>}
+                    {step < 6 && <button type="button" onClick={handleNext} disabled={step === 5 && !localDetails.agreedToTerms} className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all disabled:opacity-50">{t('nextButton')}</button>}
+                    {step === 6 && <button type="submit" disabled={isSubmitting} className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-wait">{isSubmitting ? '...' : t('submitApplicationButton')}</button>}
                 </div>
             </form>
             

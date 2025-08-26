@@ -133,15 +133,15 @@ const App: React.FC = () => {
             case 'ijazahPreview':
                 return <IjazahPreviewPage navigateTo={navigateTo} t={t} onImageClick={setImageModalSrc} />;
             case 'quiz':
-                return <QuizPage navigateTo={navigateTo} t={t} ijazahApplication={ijazahApplication} setIjazahApplication={setIjazahApplication} setLastSubmissionType={setLastSubmissionType} setLastSubmittedName={setLastSubmittedName} universalPasscode={universalPasscode} />;
+                return <QuizPage navigateTo={navigateTo} t={t} ijazahApplication={ijazahApplication} setIjazahApplication={setIjazahApplication} setLastSubmissionType={setLastSubmissionType} setLastSubmittedName={setLastSubmittedName} />;
             case 'tasmiQuiz':
                 return <TasmiQuizPage navigateTo={navigateTo} t={t} />;
             case 'tajwidImprovement':
-                return <TajwidQuizPage navigateTo={navigateTo} t={t} setLastSubmissionType={setLastSubmissionType} setLastSubmittedName={setLastSubmittedName} universalPasscode={universalPasscode} />;
+                return <TajwidQuizPage navigateTo={navigateTo} t={t} setLastSubmissionType={setLastSubmissionType} setLastSubmittedName={setLastSubmittedName} />;
             case 'tasmiInfo':
                 return <TasmiInfoPage navigateTo={navigateTo} t={t} />;
             case 'thanks':
-                return <ThanksPage navigateTo={navigateTo} t={t} registerAgainTarget={registerAgainTarget} ijazahApplication={ijazahApplication} lastSubmissionType={lastSubmissionType} lastSubmittedName={lastSubmittedName} universalPasscode={universalPasscode} />;
+                return <ThanksPage navigateTo={navigateTo} t={t} registerAgainTarget={registerAgainTarget} lastSubmissionType={lastSubmissionType} />;
             case 'about':
                 return <AboutPage navigateTo={navigateTo} t={t} />;
             case 'teachers':

@@ -9,7 +9,6 @@ interface TajwidQuizPageProps {
     t: (key: string) => string;
     setLastSubmissionType: (type: SubmissionType) => void;
     setLastSubmittedName: (name: string) => void;
-    universalPasscode: string;
 }
 
 interface TajwidFormData {
@@ -68,17 +67,19 @@ const DayButton: React.FC<{
 });
 
 
-const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t, setLastSubmissionType, setLastSubmittedName, universalPasscode }) => {
+const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t, setLastSubmissionType, setLastSubmittedName }) => {
     const weekdays = ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState<TajwidFormData>({
         name: '', age: '', whatsapp: '', time: '', 
-        tajwidLevel: t('tajwidLevelNormal'), 
+        tajwidLevel: '', 
         daysPerWeek: 0,
         selectedDays: [],
         additionalNotes: '',
         agreedToTerms: false,
     });
+    const [accountName, setAccountName] = useState('');
+    const [accountPassword, setAccountPassword] = useState('');
     const [allBookings, setAllBookings] = useState<{ time_slot: string; day_number: number; }[]>([]);
     const [isLoadingSeats, setIsLoadingSeats] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -90,6 +91,7 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t, setLastS
         3: useRef<HTMLDivElement>(null),
         4: useRef<HTMLDivElement>(null),
         5: useRef<HTMLDivElement>(null),
+        6: useRef<HTMLDivElement>(null),
     };
 
     const dayStringToNumber = (day: string): number => {
@@ -213,6 +215,10 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t, setLastS
             alert("Please select a time slot.");
             return;
         }
+        if (!accountName.trim() || !accountPassword.trim()) {
+            alert("Please create an account name and password.");
+            return;
+        }
         setIsSubmitting(true);
        
         try {
@@ -231,6 +237,38 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t, setLastS
                 throw new Error("Selected time slot details could not be found.");
             }
 
+            // Check if account name already exists
+            const { data: existingUser, error: selectError } = await supabase
+                .from('passcodes')
+                .select('name')
+                .eq('name', accountName.trim())
+                .single();
+
+            if (selectError && selectError.code !== 'PGRST116') { // PGRST116 means no rows found, which is good
+                throw selectError;
+            }
+
+            if (existingUser) {
+                alert('This account name is already taken. Please choose another one.');
+                setIsSubmitting(false);
+                return;
+            }
+            
+            // Store name and passcode with all details
+            const { error: passcodeError } = await supabase
+                .from('passcodes')
+                .insert([{ 
+                    name: accountName.trim(), 
+                    code: accountPassword.trim(),
+                    path: t('tajwidQuizTitle'),
+                    start_time_id: formData.time,
+                    selected_days: daysToBook.join(', ')
+                }]);
+
+            if (passcodeError) {
+                throw passcodeError;
+            }
+            
             const slotsToBook = daysToBook.map(day => ({
                 time_slot: selectedSlot.id,
                 day_number: dayStringToNumber(day),
@@ -249,22 +287,6 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t, setLastS
                 if (error) throw error;
             }
 
-            // Store name and passcode with all details
-            const { error: passcodeError } = await supabase
-                .from('passcodes')
-                .insert([{ 
-                    name: formData.name, 
-                    code: universalPasscode,
-                    path: t('tajwidQuizTitle'),
-                    start_time_id: formData.time,
-                    selected_days: daysToBook.join(', ')
-                }]);
-
-            if (passcodeError) {
-                console.error("Failed to store passcode:", passcodeError.message, passcodeError.details);
-                // Non-critical error
-            }
-
             const preferredTimeText = t(selectedSlot.key);
             const priceText = TAJWID_IMPROVEMENT_PRICES[formData.daysPerWeek].toLocaleString() + " IDR";
 
@@ -275,7 +297,7 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t, setLastS
                 priceText,
             }, t);
             
-            setLastSubmittedName(formData.name);
+            setLastSubmittedName(accountName.trim());
             setLastSubmissionType('paid');
             navigateTo('thanks');
         } catch (error: any) {
@@ -308,7 +330,7 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t, setLastS
         <div>
             <div className="text-center mb-6"><h2 className="text-3xl font-bold text-gray-100">{t('tajwidQuizTitle')}</h2></div>
             <form ref={formRef} onSubmit={handleSubmit} className="max-w-2xl mx-auto">
-                <FormProgress currentStep={step} totalSteps={5} t={t} />
+                <FormProgress currentStep={step} totalSteps={6} t={t} />
                 {step === 1 && (
                     <div ref={stepRefs[1]}>
                         <Card title={t('cardTitlePersonalInfo')}>
@@ -351,7 +373,7 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t, setLastS
                              )}
                             
                             <div><span className="block text-sm font-medium text-gray-300">{t('quizTimeLabel')}</span><div className="mt-2 rounded-lg bg-gray-900 p-3 space-y-3">{isLoadingSeats ? (<div className="space-y-3">{[...Array(3)].map((_, i) => (<div key={i} className="h-16 bg-gray-800 rounded-lg animate-pulse"></div>))}</div>) : (MAIN_TIME_BLOCKS.map(block => (<div key={block.id}><button type="button" onClick={() => setExpandedBlock(b => b === block.id ? null : block.id)} className="w-full text-left p-4 rounded-lg bg-gray-700/50 hover:bg-gray-700 transition-all shadow-sm flex justify-between items-center"><><div><h4 className="font-semibold text-gray-200">{t(block.key)}</h4><p className="text-xs text-gray-400">{t(block.timeRangeKey)}</p></div><svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 text-stone-500 transform transition-transform ${expandedBlock === block.id ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg></></button>{expandedBlock === block.id && (<div className="mt-2 p-3 bg-gray-700/30 rounded-lg"><div className="flex flex-col gap-2">{block.slots.map(slot => { const bookingsForSlot = allBookings.filter(b => b.time_slot === slot.id); const bookedDayNumbers = new Set(bookingsForSlot.map(b => b.day_number)); const isFullyBooked = bookedDayNumbers.size >= 7; let conflictDays: string[] = []; if (formData.selectedDays.length > 0) { conflictDays = formData.selectedDays.filter(day => bookedDayNumbers.has(dayStringToNumber(day))); } const isBookedOnSelectedDays = conflictDays.length > 0; const isDisabled = isFullyBooked || isBookedOnSelectedDays; return (<div key={slot.id}><div className="relative"><input type="radio" id={`time-${slot.id}`} name="time" value={slot.id} required disabled={isDisabled} className="sr-only peer" onChange={() => setFormData(f => ({...f, time: slot.id}))} checked={formData.time === slot.id} /><label htmlFor={`time-${slot.id}`} className={`block text-center py-3 px-2 rounded-lg cursor-pointer transition-all border-2 text-sm font-semibold ${isDisabled ? 'bg-gray-800 text-gray-600 cursor-not-allowed border-transparent' : 'bg-gray-700 text-gray-300 border-transparent hover:border-amber-400 peer-checked:bg-amber-500 peer-checked:text-white peer-checked:border-amber-600 peer-checked:shadow-lg'}`}><span className={isDisabled ? 'line-through' : ''}>{t(slot.key)}</span></label></div>{isDisabled && (<p className="text-xs text-red-400 text-center mt-1">{isFullyBooked ? t('fullyBooked') : t('bookedOnYourSelectedDays').replace('{days}', conflictDays.map(d => t(`day${d}`)).join(', '))}</p>)}</div>); })}</div></div>)}</div>)))}</div><p className="text-center mt-2 text-xs text-gray-400">{t('timezoneNote')}</p></div>
-                            <div><span className="block text-sm font-medium text-gray-300">{t('tajwidLevelLabel')}</span><div className="mt-2 space-y-2">{tajwidLevels.map(level => (<div key={level.key}><input type="radio" id={level.key} name="tajwidLevel" value={t(level.key)} checked={formData.tajwidLevel === t(level.key)} onChange={(e) => setFormData(f => ({...f, tajwidLevel: e.target.value}))} className="sr-only peer" /><label htmlFor={level.key} className="block w-full text-center py-2 px-4 rounded-md cursor-pointer transition-colors bg-gray-900 text-gray-400 peer-checked:bg-gray-700 peer-checked:shadow dark:peer-checked:text-gray-100"><span className="font-semibold">{t(level.key)}</span></label></div>))}</div></div>
+                            <div><span className="block text-sm font-medium text-gray-300">{t('tajwidLevelLabel')}</span><div className="mt-2 space-y-2">{tajwidLevels.map(level => (<div key={level.key}><input type="radio" id={level.key} name="tajwidLevel" value={t(level.key)} required checked={formData.tajwidLevel === t(level.key)} onChange={(e) => setFormData(f => ({...f, tajwidLevel: e.target.value}))} className="sr-only peer" /><label htmlFor={level.key} className="block w-full text-center py-2 px-4 rounded-md cursor-pointer transition-colors bg-gray-900 text-gray-400 peer-checked:bg-gray-700 peer-checked:shadow dark:peer-checked:text-gray-100"><span className="font-semibold">{t(level.key)}</span></label></div>))}</div></div>
                         </Card>
                     </div>
                 )}
@@ -448,10 +470,37 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t, setLastS
                         </Card>
                     </div>
                 )}
+                 {step === 6 && (
+                    <div ref={stepRefs[6]}>
+                        <Card title={t('cardTitleAccount')}>
+                            <div>
+                                <label htmlFor="accountName" className="block text-sm font-medium text-gray-300">{t('accountNameLabel')}</label>
+                                <input type="text" id="accountName" name="accountName" value={accountName} onChange={(e) => setAccountName(e.target.value)} required placeholder={t('accountNameLabel')} className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-200 placeholder-gray-400" />
+                            </div>
+                            <div>
+                                <label htmlFor="accountPassword" className="block text-sm font-medium text-gray-300">{t('passwordLabel')}</label>
+                                <input
+                                    type="password"
+                                    id="accountPassword"
+                                    name="accountPassword"
+                                    value={accountPassword}
+                                    onChange={(e) => setAccountPassword(e.target.value)}
+                                    required
+                                    placeholder="•••"
+                                    maxLength={3}
+                                    pattern="[0-9]*"
+                                    inputMode="numeric"
+                                    className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-200 placeholder-gray-400 text-center tracking-[0.5em]"
+                                />
+                                <p className="mt-2 text-xs text-gray-400 text-center">{t('passwordNote')}</p>
+                            </div>
+                        </Card>
+                    </div>
+                )}
                 <div className="mt-8 flex gap-4">
                     {step > 1 && <button type="button" onClick={handleBack} className="w-full bg-gray-700 text-gray-200 font-bold py-3 px-6 rounded-lg shadow-sm hover:shadow-md">{t('backButton')}</button>}
-                    {step < 5 && <button type="button" onClick={handleNext} className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg">{t('nextButton')}</button>}
-                    {step === 5 && <button type="submit" disabled={isSubmitting || !formData.agreedToTerms} className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg disabled:opacity-50">{isSubmitting ? '...' : t('submitButton')}</button>}
+                    {step < 6 && <button type="button" onClick={handleNext} disabled={step === 5 && !formData.agreedToTerms} className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg disabled:opacity-50">{t('nextButton')}</button>}
+                    {step === 6 && <button type="submit" disabled={isSubmitting} className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg disabled:opacity-50">{isSubmitting ? '...' : t('submitApplicationButton')}</button>}
                 </div>
             </form>
             <div className="mt-12 text-center"><button onClick={() => navigateTo('home')} className="text-sm font-semibold text-gray-400 hover:text-amber-400">{t('backToHome')}</button></div>

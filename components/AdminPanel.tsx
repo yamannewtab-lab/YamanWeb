@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabaseClient';
 import { TIME_SLOTS, MAIN_TIME_BLOCKS, PATH_TRANSLATION_KEYS } from '../constants';
+import AttendanceCalendar from './AttendanceCalendar';
 
 interface Visitor {
     country: string;
@@ -65,6 +66,11 @@ interface ChatSession {
     created_at: string;
 }
 
+interface ApprovedStudent {
+    name: string;
+    selected_days: string;
+}
+
 interface AdminPanelProps {
     onClose: () => void;
     t: (key: string) => string;
@@ -74,7 +80,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [password, setPassword] = useState('');
     const [authError, setAuthError] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<'visitors' | 'feedbacks' | 'approvals' | 'payments' | 'settings' | 'bookedSeats' | 'chats'>('visitors');
+    const [activeTab, setActiveTab] = useState<'visitors' | 'feedbacks' | 'approvals' | 'payments' | 'settings' | 'bookedSeats' | 'chats' | 'calendars'>('visitors');
 
     const [visitors, setVisitors] = useState<GroupedVisitors>({});
     const [visitorsLoading, setVisitorsLoading] = useState(true);
@@ -111,6 +117,20 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
     const [chatsError, setChatsError] = useState<string | null>(null);
     const chatMessagesEndRef = useRef<null | HTMLDivElement>(null);
     
+    // Calendar states
+    const [approvedStudents, setApprovedStudents] = useState<ApprovedStudent[]>([]);
+    const [selectedStudent, setSelectedStudent] = useState<ApprovedStudent | null>(null);
+    const [calendarDate, setCalendarDate] = useState(new Date());
+    const [studentAttendance, setStudentAttendance] = useState<{ [day: string]: 'attended' | 'missed' }>({});
+    const [calendarLoading, setCalendarLoading] = useState(false);
+
+    const dayStringToNumber = (day: string): number => {
+        const map: { [key: string]: number } = {
+            'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3,
+            'Thursday': 4, 'Friday': 5, 'Saturday': 6
+        };
+        return map[day.trim()] ?? -1;
+    };
 
     const fetchApprovals = async () => {
         setApprovalsLoading(true);
@@ -247,6 +267,19 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
             fetchBookedSeats();
         } else if (activeTab === 'chats') {
             fetchChatSessions();
+        } else if (activeTab === 'calendars') {
+            const fetchStudents = async () => {
+                setCalendarLoading(true);
+                const { data, error } = await supabase
+                    .from('passcodes')
+                    .select('name, selected_days')
+                    .not('date_approved', 'is', null)
+                    .order('name');
+                if (error) console.error("Error fetching students:", error);
+                else setApprovedStudents(data as ApprovedStudent[] || []);
+                setCalendarLoading(false);
+            };
+            fetchStudents();
         }
     }, [isAuthenticated, activeTab]);
 
@@ -330,6 +363,30 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
     useEffect(() => {
         chatMessagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [chatMessages]);
+
+    // Effect for fetching student attendance
+    useEffect(() => {
+        if (!selectedStudent) return;
+        const fetchAttendance = async () => {
+            setCalendarLoading(true);
+            const year = calendarDate.getFullYear();
+            const month = calendarDate.getMonth() + 1;
+            const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+            const endDate = `${year}-${String(month).padStart(2, '0')}-${new Date(year, month, 0).getDate()}`;
+            const { data, error } = await supabase.from('attendance').select('session_date, status').eq('student_name', selectedStudent.name).gte('session_date', startDate).lte('session_date', endDate);
+            if (error) console.error("Error fetching attendance:", error);
+            else {
+                const formattedData = data.reduce((acc: any, record: any) => {
+                    acc[record.session_date] = record.status;
+                    return acc;
+                }, {});
+                setStudentAttendance(formattedData);
+            }
+            setCalendarLoading(false);
+        };
+        fetchAttendance();
+    }, [selectedStudent, calendarDate]);
+
 
     const handlePasswordSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -484,6 +541,46 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
         }
     };
 
+    const handleCalendarDayClick = async (day: number, currentStatus: 'scheduled' | 'attended' | 'missed') => {
+        if (!selectedStudent) return;
+        const dateString = `${calendarDate.getFullYear()}-${String(calendarDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        
+        let nextStatus: 'attended' | 'missed' | 'scheduled' = 'attended';
+        if (currentStatus === 'scheduled') nextStatus = 'attended';
+        else if (currentStatus === 'attended') nextStatus = 'missed';
+        else if (currentStatus === 'missed') nextStatus = 'scheduled';
+        
+        setCalendarLoading(true);
+        try {
+            if (nextStatus === 'scheduled') {
+                const { error } = await supabase.from('attendance').delete().match({ student_name: selectedStudent.name, session_date: dateString });
+                if (error) throw error;
+                setStudentAttendance(prev => {
+                    const updated = { ...prev };
+                    delete updated[dateString];
+                    return updated;
+                });
+            } else {
+                const { data, error } = await supabase.from('attendance').upsert({ student_name: selectedStudent.name, session_date: dateString, status: nextStatus }, { onConflict: 'student_name, session_date' }).select();
+                if (error) throw error;
+                if (data) setStudentAttendance(prev => ({ ...prev, [dateString]: data[0].status }));
+            }
+        } catch (error: any) {
+            alert(`Failed to update attendance: ${error.message}`);
+        } finally {
+            setCalendarLoading(false);
+        }
+    };
+
+    const handleMonthChange = (offset: number) => {
+        setCalendarDate(prev => {
+            const newDate = new Date(prev);
+            newDate.setDate(1);
+            newDate.setMonth(newDate.getMonth() + offset);
+            return newDate;
+        });
+    };
+
     const getTabClassName = (tabName: string) => `px-4 py-2 text-sm font-medium rounded-t-md transition-colors focus:outline-none ${activeTab === tabName ? 'bg-gray-700 text-white' : 'text-gray-400 hover:bg-gray-700/50 hover:text-gray-200'}`;
     const dayNumberToString = (num: number) => ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][num];
     const timeSlotToKey = (slotId: string): string => {
@@ -513,6 +610,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
                             <button onClick={() => setActiveTab('payments')} className={getTabClassName('payments')}>{t('adminTabPayments')}</button>
                             <button onClick={() => setActiveTab('bookedSeats')} className={getTabClassName('bookedSeats')}>{t('adminTabBookedSeats')}</button>
                             <button onClick={() => setActiveTab('chats')} className={getTabClassName('chats')}>{t('adminChatTab')}</button>
+                            <button onClick={() => setActiveTab('calendars')} className={getTabClassName('calendars')}>{t('adminTabCalendars')}</button>
                             <button onClick={() => setActiveTab('settings')} className={getTabClassName('settings')}>Settings</button>
                         </div>
                         <div className="overflow-y-auto custom-scrollbar pr-2 mt-4 flex-grow">
@@ -664,6 +762,50 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
                                             <div className="flex items-center justify-center h-full"><p className="text-gray-400">Select a conversation to start chatting.</p></div>
                                         )}
                                     </div>
+                                </div>
+                            )}
+                             {activeTab === 'calendars' && (
+                                <div>
+                                    {calendarLoading && !selectedStudent ? <p>Loading students...</p> : (
+                                        <div className="flex gap-4 h-full">
+                                            <div className="w-1/3 border-r border-gray-600 pr-2 overflow-y-auto custom-scrollbar">
+                                                <h3 className="text-lg font-bold mb-3">Approved Students</h3>
+                                                <ul className="space-y-1">
+                                                    {approvedStudents.map(student => (
+                                                        <li key={student.name}>
+                                                            <button onClick={() => setSelectedStudent(student)} className={`w-full text-left p-2 rounded-md transition-colors ${selectedStudent?.name === student.name ? 'bg-amber-600/50' : 'hover:bg-gray-700'}`}>
+                                                                {student.name}
+                                                            </button>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                            <div className="w-2/3 pl-2">
+                                                {selectedStudent ? (
+                                                    <div>
+                                                        <div className="flex justify-between items-center mb-4 bg-gray-700/50 p-2 rounded-lg">
+                                                            <button onClick={() => handleMonthChange(-1)} className="p-2 rounded-full hover:bg-gray-600 transition-colors">&lt;</button>
+                                                            <span className="font-semibold text-lg">{calendarDate.toLocaleString('en-US', { month: 'long', year: 'numeric' })}</span>
+                                                            <button onClick={() => handleMonthChange(1)} className="p-2 rounded-full hover:bg-gray-600 transition-colors">&gt;</button>
+                                                        </div>
+                                                        {calendarLoading ? <p>Loading calendar...</p> : 
+                                                            <AttendanceCalendar 
+                                                                year={calendarDate.getFullYear()}
+                                                                month={calendarDate.getMonth()}
+                                                                scheduledDays={selectedStudent.selected_days.split(',').map(dayStringToNumber)}
+                                                                attendanceData={studentAttendance}
+                                                                isEditable={true}
+                                                                onDayClick={handleCalendarDayClick}
+                                                                t={t}
+                                                            />
+                                                        }
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex items-center justify-center h-full"><p className="text-gray-400">Select a student to view their calendar.</p></div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                             {activeTab === 'settings' && (

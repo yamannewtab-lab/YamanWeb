@@ -1,0 +1,46 @@
+import { LanguageData } from '../types';
+
+export const tasmiTranslations: LanguageData = {
+    en: {
+        tasmiQuizTitle: "Opened Tasmi' Session",
+        tasmiPortionLabel: "Juz' or Surah to Recite:",
+        tasmiTimeLabel: "Preferred Time for Session:",
+        tasmiFatihahOption: "Al-Fatihah",
+        tasmiJuzAmmaOption: "Some of Juz Amma",
+        tasmiWeeklyLabel: "How many sessions you want?",
+        tasmiInfoTitle: "What's Next?",
+        tasmiInfoText1: "The teacher will choose the time and the date available for him.",
+        tasmiInfoText2: "We will try to answer you as fast as we can.",
+        tasmiInfoSectionTitle: "Important: About your Tasmi' Session",
+        tasmiInfoSectionText: "Information about the Tasmi' session will be provided here. Please check back later for details.",
+        selectPortionPlaceholder: "Select portion to recite",
+    },
+    ar: {
+        tasmiQuizTitle: "جلسة تسميع مفتوحة",
+        tasmiPortionLabel: "الجزء أو السورة المراد تسميعها:",
+        tasmiTimeLabel: "الوقت المفضل للجلسة:",
+        tasmiFatihahOption: "الفاتحة",
+        tasmiJuzAmmaOption: "بعض من جزء عم",
+        tasmiWeeklyLabel: "كم عدد الجلسات التي تريدها؟",
+        tasmiInfoTitle: "ماذا بعد؟",
+        tasmiInfoText1: "سيقوم الشيخ باختيار الوقت والتاريخ المتاح له.",
+        tasmiInfoText2: "سنحاول الرد عليك في أسرع وقت ممكن.",
+        tasmiInfoSectionTitle: "هام: بخصوص جلسة التسميع",
+        tasmiInfoSectionText: "سيتم توفير المعلومات حول جلسة التسميع هنا. يرجى التحقق لاحقًا للحصول على التفاصيل.",
+        selectPortionPlaceholder: "اختر الجزء المراد تسميعه",
+    },
+    id: {
+        tasmiQuizTitle: "Sesi Tasmi' Terbuka",
+        tasmiPortionLabel: "Juz' atau Surah yang akan Dibacakan:",
+        tasmiTimeLabel: "Waktu yang Diinginkan untuk Sesi:",
+        tasmiFatihahOption: "Al-Fatihah",
+        tasmiJuzAmmaOption: "Beberapa dari Juz Amma",
+        tasmiWeeklyLabel: "Berapa sesi yang Anda inginkan?",
+        tasmiInfoTitle: "Apa Selanjutnya?",
+        tasmiInfoText1: "Guru akan memilih waktu dan tanggal yang tersedia untuknya.",
+        tasmiInfoText2: "Kami akan mencoba menjawab Anda secepat mungkin.",
+        tasmiInfoSectionTitle: "Penting: Tentang Sesi Tasmi' Anda",
+        tasmiInfoSectionText: "Informasi tentang sesi Tasmi' akan diberikan di sini. Silakan periksa kembali nanti untuk detailnya.",
+        selectPortionPlaceholder: "Pilih bagian untuk dibacakan",
+    }
+};
