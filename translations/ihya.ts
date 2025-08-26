@@ -4,7 +4,7 @@ export const ihyaTranslations: LanguageData = {
     en: {
         ihyaCourseButton: "Ihya Ulumuddin",
         ihyaCourseTitle: "Ihya Ulumuddin Course",
-        ihyaCourseIntro: "This course, offered by Maqra'at Al-Huda, will focus on understanding how Imam al-Ghazali explained the progression from a minor sin to a major one. We will live our moments with the great Imam.",
+        ihyaCourseIntro: "How can a sinner repent from his deed, and how can a transgressor turn to Allah? Come, let us look at what Imam al-Ghazali said in the chapter of repentance.",
         ihyaCourseDetailsTitle: "Course Details",
         ihyaCourseLessonDuration: "15 minutes per lesson",
         ihyaCourseStartDate: "Starts: 29/8/2025",
@@ -36,7 +36,7 @@ export const ihyaTranslations: LanguageData = {
     ar: {
         ihyaCourseButton: "إحياء علوم الدين",
         ihyaCourseTitle: "دورة إحياء علوم الدين",
-        ihyaCourseIntro: "هذه الدورة، المقدمة من مقرأة الهدى، ستركز على فهم كيف شرح الإمام الغزالي تحول الصغيرة إلى كبيرة. سنعيش لحظاتنا مع الإمام العظيم.",
+        ihyaCourseIntro: "كيف للعاصي أن يتوب من فعلته وكيف للمذنب أن ينيب إلى الله\n\nتعالوا للنظر إلى ما قال الإمام الغزالي في باب التوبة",
         ihyaCourseDetailsTitle: "تفاصيل الدورة",
         ihyaCourseLessonDuration: "15 دقيقة لكل درس",
         ihyaCourseStartDate: "تبدأ: 29/8/2025",
@@ -68,7 +68,7 @@ export const ihyaTranslations: LanguageData = {
     id: {
         ihyaCourseButton: "Ihya Ulumuddin",
         ihyaCourseTitle: "Kursus Ihya Ulumuddin",
-        ihyaCourseIntro: "Kursus ini, yang diselenggarakan oleh Maqra'at Al-Huda, akan berfokus pada pemahaman bagaimana Imam al-Ghazali menjelaskan perkembangan dari dosa kecil menjadi dosa besar. Kita akan menjalani momen-momen kita bersama Imam besar.",
+        ihyaCourseIntro: "Bagaimana seorang pendosa bisa bertaubat dari perbuatannya, dan bagaimana seorang pelanggar bisa kembali kepada Allah? Mari kita lihat apa yang dikatakan Imam al-Ghazali dalam bab taubat.",
         ihyaCourseDetailsTitle: "Detail Kursus",
         ihyaCourseLessonDuration: "15 menit per pelajaran",
         ihyaCourseStartDate: "Mulai: 29/8/2025",
