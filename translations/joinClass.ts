@@ -42,6 +42,7 @@ export const joinClassTranslations: LanguageData = {
         notifyTeacherButtonNotified: "Teacher Notified!",
         attendanceCalendarTitle: "Attendance Calendar",
         sessionsThisMonth: "{count} sessions this month",
+        viewMonthlyLessons: "View my monthly lessons",
     },
     ar: {
         joinClassPageTitle: "انضم إلى صفك",
@@ -84,6 +85,7 @@ export const joinClassTranslations: LanguageData = {
         notifyTeacherButtonNotified: "تم إعلام المعلم!",
         attendanceCalendarTitle: "تقويم الحضور",
         sessionsThisMonth: "{count} جلسات هذا الشهر",
+        viewMonthlyLessons: "عرض دروسي الشهرية",
     },
     id: {
         joinClassPageTitle: "Gabung Kelas Anda",
@@ -126,5 +128,6 @@ export const joinClassTranslations: LanguageData = {
         notifyTeacherButtonNotified: "Guru Diberi Tahu!",
         attendanceCalendarTitle: "Kalender Kehadiran",
         sessionsThisMonth: "{count} sesi bulan ini",
+        viewMonthlyLessons: "Lihat pelajaran bulanan saya",
     }
 };

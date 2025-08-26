@@ -210,22 +210,31 @@ const ClassDetailsView: React.FC<{ classDetails: ClassDetails; t: (key: string) 
                     
                     {classDetails.isApproved && (
                          <div className="border-t border-gray-700 pt-4">
-                            <h4 className="text-lg font-semibold text-gray-200 mb-2">{t('attendanceCalendarTitle')}</h4>
-                            <div className="flex justify-between items-center mb-4 bg-gray-700/50 p-2 rounded-lg">
-                                <button onClick={() => handleMonthChange(-1)} className="p-2 rounded-full hover:bg-gray-600 transition-colors">&lt;</button>
-                                <span className="font-semibold text-lg">{currentDate.toLocaleString(langForLocale, { month: 'long', year: 'numeric' })}</span>
-                                <button onClick={() => handleMonthChange(1)} className="p-2 rounded-full hover:bg-gray-600 transition-colors">&gt;</button>
-                            </div>
-                            {isLoadingCalendar ? <div className="text-center p-4">Loading calendar...</div> : 
-                                <AttendanceCalendar 
-                                    year={currentDate.getFullYear()}
-                                    month={currentDate.getMonth()}
-                                    scheduledDays={scheduledDaysNumbers}
-                                    attendanceData={attendanceData}
-                                    t={t}
-                                />
-                            }
-                            <p className="text-center mt-2 text-sm text-gray-400">{t('sessionsThisMonth').replace('{count}', String(sessionsThisMonth))}</p>
+                            <details className="group">
+                                <summary className="list-none flex justify-between items-center cursor-pointer p-2 rounded-lg hover:bg-gray-700/50 transition-colors">
+                                    <h4 className="text-lg font-semibold text-gray-200">{t('viewMonthlyLessons')}</h4>
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 transform transition-transform duration-300 group-open:rotate-180" fill="none" viewBox="0 0 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </summary>
+                                <div className="mt-4">
+                                    <div className="flex justify-between items-center mb-4 bg-gray-700/50 p-2 rounded-lg">
+                                        <button onClick={() => handleMonthChange(-1)} className="p-2 rounded-full hover:bg-gray-600 transition-colors">&lt;</button>
+                                        <span className="font-semibold text-lg">{currentDate.toLocaleString(langForLocale, { month: 'long', year: 'numeric' })}</span>
+                                        <button onClick={() => handleMonthChange(1)} className="p-2 rounded-full hover:bg-gray-600 transition-colors">&gt;</button>
+                                    </div>
+                                    {isLoadingCalendar ? <div className="text-center p-4">Loading calendar...</div> : 
+                                        <AttendanceCalendar 
+                                            year={currentDate.getFullYear()}
+                                            month={currentDate.getMonth()}
+                                            scheduledDays={scheduledDaysNumbers}
+                                            attendanceData={attendanceData}
+                                            t={t}
+                                        />
+                                    }
+                                    <p className="text-center mt-2 text-sm text-gray-400">{t('sessionsThisMonth').replace('{count}', String(sessionsThisMonth))}</p>
+                                </div>
+                            </details>
                         </div>
                     )}
                 </div>

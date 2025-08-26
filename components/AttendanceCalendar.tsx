@@ -47,7 +47,7 @@ const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
         const calendarDays = [];
         // Add empty cells for days before the first of the month
         for (let i = 0; i < firstDayOfMonth; i++) {
-            calendarDays.push(<div key={`empty-start-${i}`} className="p-2 rounded-md"></div>);
+            calendarDays.push(<div key={`empty-start-${i}`} className="rounded-full"></div>);
         }
 
         // Add cells for each day of the month
@@ -71,7 +71,7 @@ const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
                     key={day}
                     onClick={() => handleDayClick(day)}
                     className={`
-                        p-2 text-center rounded-md aspect-square flex items-center justify-center
+                        text-center rounded-full aspect-square flex items-center justify-center text-xs sm:text-sm
                         ${bgColor}
                         ${isEditable && isScheduled && 'cursor-pointer hover:ring-2 ring-amber-400 transition-all'}
                         ${!isScheduled ? 'text-gray-500' : 'text-white font-bold'}
@@ -88,11 +88,11 @@ const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
     const weekdays = ['daySunday', 'dayMonday', 'dayTuesday', 'dayWednesday', 'dayThursday', 'dayFriday', 'daySaturday'];
 
     return (
-        <div className="p-4 bg-gray-800 rounded-lg">
-            <div className="grid grid-cols-7 gap-2 mb-2 text-center text-xs font-bold text-gray-400">
-                {weekdays.map(dayKey => <div key={dayKey}>{t(dayKey).substring(0, 3)}</div>)}
+        <div className="p-2 bg-gray-800 rounded-lg">
+            <div className="grid grid-cols-7 gap-1 mb-2 text-center text-xs font-bold text-gray-400">
+                {weekdays.map(dayKey => <div key={dayKey}>{t(dayKey).substring(0, 1)}</div>)}
             </div>
-            <div className="grid grid-cols-7 gap-2">
+            <div className="grid grid-cols-7 gap-1">
                 {renderCalendar()}
             </div>
             {(isEditable || Object.values(attendanceData).length > 0) && (
