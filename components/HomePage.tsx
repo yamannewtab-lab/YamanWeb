@@ -1,4 +1,5 @@
 
+
 import React, { useRef } from 'react';
 import { Page } from '../types';
 import ActionCard from './ActionCard';
@@ -76,19 +77,27 @@ const HomePage: React.FC<HomePageProps> = ({ navigateTo, t }) => {
                     <p className="mt-4 max-w-3xl mx-auto text-lg text-stone-200 drop-shadow-md">
                         {t('heroSubtitle')}
                     </p>
-                    <div className="mt-8 flex flex-row items-center justify-center gap-4">
+                    <div className="mt-8 flex flex-col items-center justify-center gap-4">
                         <button 
-                            onClick={handleScrollToSections}
-                            className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold text-base rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 ease-in-out focus:outline-none focus:ring-4 focus:ring-amber-800"
+                            onClick={() => navigateTo('ihyaCourse')}
+                            className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-sky-500 to-blue-600 text-white font-bold text-lg rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 ease-in-out focus:outline-none focus:ring-4 focus:ring-blue-800"
                         >
-                            {t('heroButton')}
+                            {t('ihyaCourseButton')}
                         </button>
-                         <button 
-                            onClick={() => navigateTo('joinClass')}
-                            className="w-full sm:w-auto px-6 py-3 bg-gray-700/80 backdrop-blur-sm text-gray-200 font-bold text-base rounded-lg shadow-md hover:shadow-lg hover:bg-gray-600 transform hover:scale-105 transition-all duration-300 ease-in-out focus:outline-none focus:ring-4 focus:ring-gray-600 border border-gray-600"
-                        >
-                            {t('heroJoinButton')}
-                        </button>
+                        <div className="flex flex-row items-center justify-center gap-4">
+                            <button 
+                                onClick={handleScrollToSections}
+                                className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold text-base rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 ease-in-out focus:outline-none focus:ring-4 focus:ring-amber-800"
+                            >
+                                {t('heroButton')}
+                            </button>
+                             <button 
+                                onClick={() => navigateTo('joinClass')}
+                                className="w-full sm:w-auto px-6 py-3 bg-gray-700/80 backdrop-blur-sm text-gray-200 font-bold text-base rounded-lg shadow-md hover:shadow-lg hover:bg-gray-600 transform hover:scale-105 transition-all duration-300 ease-in-out focus:outline-none focus:ring-4 focus:ring-gray-600 border border-gray-600"
+                            >
+                                {t('heroJoinButton')}
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

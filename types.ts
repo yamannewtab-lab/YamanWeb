@@ -1,4 +1,4 @@
-export type Page = 'home' | 'register' | 'courses' | 'ijazah' | 'quiz' | 'tasmiQuiz' | 'tasmiInfo' | 'thanks' | 'ijazahPreview' | 'about' | 'tajwidImprovement' | 'teachers' | 'feedback' | 'feedbackThanks' | 'joinClass';
+export type Page = 'home' | 'register' | 'courses' | 'ijazah' | 'quiz' | 'tasmiQuiz' | 'tasmiInfo' | 'thanks' | 'ijazahPreview' | 'about' | 'tajwidImprovement' | 'teachers' | 'feedback' | 'feedbackThanks' | 'joinClass' | 'ihyaCourse' | 'ihyaRegister' | 'ihyaJoin';
 
 export type Language = 'en' | 'ar' | 'id';
 

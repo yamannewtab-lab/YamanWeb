@@ -15,6 +15,7 @@ import { teachersTranslations } from './teachers';
 import { feedbackTranslations } from './feedback';
 import { joinClassTranslations } from './joinClass';
 import { widgetTranslations } from './widget';
+import { ihyaTranslations } from './ihya';
 
 const mergeTranslations = (...translations: LanguageData[]): LanguageData => {
   const result: LanguageData = { en: {}, ar: {}, id: {} };
@@ -41,5 +42,6 @@ export const LANGUAGE_DATA: LanguageData = mergeTranslations(
     teachersTranslations,
     feedbackTranslations,
     joinClassTranslations,
-    widgetTranslations
+    widgetTranslations,
+    ihyaTranslations
 );

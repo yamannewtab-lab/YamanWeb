@@ -24,6 +24,10 @@ import FeedbackThanksPage from './components/FeedbackThanksPage';
 import AiChatWidget from './components/AiChatWidget';
 import ChatWidget from './components/ChatWidget';
 import JoinClassPage from './components/JoinClassPage';
+import IhyaCoursePage from './components/IhyaCoursePage';
+import IhyaRegisterPage from './components/IhyaRegisterPage';
+import IhyaJoinPage from './components/IhyaJoinPage';
+
 
 const App: React.FC = () => {
     const [currentPage, setCurrentPage] = useState<Page>('home');
@@ -152,12 +156,18 @@ const App: React.FC = () => {
                 return <FeedbackThanksPage navigateTo={navigateTo} t={t} />;
             case 'joinClass':
                 return <JoinClassPage navigateTo={navigateTo} t={t} onOpenChat={handleOpenChat} unreadCount={unreadCount} />;
+            case 'ihyaCourse':
+                return <IhyaCoursePage navigateTo={navigateTo} t={t} />;
+            case 'ihyaRegister':
+                return <IhyaRegisterPage navigateTo={navigateTo} t={t} />;
+            case 'ihyaJoin':
+                return <IhyaJoinPage navigateTo={navigateTo} t={t} />;
             default:
                 return <HomePage navigateTo={navigateTo} t={t} />;
         }
     };
 
-    const formPages: Page[] = ['register', 'quiz', 'tasmiQuiz', 'tajwidImprovement', 'feedback'];
+    const formPages: Page[] = ['register', 'quiz', 'tasmiQuiz', 'tajwidImprovement', 'feedback', 'ihyaRegister'];
     const showAiChat = formPages.includes(currentPage);
 
     return (

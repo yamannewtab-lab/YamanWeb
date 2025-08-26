@@ -15,6 +15,7 @@ const WEBHOOK_URLS = {
     FORGOT_PASSCODE: 'https://discord.com/api/webhooks/1409207667360010421/IY9TSrUhUniyhuLRVRtDDneMw-e_ozf8LKG7y7GelYlgM1A-96VK9mfA-srFSBMz8FtB',
     TEACHER_NOTIFICATION: 'https://discord.com/api/webhooks/1409537105243279442/3X_LGP8m9cPv3Z5Yp5uPkoFlNRjKIdQxkt_m7odxFfn3UFqtnB3D4QfoKhXqDp5nCPHm',
     CHAT_MESSAGES: 'https://discord.com/api/webhooks/1409537105243279442/3X_LGP8m9cPv3Z5Yp5uPkoFlNRjKIdQxkt_m7odxFfn3UFqtnB3D4QfoKhXqDp5nCPHm', // Reusing teacher webhook, can be changed.
+    IHYA_COURSE: 'https://discord.com/api/webhooks/1409889821228269598/jIjBKhpXvnxl0giXWyt8OPNGlm4D8k1iUY7iUelfNHqJ7pIoklaqBN3HJZ3CTAlndEFd',
 };
 
 type WebhookType = keyof typeof WEBHOOK_URLS;
@@ -73,6 +74,12 @@ interface CourseRegistration {
     whatsapp: string;
     source: string;
     about: string;
+}
+
+interface IhyaRegistration {
+    name: string;
+    age: string;
+    whatsapp: string;
 }
 
 interface ForgotPasscodeRequest {
@@ -343,6 +350,48 @@ export async function sendCourseRegistrationToDiscord(request: CourseRegistratio
         console.error('Error sending message to Discord:', error);
     }
 }
+
+
+/**
+ * Sends the Ihya Ulumuddin registration data to Discord.
+ */
+export async function sendIhyaRegistrationToDiscord(request: IhyaRegistration, t: (key: string) => string) {
+    const feedbackMessage = `New Ihya Ulumuddin Registration for ${request.name}.`;
+    await logRegistrationAsFeedback(feedbackMessage);
+
+    const embed = {
+        title: isTestModeEnabled() ? "[TEST] New Ihya Ulumuddin Registration" : "New Ihya Ulumuddin Registration",
+        color: 3447003, // Blue
+        fields: [
+            { name: t('nameLabel'), value: request.name, inline: true },
+            { name: t('quizAgeLabel'), value: request.age, inline: true },
+            { name: t('whatsappLabel'), value: request.whatsapp, inline: true },
+        ],
+        footer: { text: "Submitted via Maqra'at Al-Huda App" },
+        timestamp: new Date().toISOString()
+    };
+
+    const payload = {
+        username: "Maqra'at Al-Huda Bot",
+        avatar_url: "https://i.imgur.com/uFPNd22.png",
+        embeds: [embed]
+    };
+
+    try {
+        const response = await fetch(getWebhookUrl('IHYA_COURSE'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (!response.ok) {
+            const errorBody = await response.text();
+            console.error('Failed to send message to Discord:', response.status, response.statusText, errorBody);
+        }
+    } catch (error) {
+        console.error('Error sending message to Discord:', error);
+    }
+}
+
 
 /**
  * Sends a user's question to the AI to a Discord channel for logging.
