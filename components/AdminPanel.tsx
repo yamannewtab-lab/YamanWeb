@@ -417,81 +417,83 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
 
     const handleConfirmApproval = async () => {
         if (!approvalForLink) return;
-        
         setProcessingId(approvalForLink.id);
+        
         try {
-            if (zoomLinkInput && zoomLinkInput.trim() !== '') {
-                 // 1. Book the requested slots in the 'booking' table.
-                if (approvalForLink.slots && approvalForLink.slots.length > 0) {
-                    const bookingsToInsert = approvalForLink.slots.map(slot => ({
-                        time_slot: slot.time_slot,
-                        day_number: slot.day_number,
-                        is_booked: true
-                    }));
-
-                    const { error: bookingError } = await supabase
-                        .from('booking')
-                        .insert(bookingsToInsert);
-
-                    if (bookingError) {
-                        throw new Error(`Failed to book the required slots: ${bookingError.message}`);
-                    }
-                }
-                
-                // Fetch passcode
-                const { data: passcodeData, error: passcodeFetchError } = await supabase
-                    .from('passcodes')
-                    .select('code')
-                    .eq('name', approvalForLink.name)
-                    .limit(1)
-                    .single();
-
-                if (passcodeFetchError || !passcodeData) {
-                    throw new Error(`Could not fetch passcode for ${approvalForLink.name}. Error: ${passcodeFetchError?.message}`);
-                }
-
-                // Insert into links table
-                const { error: linkInsertError } = await supabase
-                    .from('links')
-                    .insert([{
-                        name: approvalForLink.name,
-                        passcode: passcodeData.code,
-                        zoom_link: zoomLinkInput.trim()
-                    }]);
-                
-                if (linkInsertError) {
-                    throw new Error(`Failed to store Zoom link: ${linkInsertError.message}`);
-                }
-
-                // Update the student's record in 'passcodes' to mark as approved.
-                const { error: passcodeUpdateError } = await supabase
-                    .from('passcodes')
-                    .update({ 
-                        date_approved: new Date().toISOString(),
-                        paid_state: 'unpaid',
-                    })
-                    .eq('name', approvalForLink.name);
-
-                if (passcodeUpdateError) {
-                    console.error(`CRITICAL: Failed to update passcode for ${approvalForLink.name}.`, passcodeUpdateError.message);
-                    throw new Error(`Could not update passcode status: ${passcodeUpdateError.message}. Please check manually.`);
-                }
-
-                // Update the approval request status to 'approved'.
+            // Handle Tasmi separately as it has no booking/passcode logic
+            if (approvalForLink.type === 'Tasmi') {
                 const { error: updateError } = await supabase.from('approvals').update({ status: 'approved' }).eq('id', approvalForLink.id);
-                if (updateError) throw new Error(`Failed to update approval status: ${updateError.message}`);
-                
-                alert('Application approved, slots booked, and Zoom link stored successfully!');
+                if (updateError) throw updateError;
+                alert('Tasmi request approved and removed from list.');
                 setApprovals(current => current.filter(a => a.id !== approvalForLink.id));
+                // Cleanup state after handling
+                setProcessingId(null);
                 handleCancelApproval();
-            } else {
-                alert('Please provide a valid Zoom link.');
+                return;
             }
+
+            // For Ijazah and Tajwid, proceed with booking and account linking
+            if (!zoomLinkInput || zoomLinkInput.trim() === '') {
+                throw new Error('Please provide a valid Zoom link.');
+            }
+
+            // CRITICAL FIX: Check for accountName and throw a clear error if missing
+            const studentAccountName = approvalForLink.data?.accountName;
+            if (!studentAccountName) {
+                throw new Error(`Critical error: 'accountName' is missing from application data for '${approvalForLink.name}'. This application cannot be auto-approved and must be handled manually.`);
+            }
+
+            // Fetch the student's record from the passcodes table using their account name.
+            const { data: passcodeData, error: passcodeFetchError } = await supabase
+                .from('passcodes')
+                .select('*')
+                .eq('name', studentAccountName)
+                .limit(1)
+                .single();
+
+            if (passcodeFetchError || !passcodeData) {
+                const errorMsg = passcodeFetchError ? passcodeFetchError.message : "No matching student account found.";
+                throw new Error(`Could not find the student account for "${studentAccountName}". Please ensure the account was created successfully. Error: ${errorMsg}`);
+            }
+
+            // Book the slots in the 'booking' table
+            if (approvalForLink.slots && approvalForLink.slots.length > 0) {
+                const bookingsToInsert = approvalForLink.slots.map(slot => ({
+                    time_slot: slot.time_slot,
+                    day_number: slot.day_number,
+                    is_booked: true
+                }));
+                const { error: bookingError } = await supabase.from('booking').insert(bookingsToInsert);
+                if (bookingError) throw new Error(`Failed to book slots: ${bookingError.message}`);
+            }
+
+            // Insert the zoom link into the 'links' table
+            const { error: linkInsertError } = await supabase.from('links').insert([{
+                name: approvalForLink.name, // Use student's full name for display
+                passcode: passcodeData.code,
+                zoom_link: zoomLinkInput.trim()
+            }]);
+            if (linkInsertError) throw new Error(`Failed to store Zoom link: ${linkInsertError.message}`);
+            
+            // Update the student's record in 'passcodes' to mark as approved
+            const { error: passcodeUpdateError } = await supabase.from('passcodes').update({
+                date_approved: new Date().toISOString(),
+                paid_state: 'unpaid',
+            }).eq('id', passcodeData.id);
+            if (passcodeUpdateError) throw new Error(`Could not update student's approval status: ${passcodeUpdateError.message}. Please check manually.`);
+
+            // Finally, update the approval request to 'approved' status
+            const { error: approvalUpdateError } = await supabase.from('approvals').update({ status: 'approved' }).eq('id', approvalForLink.id);
+            if (approvalUpdateError) throw new Error(`Failed to update approval status: ${approvalUpdateError.message}`);
+            
+            alert('Application approved, slots booked, and Zoom link stored successfully!');
+            setApprovals(current => current.filter(a => a.id !== approvalForLink.id));
+
         } catch (error: any) {
             alert(`Approval failed: ${error.message}`);
-            fetchApprovals();
         } finally {
             setProcessingId(null);
+            handleCancelApproval();
         }
     };
     
@@ -613,223 +615,143 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
                             <button onClick={() => setActiveTab('calendars')} className={getTabClassName('calendars')}>{t('adminTabCalendars')}</button>
                             <button onClick={() => setActiveTab('settings')} className={getTabClassName('settings')}>Settings</button>
                         </div>
-                        <div className="overflow-y-auto custom-scrollbar pr-2 mt-4 flex-grow">
-                            {activeTab === 'visitors' && (<div>{visitorsLoading ? <p>Loading visitors...</p> : visitorsError ? <p className="text-red-400">{visitorsError}</p> : <ul className="space-y-2">{Object.entries(visitors).sort((a,b) => b[1].count - a[1].count).map(([country, data]) => (<li key={country} className="bg-gray-700 rounded-md"><details><summary className="p-3 cursor-pointer flex justify-between items-center font-semibold list-none"><span>{country}</span><span className="text-sm bg-gray-600 px-2 py-0.5 rounded-full">{data.count}</span></summary><div className="p-3 border-t border-gray-600">{data.cities.length > 0 ? <ul className="list-disc list-inside pl-2 space-y-1 text-gray-300">{data.cities.sort().map((city, index) => city && <li key={index}>{city}</li>)}</ul> : <p className="text-gray-400 italic">No city data.</p>}</div></details></li>))}</ul>}</div>)}
-                            {activeTab === 'feedbacks' && (<div>{feedbacksLoading ? <p>Loading feedbacks...</p> : feedbacksError ? <p className="text-red-400">{feedbacksError}</p> : <ul className="space-y-3">{feedbacks.map((fb, index) => (<li key={index} className="bg-gray-700 p-4 rounded-md shadow"><p className="text-gray-300 whitespace-pre-wrap">{fb.message}</p></li>))}</ul>}</div>)}
-                            {activeTab === 'approvals' && (<div>{approvalsLoading ? <p>Loading approvals...</p> : approvalsError ? <p className="text-red-400">{approvalsError}</p> : approvals.length === 0 ? <p>No pending approvals.</p> : <ul className="space-y-3">{approvals.map(approval => {
-                                const selectedDays = approval.data?.fullDetails?.selectedDays || approval.data?.selectedDays;
-                                return (
-                                <li key={approval.id} className="bg-gray-700/80 p-4 rounded-lg">
-                                    <div className="flex justify-between items-start">
-                                        <div>
-                                            <h4 className="font-bold text-lg">{approval.name}</h4>
-                                            <p className="text-sm text-amber-400">{approval.type} Application</p>
-                                        </div>
-                                        <div className="flex gap-2">{<button onClick={() => handleApproveClick(approval)} disabled={processingId===approval.id} className="bg-green-600 text-white px-3 py-1 rounded-md text-sm font-semibold hover:bg-green-500 disabled:bg-gray-500">Approve</button>}<button onClick={() => handleReject(approval.id)} disabled={processingId===approval.id} className="bg-red-600 text-white px-3 py-1 rounded-md text-sm font-semibold hover:bg-red-500 disabled:bg-gray-500">Reject</button></div>
-                                    </div>
-                                    <div className="mt-3 border-t border-gray-600 pt-3">
-                                        {selectedDays && Array.isArray(selectedDays) && selectedDays.length > 0 && (
-                                            <div className="mb-3">
-                                                <p className="font-semibold text-gray-300 text-sm mb-1">selected_weekly:</p>
-                                                <p className="text-sm text-gray-200">{selectedDays.map((day:string) => t(`day${day}`)).join(' - ')}</p>
-                                            </div>
-                                        )}
-                                        <p className="font-semibold text-gray-300 text-sm mb-1">Requested Slots:</p>
-                                        <ul className="list-disc list-inside pl-2 space-y-1 text-sm">{approval.slots?.map((slot, i) => (<li key={i}>{t('day' + dayNumberToString(slot.day_number))} @ {t(timeSlotToKey(slot.time_slot))}</li>))}</ul>
-                                    </div>
-                                    <details className="mt-3"><summary className="cursor-pointer text-sm text-gray-400 hover:text-white">View Full Details</summary><pre className="mt-2 p-2 bg-gray-900 rounded-md text-xs overflow-x-auto custom-scrollbar"><code>{JSON.stringify(approval.data, null, 2)}</code></pre></details>
-                                </li>
-                                )
-                            })}</ul>}</div>)}
+
+                        <div className="overflow-y-auto custom-scrollbar flex-grow -mx-6 px-6 pt-4">
+                            {activeTab === 'visitors' && (
+                                <div>
+                                    {visitorsLoading ? <p>Loading visitors...</p> : visitorsError ? <p className="text-red-400">{visitorsError}</p> :
+                                    <div className="space-y-2">
+                                        {Object.entries(visitors).sort(([, a], [, b]) => b.count - a.count).map(([country, data]) => (
+                                            <details key={country} className="bg-gray-700/50 rounded-lg"><summary className="p-2 cursor-pointer font-semibold">{country} ({data.count})</summary><div className="p-2 border-t border-gray-600 text-sm">{data.cities.join(', ')}</div></details>
+                                        ))}
+                                    </div>}
+                                </div>
+                            )}
+
+                            {activeTab === 'feedbacks' && (
+                                <div>
+                                    {feedbacksLoading ? <p>Loading feedback...</p> : feedbacksError ? <p className="text-red-400">{feedbacksError}</p> :
+                                    <div className="space-y-2">
+                                        {feedbacks.map((fb, i) => <div key={i} className="bg-gray-700/50 p-3 rounded-lg text-sm whitespace-pre-wrap">{fb.message}</div>)}
+                                    </div>}
+                                </div>
+                            )}
+
+                             {activeTab === 'approvals' && (
+                                <div>
+                                    {approvalsLoading ? <p>Loading approvals...</p> : approvalsError ? <p className="text-red-400">{approvalsError}</p> :
+                                    <div className="space-y-4">
+                                        {approvals.length === 0 ? <p className="text-gray-400 text-center py-4">No pending approvals.</p> : approvals.map(approval => (
+                                            <details key={approval.id} className="bg-gray-700/50 rounded-lg overflow-hidden"><summary className="p-3 cursor-pointer flex justify-between items-center"><span className="font-semibold">{approval.name} <span className="text-xs font-normal text-gray-400 ml-2">({approval.type})</span></span><span className="text-xs text-amber-400">View Details</span></summary>
+                                            <div className="p-3 border-t border-gray-600 text-sm space-y-2">
+                                                {approval.data.accountName && <p><strong className="text-gray-400">Account:</strong> {approval.data.accountName}</p>}
+                                                {Object.entries(approval.data.fullDetails || approval.data).map(([key, value]) => <p key={key}><strong className="text-gray-400 capitalize">{key.replace(/([A-Z])/g, ' $1')}:</strong> {typeof value === 'boolean' ? (value ? 'Yes' : 'No') : (Array.isArray(value) ? value.join(', ') : String(value))}</p>)}
+                                                <div className="flex gap-2 pt-2">
+                                                    <button onClick={() => handleApproveClick(approval)} disabled={processingId === approval.id} className="w-full bg-green-600 text-white font-bold py-2 px-4 rounded-md hover:bg-green-700 disabled:bg-green-800">Approve</button>
+                                                    <button onClick={() => handleReject(approval.id)} disabled={processingId === approval.id} className="w-full bg-red-600 text-white font-bold py-2 px-4 rounded-md hover:bg-red-700 disabled:bg-red-800">Reject</button>
+                                                </div>
+                                            </div></details>
+                                        ))}
+                                    </div>}
+                                </div>
+                            )}
+                            
                              {activeTab === 'payments' && (
                                 <div>
-                                    {paymentsLoading ? <p>Loading payments...</p> :
-                                    paymentsError ? <p className="text-red-400">{paymentsError}</p> :
-                                    payments.length === 0 ? <p>No approved students found.</p> :
-                                    <ul className="space-y-3">
-                                        {payments.map(payment => (
-                                            <li key={payment.id} className="bg-gray-700/80 p-4 rounded-lg">
-                                                <div className="flex justify-between items-center">
-                                                    <h4 className="font-bold text-lg">{payment.name}</h4>
-                                                    {payment.paid_state === 'PAID' ? (
-                                                        <span className="text-sm bg-green-600 px-3 py-1 rounded-full font-semibold">{t('statusPaid')}</span>
-                                                    ) : (
-                                                        <button 
-                                                            onClick={() => handleMarkAsPaid(payment.id)} 
-                                                            disabled={processingId === payment.id}
-                                                            className="bg-blue-600 text-white px-3 py-1 rounded-md text-sm font-semibold hover:bg-blue-500 disabled:bg-gray-500"
-                                                        >
-                                                            {t('markAsPaid')}
-                                                        </button>
-                                                    )}
-                                                </div>
-                                                <div className="mt-3 border-t border-gray-600 pt-3 text-sm text-gray-400">
-                                                    {payment.paid_state === 'PAID' && payment.last_paid && payment.next_paid ? (
-                                                        <div>
-                                                            <p>{t('paidOn').replace('{date}', new Date(payment.last_paid).toLocaleDateString())}</p>
-                                                            <p className="font-semibold text-gray-200">{t('nextPaymentDue').replace('{date}', new Date(payment.next_paid).toLocaleDateString())}</p>
-                                                        </div>
-                                                    ) : (
-                                                        <p className="font-semibold text-red-400">{t('statusUnpaid')}</p>
-                                                    )}
-                                                </div>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                    }
+                                    {paymentsLoading ? <p>Loading payments...</p> : paymentsError ? <p className="text-red-400">{paymentsError}</p> :
+                                    <table className="w-full text-sm text-left">
+                                        <thead className="bg-gray-700"><tr className="text-gray-300">
+                                            <th className="p-2">Name</th><th className="p-2">Status</th><th className="p-2">Next Payment</th><th className="p-2">Action</th>
+                                        </tr></thead>
+                                        <tbody>{payments.map(p => (
+                                            <tr key={p.id} className="border-b border-gray-700">
+                                                <td className="p-2">{p.name}</td>
+                                                <td className={`p-2 font-semibold ${p.paid_state === 'PAID' ? 'text-green-400' : 'text-red-400'}`}>{p.paid_state}</td>
+                                                <td className="p-2">{p.next_paid ? new Date(p.next_paid).toLocaleDateString() : 'N/A'}</td>
+                                                <td className="p-2">{p.paid_state !== 'PAID' && <button onClick={() => handleMarkAsPaid(p.id)} disabled={processingId === p.id} className="bg-blue-600 text-white font-semibold py-1 px-2 rounded-md hover:bg-blue-700 text-xs">{t('markAsPaid')}</button>}</td>
+                                            </tr>))}
+                                        </tbody>
+                                    </table>}
                                 </div>
                             )}
-                            {activeTab === 'bookedSeats' && (
-                                <div>
-                                    {bookedSeatsLoading ? <p>Loading booked seats...</p> :
-                                    bookedSeatsError ? <p className="text-red-400">{bookedSeatsError}</p> :
-                                    Object.keys(bookedSeats).length === 0 ? <p>No seats are currently booked.</p> :
-                                    (
-                                        <div className="space-y-6">
-                                            {MAIN_TIME_BLOCKS.map(block => {
-                                                const blockBookings = block.slots.filter(slot => bookedSeats[slot.id] && bookedSeats[slot.id].length > 0);
-                                                if (blockBookings.length === 0) return null;
 
-                                                return (
-                                                    <div key={block.id}>
-                                                        <h3 className="text-xl font-bold text-gray-100 mb-3 border-b border-gray-600 pb-2">{t(block.key)}</h3>
-                                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                                            {blockBookings.map(slot => (
-                                                                <div key={slot.id} className="bg-gray-700 p-4 rounded-lg">
-                                                                    <p className="font-semibold text-amber-400">{t(slot.key)}</p>
-                                                                    <ul className="mt-2 space-y-1 text-sm text-gray-300">
-                                                                        {bookedSeats[slot.id].map(dayNum => (
-                                                                            <li key={dayNum} className="flex items-center gap-2">
-                                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-400 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                                                                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                                                                </svg>
-                                                                                {t('day' + dayNumberToString(dayNum))}
-                                                                            </li>
-                                                                        ))}
-                                                                    </ul>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    )
-                                    }
-                                </div>
-                            )}
-                             {activeTab === 'chats' && (
-                                <div className="flex h-full">
-                                    <div className="w-1/3 border-r border-gray-600 pr-2 overflow-y-auto custom-scrollbar">
-                                        <h3 className="text-lg font-bold mb-3">Conversations</h3>
-                                        {chatsLoading ? <p>Loading chats...</p> : chatsError ? <p className="text-red-400">{chatsError}</p> : (
-                                            <ul className="space-y-1">
-                                                {chatSessions.map(session => (
-                                                    <li key={session.session_id}>
-                                                        <button 
-                                                            onClick={() => setSelectedSessionId(session.session_id)}
-                                                            className={`w-full text-left p-2 rounded-md transition-colors ${selectedSessionId === session.session_id ? 'bg-amber-600/50' : 'hover:bg-gray-700'}`}
-                                                        >
-                                                            <p className="font-semibold text-gray-200 truncate">{session.session_id}</p>
-                                                            <p className="text-xs text-gray-400">{new Date(session.created_at).toLocaleString()}</p>
-                                                        </button>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        )}
-                                    </div>
-                                    <div className="w-2/3 pl-2 flex flex-col">
-                                        {selectedSessionId ? (
-                                            <>
-                                                <div className="flex-grow overflow-y-auto custom-scrollbar p-2 space-y-4">
-                                                    {chatMessages.map(msg => (
-                                                        <div key={msg.id} className={`flex items-end gap-2 ${msg.sender_name === 'Admin' ? 'justify-end' : 'justify-start'}`}>
-                                                            <div className={`max-w-[85%] px-3 py-2 rounded-2xl shadow-sm whitespace-pre-wrap text-sm ${msg.sender_name === 'Admin' ? 'bg-gradient-to-br from-blue-500 to-sky-500 text-white rounded-br-none' : 'bg-gray-700 text-gray-200 rounded-bl-none'}`}>
-                                                                <p className="font-bold text-xs mb-1">{msg.sender_name}</p>
-                                                                {msg.message}
-                                                                <p className="text-right text-[10px] text-gray-400 mt-1">{new Date(msg.created_at).toLocaleTimeString()}</p>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                     <div ref={chatMessagesEndRef} />
-                                                </div>
-                                                <form onSubmit={handleSendAdminMessage} className="mt-2 flex items-center gap-2">
-                                                    <input type="text" value={adminMessage} onChange={e => setAdminMessage(e.target.value)} placeholder="Type your reply..." className="flex-grow w-full px-4 py-2 text-sm bg-gray-600 border border-gray-500 rounded-full focus:outline-none focus:ring-2 focus:ring-amber-500 text-gray-200"/>
-                                                    <button type="submit" disabled={!adminMessage.trim()} className="bg-amber-500 text-white rounded-full p-2.5 hover:bg-amber-600 disabled:bg-gray-500 transition-all"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg></button>
-                                                </form>
-                                            </>
-                                        ) : (
-                                            <div className="flex items-center justify-center h-full"><p className="text-gray-400">Select a conversation to start chatting.</p></div>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-                             {activeTab === 'calendars' && (
+                             {activeTab === 'bookedSeats' && (
                                 <div>
-                                    {calendarLoading && !selectedStudent ? <p>Loading students...</p> : (
-                                        <div className="flex gap-4 h-full">
-                                            <div className="w-1/3 border-r border-gray-600 pr-2 overflow-y-auto custom-scrollbar">
-                                                <h3 className="text-lg font-bold mb-3">Approved Students</h3>
-                                                <ul className="space-y-1">
-                                                    {approvedStudents.map(student => (
-                                                        <li key={student.name}>
-                                                            <button onClick={() => setSelectedStudent(student)} className={`w-full text-left p-2 rounded-md transition-colors ${selectedStudent?.name === student.name ? 'bg-amber-600/50' : 'hover:bg-gray-700'}`}>
-                                                                {student.name}
-                                                            </button>
-                                                        </li>
-                                                    ))}
-                                                </ul>
+                                    {bookedSeatsLoading ? <p>Loading...</p> : bookedSeatsError ? <p className="text-red-400">{bookedSeatsError}</p> :
+                                    <div className="space-y-2">
+                                        {Object.entries(bookedSeats).map(([timeSlot, days]) => (
+                                            <div key={timeSlot} className="bg-gray-700/50 p-2 rounded-lg text-sm">
+                                                <p className="font-semibold">{t(timeSlotToKey(timeSlot))}</p>
+                                                <p className="text-xs text-gray-400">{days.map(dayNumberToString).join(', ')}</p>
                                             </div>
-                                            <div className="w-2/3 pl-2">
-                                                {selectedStudent ? (
-                                                    <div>
-                                                        <div className="flex justify-between items-center mb-4 bg-gray-700/50 p-2 rounded-lg">
-                                                            <button onClick={() => handleMonthChange(-1)} className="p-2 rounded-full hover:bg-gray-600 transition-colors">&lt;</button>
-                                                            <span className="font-semibold text-lg">{calendarDate.toLocaleString('en-US', { month: 'long', year: 'numeric' })}</span>
-                                                            <button onClick={() => handleMonthChange(1)} className="p-2 rounded-full hover:bg-gray-600 transition-colors">&gt;</button>
-                                                        </div>
-                                                        {calendarLoading ? <p>Loading calendar...</p> : 
-                                                            <AttendanceCalendar 
-                                                                year={calendarDate.getFullYear()}
-                                                                month={calendarDate.getMonth()}
-                                                                scheduledDays={selectedStudent.selected_days.split(',').map(dayStringToNumber)}
-                                                                attendanceData={studentAttendance}
-                                                                isEditable={true}
-                                                                onDayClick={handleCalendarDayClick}
-                                                                t={t}
-                                                            />
-                                                        }
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex items-center justify-center h-full"><p className="text-gray-400">Select a student to view their calendar.</p></div>
-                                                )}
+                                        ))}
+                                    </div>}
+                                </div>
+                            )}
+
+                             {activeTab === 'chats' && (
+                                <div className="flex h-full -mx-6">
+                                    <div className="w-1/3 border-r border-gray-600 overflow-y-auto custom-scrollbar">
+                                        {chatsLoading ? <p className="p-2">Loading...</p> : chatsError ? <p className="p-2 text-red-400">{chatsError}</p> :
+                                        chatSessions.map(session => (
+                                            <button key={session.session_id} onClick={() => setSelectedSessionId(session.session_id)} className={`w-full text-left p-2 text-sm ${selectedSessionId === session.session_id ? 'bg-amber-600/50' : 'hover:bg-gray-700/50'}`}>
+                                                <p className="font-semibold truncate">{session.session_id}</p>
+                                                <p className="text-xs text-gray-400">{new Date(session.created_at).toLocaleString()}</p>
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <div className="w-2/3 flex flex-col pl-2">
+                                        <div className="flex-grow overflow-y-auto custom-scrollbar space-y-3 p-2">
+                                            {selectedSessionId ? chatMessages.map(msg => (
+                                                <div key={msg.id} className={`p-2 rounded-lg max-w-[80%] ${msg.sender_name === 'Admin' ? 'bg-gray-600 self-end ml-auto' : 'bg-blue-800/80 self-start mr-auto'}`}>
+                                                    <p className="text-xs font-bold text-gray-300">{msg.sender_name}</p>
+                                                    <p className="text-sm">{msg.message}</p>
+                                                </div>
+                                            )) : <p className="text-center text-gray-400">Select a session to view messages.</p>}
+                                            <div ref={chatMessagesEndRef} />
+                                        </div>
+                                        {selectedSessionId && <form onSubmit={handleSendAdminMessage} className="flex gap-2 p-2 border-t border-gray-600"><input type="text" value={adminMessage} onChange={(e) => setAdminMessage(e.target.value)} placeholder="Type a message..." className="flex-grow bg-gray-600 rounded-full px-3 py-1 text-sm focus:outline-none" /><button type="submit" className="bg-amber-500 rounded-full p-2 text-white">Send</button></form>}
+                                    </div>
+                                </div>
+                            )}
+
+                             {activeTab === 'calendars' && (
+                                <div className="space-y-4">
+                                    <select onChange={(e) => setSelectedStudent(approvedStudents.find(s => s.name === e.target.value) || null)} className="w-full bg-gray-700 p-2 rounded-md">
+                                        <option>Select a student</option>
+                                        {approvedStudents.map(s => <option key={s.name} value={s.name}>{s.name}</option>)}
+                                    </select>
+                                    {selectedStudent && (
+                                        <div>
+                                            <div className="flex justify-between items-center mb-2">
+                                                <button onClick={() => handleMonthChange(-1)}>&lt;</button>
+                                                <span>{calendarDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
+                                                <button onClick={() => handleMonthChange(1)}>&gt;</button>
                                             </div>
+                                            {calendarLoading ? <p>Loading attendance...</p> : 
+                                                <AttendanceCalendar
+                                                    year={calendarDate.getFullYear()} month={calendarDate.getMonth()}
+                                                    scheduledDays={selectedStudent.selected_days.split(',').map(dayStringToNumber)}
+                                                    attendanceData={studentAttendance}
+                                                    isEditable={true} onDayClick={handleCalendarDayClick} t={t}
+                                                />
+                                            }
                                         </div>
                                     )}
                                 </div>
                             )}
+
                             {activeTab === 'settings' && (
                                 <div className="space-y-4">
-                                    <div>
-                                        <h3 className="text-lg font-bold mb-2">Application Settings</h3>
-                                        <div className="bg-gray-700 p-4 rounded-lg flex items-center justify-between">
-                                            <div>
-                                                <label htmlFor="test-mode-toggle" className="font-semibold text-gray-200">Test Mode</label>
-                                                <p className="text-sm text-gray-400">Route all notifications to a test webhook.</p>
-                                            </div>
-                                            <label htmlFor="test-mode-toggle" className="flex items-center cursor-pointer">
-                                                <div className="relative">
-                                                    <input type="checkbox" id="test-mode-toggle" className="sr-only" checked={isTestMode} onChange={() => {
-                                                        const newMode = !isTestMode;
-                                                        setIsTestMode(newMode);
-                                                        (window as any).maqraatIsTestMode = newMode;
-                                                    }} />
-                                                    <div className={`block w-14 h-8 rounded-full transition ${isTestMode ? 'bg-amber-500' : 'bg-gray-600'}`}></div>
-                                                    <div className={`dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform ${isTestMode ? 'translate-x-6' : 'translate-x-0'}`}></div>
-                                                </div>
-                                            </label>
+                                    <div className="bg-gray-700/50 p-3 rounded-lg flex justify-between items-center">
+                                        <label htmlFor="test-mode-toggle" className="font-semibold">Enable Test Mode</label>
+                                        <div className="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                                            <input type="checkbox" name="toggle" id="test-mode-toggle" checked={isTestMode} onChange={(e) => { const checked = e.target.checked; setIsTestMode(checked); (window as any).maqraatIsTestMode = checked; }} className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
+                                            <label htmlFor="test-mode-toggle" className="toggle-label block overflow-hidden h-6 rounded-full bg-gray-500 cursor-pointer"></label>
                                         </div>
                                     </div>
+                                    <style>{`.toggle-checkbox:checked { right: 0; border-color: #48bb78; } .toggle-checkbox:checked + .toggle-label { background-color: #48bb78; }`}</style>
+                                    <p className="text-xs text-gray-400">When enabled, all Discord notifications will be sent to a test channel.</p>
                                 </div>
                             )}
                         </div>
@@ -837,31 +759,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
                 )}
 
                 {approvalForLink && (
-                    <div className="absolute inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-10 rounded-lg">
-                        <div className="bg-gray-700 p-6 rounded-lg shadow-xl w-full max-w-md">
-                            <h3 className="text-lg font-bold mb-4">Enter Zoom Link for {approvalForLink.name}</h3>
-                            <input
-                                type="url"
-                                value={zoomLinkInput}
-                                onChange={(e) => setZoomLinkInput(e.target.value)}
-                                placeholder="https://zoom.us/j/..."
-                                autoFocus
-                                className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-amber-500 focus:border-amber-500 text-gray-200"
-                            />
-                            <div className="mt-6 flex justify-end gap-4">
-                                <button
-                                    onClick={handleCancelApproval}
-                                    className="px-4 py-2 bg-gray-600 text-gray-200 font-semibold rounded-md hover:bg-gray-500"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={handleConfirmApproval}
-                                    disabled={processingId === approvalForLink.id || !zoomLinkInput.trim()}
-                                    className="px-4 py-2 bg-green-600 text-white font-semibold rounded-md hover:bg-green-500 disabled:bg-gray-500"
-                                >
-                                    {processingId === approvalForLink.id ? 'Processing...' : 'Confirm & Approve'}
-                                </button>
+                    <div className="absolute inset-0 bg-black/80 flex items-center justify-center" onClick={handleCancelApproval}>
+                        <div className="bg-gray-800 border border-gray-600 rounded-lg p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
+                            <h3 className="text-lg font-bold mb-4">Approve: {approvalForLink.name}</h3>
+                            <p className="text-sm text-gray-400 mb-4">Enter the Zoom meeting link for this student.</p>
+                            <input type="url" value={zoomLinkInput} onChange={e => setZoomLinkInput(e.target.value)} placeholder="https://zoom.us/..." autoFocus className="w-full bg-gray-700 p-2 rounded-md mb-4"/>
+                            <div className="flex gap-2">
+                                <button onClick={handleConfirmApproval} disabled={!zoomLinkInput.trim() || processingId === approvalForLink.id} className="w-full bg-green-600 text-white font-bold py-2 px-4 rounded-md hover:bg-green-700 disabled:opacity-50">Confirm Approval</button>
+                                <button onClick={handleCancelApproval} className="w-full bg-gray-600 text-white font-bold py-2 px-4 rounded-md hover:bg-gray-700">Cancel</button>
                             </div>
                         </div>
                     </div>

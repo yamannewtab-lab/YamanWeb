@@ -316,7 +316,11 @@ const QuizPage: React.FC<QuizPageProps> = ({ navigateTo, t, ijazahApplication, s
                 day_number: dayStringToNumber(day),
             }));
 
-            const applicationData = { ...ijazahApplication, fullDetails: localDetails };
+            const applicationData = {
+                ...ijazahApplication,
+                fullDetails: localDetails,
+                accountName: accountName.trim()
+            };
 
             const approvalRequest = {
                 name: localDetails.name,

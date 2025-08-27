@@ -1,5 +1,7 @@
 {
   "name": "Maqra'at Al-Huda",
   "description": "A web application for registering for Islamic courses, Ijazah programs, and free Tasmi' sessions offered by Maqra'at Al-Huda. ",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "microphone"
+  ]
 }

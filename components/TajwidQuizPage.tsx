@@ -279,7 +279,7 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t, setLastS
                 name: formData.name,
                 application_type: 'Tajwid',
                 requested_slots: JSON.stringify(slotsToBook),
-                application_data: JSON.stringify(formData),
+                application_data: JSON.stringify({ ...formData, accountName: accountName.trim() }),
                 status: 'pending'
             };
 

@@ -13,7 +13,9 @@ const WEBHOOK_URLS = {
     COURSE_REGISTRATION: 'https://discord.com/api/webhooks/1407929481943060521/ptt6k-9KH-ZoNsxdj6x1N0rUbIprbTYYiOwTl59gE9k6nFL93ZhYOlBJlljLXDXAKw5t',
     AI_QUESTIONS: 'https://discord.com/api/webhooks/1408380025983602688/9wlOyBOt0RYed0ftJVXjRhNelhcIjECYzKSOnIaa0JyxnSrCQYQ-W3geQrKcivpjsqfL',
     FORGOT_PASSCODE: 'https://discord.com/api/webhooks/1409207667360010421/IY9TSrUhUniyhuLRVRtDDneMw-e_ozf8LKG7y7GelYlgM1A-96VK9mfA-srFSBMz8FtB',
-    TEACHER_NOTIFICATION: 'https://discord.com/api/webhooks/1409537105243279442/3X_LGP8m9cPv3Z5Yp5uPkoFlNRjKIdQxkt_m7odxFfn3UFqtnB3D4QfoKhXqDp5nCPHm',
+    TEACHER_NOTIFICATION: 'https://discord.com/api/webhooks/1410127945657352312/GzjZMclkR9j0pJBVDBjyOGOn4ktYLcY3f2MvNH2R-5UhtJWLqAmTURzOHOaFLSh1fBeW',
+    TEACHER_ABSENT_NOTIFICATION: 'https://discord.com/api/webhooks/1410128137429192796/K9VhoitpLcPbahZFKYPZql4LTsLpEUK7qXSSDOqMYzGAbEIy1VYyZ1ZSrVtBuKvl33ch',
+    HOMEWORK: 'https://discord.com/api/webhooks/1410135598844350495/8V794jeUKiQBC_4DILu18NrUq-U6Xgw1EzmpKXJHrgvjd1mL2iPNRbeYHKtlSEwxxDVD',
     CHAT_MESSAGES: 'https://discord.com/api/webhooks/1409537105243279442/3X_LGP8m9cPv3Z5Yp5uPkoFlNRjKIdQxkt_m7odxFfn3UFqtnB3D4QfoKhXqDp5nCPHm', // Reusing teacher webhook, can be changed.
     IHYA_COURSE: 'https://discord.com/api/webhooks/1409889821228269598/jIjBKhpXvnxl0giXWyt8OPNGlm4D8k1iUY7iUelfNHqJ7pIoklaqBN3HJZ3CTAlndEFd',
 };
@@ -97,6 +99,12 @@ interface TeacherNotificationRequest {
 interface ChatMessageRequest {
     name: string;
     message: string;
+}
+
+interface HomeworkRequest {
+    studentName: string;
+    text: string;
+    audioBlob: Blob | null;
 }
 
 
@@ -487,7 +495,7 @@ export async function sendTeacherNotification(request: TeacherNotificationReques
             { name: "Program", value: request.program, inline: true },
             { name: "Scheduled Time", value: request.time, inline: false },
         ],
-        description: `**${request.name}** has clicked the 'Notify Teacher' button and is waiting to start the session.`,
+        description: `**${request.name}** has clicked the 'I'm Ready' button and is waiting to start the session.`,
         footer: { text: "Notification from Maqra'at Al-Huda App" },
         timestamp: new Date().toISOString()
     };
@@ -511,6 +519,78 @@ export async function sendTeacherNotification(request: TeacherNotificationReques
         }
     } catch (error) {
         console.error('Error sending teacher notification to Discord:', error);
+    }
+}
+
+/**
+ * Sends a notification to the teacher that a student cannot attend.
+ */
+export async function sendTeacherAbsentNotification(request: TeacherNotificationRequest) {
+    const embed = {
+        title: isTestModeEnabled() ? "[TEST] Student Absent from Class" : "Student Absent from Class",
+        color: 15158332, // Red
+        fields: [
+            { name: "Student Name", value: request.name, inline: true },
+            { name: "Program", value: request.program, inline: true },
+            { name: "Scheduled Time", value: request.time, inline: false },
+        ],
+        description: `**${request.name}** has indicated they cannot attend today's session. Their attendance has been marked as 'missed'.`,
+        footer: { text: "Notification from Maqra'at Al-Huda App" },
+        timestamp: new Date().toISOString()
+    };
+    
+    const payload = {
+        username: "Class Notifier Bot",
+        avatar_url: "https://i.imgur.com/uFPNd22.png",
+        content: `🚫 Student **${request.name}** will be absent today.`,
+        embeds: [embed]
+    };
+
+    try {
+        const response = await fetch(getWebhookUrl('TEACHER_ABSENT_NOTIFICATION'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (!response.ok) {
+            const errorBody = await response.text();
+            console.error('Failed to send teacher absent notification to Discord:', response.status, response.statusText, errorBody);
+        }
+    } catch (error) {
+        console.error('Error sending teacher absent notification to Discord:', error);
+    }
+}
+
+/**
+ * Sends homework (text and optional audio) to Discord.
+ */
+export async function sendHomeworkToDiscord(request: HomeworkRequest) {
+    const formData = new FormData();
+    
+    const content = `New homework submission from **${request.studentName}**:\n\n**Text:**\n${request.text || "No text submitted."}`;
+    formData.append('payload_json', JSON.stringify({
+        username: "Homework Bot",
+        avatar_url: "https://i.imgur.com/uFPNd22.png",
+        content: content,
+    }));
+
+    if (request.audioBlob) {
+        formData.append('file1', request.audioBlob, 'homework_recording.mp3');
+    }
+
+    try {
+        const response = await fetch(getWebhookUrl('HOMEWORK'), {
+            method: 'POST',
+            body: formData
+        });
+        if (!response.ok) {
+            const errorBody = await response.text();
+            console.error('Failed to send homework to Discord:', response.status, response.statusText, errorBody);
+            throw new Error(`Discord API error: ${response.statusText}`);
+        }
+    } catch (error) {
+        console.error('Error sending homework to Discord:', error);
+        throw error;
     }
 }
 

@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Page } from '../types';
 import { supabase } from '../supabaseClient';
 import { TIME_SLOTS, PATH_TRANSLATION_KEYS } from '../constants';
-import { sendForgotPasscodeToDiscord, sendTeacherNotification } from '../discordService';
+import { sendForgotPasscodeToDiscord, sendTeacherNotification, sendTeacherAbsentNotification, sendHomeworkToDiscord } from '../discordService';
 import AttendanceCalendar from './AttendanceCalendar';
 
-// --- Main Component Logic ---
+// --- Sub-Components ---
+
 interface ClassDetails {
     id: string;
     name: string;
@@ -18,47 +19,208 @@ interface ClassDetails {
     isApproved: boolean;
 }
 
-const ClassDetailsView: React.FC<{ classDetails: ClassDetails; t: (key: string) => string; navigateTo: (page: Page) => void; onOpenChat: (name: string) => void; unreadCount: number; }> = ({ classDetails, t, navigateTo, onOpenChat, unreadCount }) => {
+const HomeworkView: React.FC<{ studentName: string; t: (key: string) => string; onBack: () => void; }> = ({ studentName, t, onBack }) => {
+    const [text, setText] = useState('');
+    const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+    const [audioUrl, setAudioUrl] = useState<string | null>(null);
+    const [recordingStatus, setRecordingStatus] = useState<'idle' | 'recording' | 'paused' | 'finished'>('idle');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const audioChunksRef = useRef<Blob[]>([]);
+
+    const startRecording = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorderRef.current = new MediaRecorder(stream);
+            audioChunksRef.current = [];
+
+            mediaRecorderRef.current.ondataavailable = (event) => {
+                audioChunksRef.current.push(event.data);
+            };
+
+            mediaRecorderRef.current.onstop = () => {
+                const blob = new Blob(audioChunksRef.current, { type: 'audio/webm;codecs=opus' });
+                setAudioBlob(blob);
+                setAudioUrl(URL.createObjectURL(blob));
+                setRecordingStatus('finished');
+                stream.getTracks().forEach(track => track.stop()); // Stop microphone access
+            };
+
+            mediaRecorderRef.current.start();
+            setRecordingStatus('recording');
+        } catch (err) {
+            console.error("Error accessing microphone:", err);
+            alert("Could not access microphone. Please ensure permission is granted.");
+        }
+    };
+
+    const stopRecording = () => {
+        if (mediaRecorderRef.current && (recordingStatus === 'recording' || recordingStatus === 'paused')) {
+            mediaRecorderRef.current.stop();
+        }
+    };
+    
+    const pauseRecording = () => {
+        if (mediaRecorderRef.current && recordingStatus === 'recording') {
+            mediaRecorderRef.current.pause();
+            setRecordingStatus('paused');
+        }
+    };
+
+    const resumeRecording = () => {
+        if (mediaRecorderRef.current && recordingStatus === 'paused') {
+            mediaRecorderRef.current.resume();
+            setRecordingStatus('recording');
+        }
+    };
+    
+    const handleReset = () => {
+        setAudioBlob(null);
+        if(audioUrl) URL.revokeObjectURL(audioUrl);
+        setAudioUrl(null);
+        setRecordingStatus('idle');
+        audioChunksRef.current = [];
+    };
+
+    const handleSubmit = async () => {
+        if (!text.trim() && !audioBlob) {
+            alert("Please provide either text or an audio recording for your homework.");
+            return;
+        }
+        setIsSubmitting(true);
+        setSubmitStatus('idle');
+        try {
+            await sendHomeworkToDiscord({ studentName, text, audioBlob });
+            setSubmitStatus('success');
+            setTimeout(() => {
+                onBack();
+            }, 2000);
+        } catch (error) {
+            console.error("Failed to submit homework:", error);
+            setSubmitStatus('error');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const RecorderControls = () => (
+        <div className="bg-gray-700/50 p-4 rounded-lg space-y-4">
+            <div className="text-center font-semibold text-gray-300 capitalize">{recordingStatus}</div>
+            {recordingStatus === 'finished' && audioUrl && (
+                <audio src={audioUrl} controls className="w-full" />
+            )}
+            <div className="flex justify-center items-center gap-3">
+                {recordingStatus === 'idle' && (
+                    <button onClick={startRecording} className="bg-red-600 text-white font-bold py-2 px-4 rounded-full">{t('recordButton')}</button>
+                )}
+                {recordingStatus === 'recording' && (
+                    <>
+                        <button onClick={pauseRecording} className="bg-yellow-500 text-white font-bold py-2 px-4 rounded-full">{t('pauseButton')}</button>
+                        <button onClick={stopRecording} className="bg-gray-600 text-white font-bold py-2 px-4 rounded-full">{t('stopButton')}</button>
+                    </>
+                )}
+                {recordingStatus === 'paused' && (
+                     <>
+                        <button onClick={resumeRecording} className="bg-green-500 text-white font-bold py-2 px-4 rounded-full">{t('resumeButton')}</button>
+                        <button onClick={stopRecording} className="bg-gray-600 text-white font-bold py-2 px-4 rounded-full">{t('stopButton')}</button>
+                    </>
+                )}
+                {recordingStatus === 'finished' && (
+                    <button onClick={handleReset} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-full">{t('resetButton')}</button>
+                )}
+            </div>
+        </div>
+    );
+
+    return (
+        <div className="page-transition">
+            <div className="flex items-center gap-4 mb-6">
+                <button onClick={onBack} className="text-gray-400 hover:text-white">&larr;</button>
+                <h3 className="text-xl font-bold text-gray-100">{t('homeworkTitle')}</h3>
+            </div>
+            <div className="space-y-6">
+                <div>
+                    <label htmlFor="homework-text" className="block text-sm font-medium text-gray-300 mb-2">{t('homeworkTextLabel')}</label>
+                    <textarea
+                        id="homework-text"
+                        value={text}
+                        onChange={(e) => setText(e.target.value)}
+                        rows={5}
+                        className="w-full bg-gray-700 p-2 rounded-md border border-gray-600 focus:ring-amber-500 focus:border-amber-500"
+                        placeholder={t('homeworkTextPlaceholder')}
+                    />
+                </div>
+                <div>
+                     <label className="block text-sm font-medium text-gray-300 mb-2">{t('homeworkAudioLabel')}</label>
+                     <RecorderControls />
+                </div>
+                <div>
+                    <button 
+                        onClick={handleSubmit} 
+                        disabled={isSubmitting || submitStatus === 'success'}
+                        className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg disabled:opacity-60"
+                    >
+                        {isSubmitting ? t('submittingHomework') : (submitStatus === 'success' ? t('homeworkSubmittedSuccess') : t('submitHomeworkButton'))}
+                    </button>
+                    {submitStatus === 'error' && <p className="text-red-400 text-center text-sm mt-2">{t('homeworkSubmittedError')}</p>}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
+const ClassDetailsView: React.FC<{ classDetails: ClassDetails; t: (key: string) => string; navigateTo: (page: Page) => void; onOpenChat: (name: string) => void; unreadCount: number; onHomeworkClick: () => void; }> = ({ classDetails, t, navigateTo, onOpenChat, unreadCount, onHomeworkClick }) => {
     const [countdown, setCountdown] = useState<string>('');
     const [expirationCountdown, setExpirationCountdown] = useState<string>('');
     const [currentMeetingUrl, setCurrentMeetingUrl] = useState<string>('#');
-    const [showNotifyButton, setShowNotifyButton] = useState<boolean>(false);
-    const [notificationStatus, setNotificationStatus] = useState<'ready' | 'notifying' | 'notified'>('ready');
+    const [readyStatus, setReadyStatus] = useState<'ready' | 'notifying' | 'notified'>('ready');
+    const [absentStatus, setAbsentStatus] = useState<'ready' | 'notifying' | 'notified'>('ready');
     
-    // Calendar State
     const [currentDate, setCurrentDate] = useState(new Date());
     const [attendanceData, setAttendanceData] = useState<{ [day: string]: 'attended' | 'missed' }>({});
     const [isLoadingCalendar, setIsLoadingCalendar] = useState(true);
 
-    const dayStringToNumber = (day: string): number => {
-        const map: { [key: string]: number } = {
-            'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3,
-            'Thursday': 4, 'Friday': 5, 'Saturday': 6
-        };
-        return map[day.trim()] ?? -1;
-    };
+    const timeSlotDetails = useMemo(() => {
+        return Object.values(TIME_SLOTS).flat().find(slot => slot.id === classDetails.start_time_id);
+    }, [classDetails.start_time_id]);
     
+    const scheduledTimeText = timeSlotDetails ? t(timeSlotDetails.key) : 'N/A';
+    
+    const dayStringToNumber = (day: string): number => ({
+        'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6
+    }[day.trim()] ?? -1);
+
     const scheduledDaysNumbers = useMemo(() => classDetails.selected_days.map(dayStringToNumber).filter(d => d !== -1), [classDetails.selected_days]);
 
     useEffect(() => {
+        const fetchMeetingUrl = async () => {
+            const { data, error } = await supabase.from('links').select('zoom_link').eq('name', classDetails.name).single();
+            if (data?.zoom_link) setCurrentMeetingUrl(data.zoom_link);
+        };
+        fetchMeetingUrl();
+    }, [classDetails.name]);
+    
+    useEffect(() => {
         const fetchAttendance = async () => {
-            if (!classDetails.isApproved) return;
             setIsLoadingCalendar(true);
             const year = currentDate.getFullYear();
             const month = currentDate.getMonth() + 1;
             const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
             const endDate = `${year}-${String(month).padStart(2, '0')}-${new Date(year, month, 0).getDate()}`;
-            
+
             const { data, error } = await supabase
                 .from('attendance')
                 .select('session_date, status')
                 .eq('student_name', classDetails.name)
                 .gte('session_date', startDate)
                 .lte('session_date', endDate);
-                
+
             if (error) {
-                console.error("Error fetching attendance data:", error);
-            } else if (data) {
+                console.error("Error fetching attendance:", error);
+            } else {
                 const formattedData = data.reduce((acc: any, record: any) => {
                     acc[record.session_date] = record.status;
                     return acc;
@@ -68,195 +230,154 @@ const ClassDetailsView: React.FC<{ classDetails: ClassDetails; t: (key: string) 
             setIsLoadingCalendar(false);
         };
         fetchAttendance();
-    }, [classDetails.name, classDetails.isApproved, currentDate]);
-
-    const sessionsThisMonth = useMemo(() => {
-        const year = currentDate.getFullYear();
-        const month = currentDate.getMonth();
-        let count = 0;
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
-        for (let day = 1; day <= daysInMonth; day++) {
-            const date = new Date(year, month, day);
-            if (scheduledDaysNumbers.includes(date.getDay())) {
-                count++;
-            }
-        }
-        return count;
-    }, [currentDate, scheduledDaysNumbers]);
-
-    const handleMonthChange = (offset: number) => {
-        setCurrentDate(prev => {
-            const newDate = new Date(prev);
-            newDate.setDate(1); // Avoid issues with different month lengths
-            newDate.setMonth(newDate.getMonth() + offset);
-            return newDate;
-        });
-    };
+    }, [classDetails.name, currentDate]);
 
     useEffect(() => {
-        const fetchMeetingLink = async () => {
-            if (!classDetails.isApproved) return;
-            const { data, error } = await supabase.from('links').select('zoom_link').eq('name', classDetails.name).limit(1).single();
-            if (error) console.error("Failed to fetch meeting link:", error);
-            else if (data && data.zoom_link) setCurrentMeetingUrl(data.zoom_link);
-        };
-        fetchMeetingLink();
-    }, [classDetails.name, classDetails.isApproved]);
-
-    useEffect(() => {
-        const calculateNextSession = () => {
-            function getJakartaTime() {
-                const now = new Date();
-                const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
-                return new Date(utcTime + (3600000 * 7));
-            }
-
-            const { start_time_id } = classDetails;
-            if (!start_time_id || scheduledDaysNumbers.length === 0) return null;
-            const timePart = start_time_id.split('_')[1];
-            if (!timePart || timePart.length < 4) return null;
-            const [startHour, startMinute] = [parseInt(timePart.substring(0, 2)), parseInt(timePart.substring(2, 4))];
+        const interval = setInterval(() => {
+            const now = new Date();
+            const [hours, minutes] = (timeSlotDetails?.key ? t(timeSlotDetails.key).match(/\d+/g)?.map(Number) || [0,0] : [0,0]);
             
-            const nowJakarta = getJakartaTime();
+            let nextSession: Date | null = null;
             for (let i = 0; i < 7; i++) {
-                const checkDate = new Date(nowJakarta);
-                checkDate.setDate(nowJakarta.getDate() + i);
+                const checkDate = new Date();
+                checkDate.setDate(now.getDate() + i);
                 if (scheduledDaysNumbers.includes(checkDate.getDay())) {
-                    const potentialSession = new Date(checkDate);
-                    potentialSession.setHours(startHour, startMinute, 0, 0);
-                    if (potentialSession.getTime() + (16 * 60 * 1000) < nowJakarta.getTime()) continue;
-                    return potentialSession;
+                    const sessionTime = new Date(checkDate);
+                    sessionTime.setHours(hours, minutes, 0, 0);
+                    if (sessionTime > now) {
+                        nextSession = sessionTime;
+                        break;
+                    }
                 }
             }
-            return null;
-        };
-
-        const interval = setInterval(() => {
-            const nextSessionDate = calculateNextSession();
-            if (nextSessionDate) {
-                const now = new Date(); // Use local time for display diff
-                const diff = nextSessionDate.getTime() - now.getTime();
-                setShowNotifyButton(diff > 0 && diff < 15 * 60 * 1000);
-                const sessionStartTime = nextSessionDate.getTime();
-                const sessionWindowEnd = sessionStartTime + 16 * 60 * 1000;
-                const sessionJoinTime = sessionStartTime - 5 * 60 * 1000;
-                if (now.getTime() >= sessionJoinTime && now.getTime() < sessionWindowEnd) {
-                    const remaining = sessionWindowEnd - now.getTime();
-                    const minutes = Math.floor(remaining / (1000 * 60));
-                    setCountdown(`${t('joinClassStartsNow')} (${minutes}m)`);
-                } else if (diff > 0) {
-                    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-                    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                    setCountdown(`${days}d ${hours}h ${minutes}m`);
-                } else setCountdown(t('joinClassNoUpcoming'));
-            } else setCountdown(t('joinClassNoUpcoming'));
+            
+            if (nextSession) {
+                const diff = nextSession.getTime() - now.getTime();
+                const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const s = Math.floor((diff % (1000 * 60)) / 1000);
+                setCountdown(`${d}d ${h}h ${m}m ${s}s`);
+            } else {
+                setCountdown(t('joinClassNoUpcoming'));
+            }
         }, 1000);
         return () => clearInterval(interval);
-    }, [classDetails, t, scheduledDaysNumbers]);
-
-    useEffect(() => {
-        if (classDetails.isApproved && classDetails.paid_state === 'unpaid' && classDetails.date_approved) {
-            const approvalDate = new Date(classDetails.date_approved);
-            const expirationDate = new Date(approvalDate);
-            expirationDate.setMonth(expirationDate.getMonth() + 1);
-            const interval = setInterval(() => {
-                const now = new Date();
-                const diff = expirationDate.getTime() - now.getTime();
-                if (diff <= 0) {
-                    setExpirationCountdown(t('cardExpired'));
-                    clearInterval(interval);
-                    return;
-                }
-                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                setExpirationCountdown(`${days}d ${hours}h ${minutes}m`);
-            }, 1000);
-            return () => clearInterval(interval);
-        }
-    }, [classDetails.isApproved, classDetails.paid_state, classDetails.date_approved, t]);
+    }, [t, timeSlotDetails, scheduledDaysNumbers]);
     
-    const timeSlotKey = classDetails.start_time_id ? Object.values(TIME_SLOTS).flat().find(s => s.id === classDetails.start_time_id)?.key : null;
-    const scheduledTime = timeSlotKey ? t(timeSlotKey) : classDetails.start_time_id;
-    const programName = PATH_TRANSLATION_KEYS[classDetails.path] ? t(PATH_TRANSLATION_KEYS[classDetails.path]) : classDetails.path;
+     useEffect(() => {
+        if (!classDetails.date_approved) return;
+        const interval = setInterval(() => {
+            const approvedDate = new Date(classDetails.date_approved);
+            const expirationDate = new Date(approvedDate);
+            expirationDate.setDate(approvedDate.getDate() + 2);
+            const now = new Date();
+            const diff = expirationDate.getTime() - now.getTime();
+            if (diff > 0) {
+                const h = Math.floor(diff / (1000 * 60 * 60));
+                const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                setExpirationCountdown(t('cardExpirationInfo').replace('{time}', `${h}h ${m}m`));
+            } else {
+                setExpirationCountdown(t('cardExpired'));
+                clearInterval(interval);
+            }
+        }, 60000);
+        return () => clearInterval(interval);
+    }, [classDetails.date_approved, t]);
 
-    const handleNotifyTeacher = async () => {
-        if (notificationStatus !== 'ready') return;
-        setNotificationStatus('notifying');
+    const handleReadyClick = async () => {
+        setReadyStatus('notifying');
+        await sendTeacherNotification({ name: classDetails.name, program: classDetails.path, time: scheduledTimeText });
+        setReadyStatus('notified');
+    };
+
+    const handleAbsentClick = async () => {
+        setAbsentStatus('notifying');
         try {
-            await sendTeacherNotification({ name: classDetails.name, program: programName, time: scheduledTime });
-            setNotificationStatus('notified');
-        } catch (error) {
-            console.error("Failed to send notification:", error);
-            setNotificationStatus('ready');
+            const today = new Date();
+            const dateString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+            
+            const { error } = await supabase.from('attendance').upsert({ student_name: classDetails.name, session_date: dateString, status: 'missed' }, { onConflict: 'student_name, session_date' });
+            if (error) throw error;
+            
+            setAttendanceData(prev => ({ ...prev, [dateString]: 'missed' }));
+            await sendTeacherAbsentNotification({ name: classDetails.name, program: classDetails.path, time: scheduledTimeText });
+            setAbsentStatus('notified');
+        } catch (error: any) {
+            alert(`Failed to update attendance: ${error.message}`);
+            setAbsentStatus('ready');
         }
     };
-    
-    const notifyButtonText = notificationStatus === 'notifying' ? t('notifyTeacherButtonNotifying') : notificationStatus === 'notified' ? t('notifyTeacherButtonNotified') : t('notifyTeacherButtonReady');
-    const langForLocale = t('langButtonText') === 'AR' ? 'ar-EG' : (t('langButtonText') === 'ID' ? 'id-ID' : 'en-US');
+
+    const isTodayASessionDay = scheduledDaysNumbers.includes(new Date().getDay());
 
     return (
-        <div className="page-transition">
-            <h2 className="text-3xl font-bold text-gray-100">{t('joinClassWelcomeTitle').replace('{name}', classDetails.name)}</h2>
-            <div className="mt-8 max-w-lg mx-auto bg-gray-800/50 border border-amber-500/30 p-6 rounded-2xl shadow-lg">
-                <h3 className="text-xl font-bold text-gray-100 mb-6 border-b border-gray-700 pb-3">{t('joinClassDetailsTitle')}</h3>
-                <div className="space-y-4 text-left">
-                    <div><p className="text-sm text-gray-400">{t('joinClassSelectedIjazah')}</p><p className="font-semibold text-gray-200 text-lg">{programName}</p></div>
-                    <div><p className="text-sm text-gray-400">{t('joinClassSelectedTime')}</p><p className="font-semibold text-gray-200 text-lg">{scheduledTime}</p></div>
-                    {classDetails.selected_days && <div><p className="text-sm text-gray-400">{t('summaryPreferredDays')}</p><p className="font-semibold text-gray-200 text-lg">{classDetails.selected_days.map(day => t(`day${day}`)).join(' - ')}</p></div>}
-                    {classDetails.isApproved && <div><p className="text-sm text-gray-400">{t('joinClassNextSession')}</p><p className="font-mono text-amber-400 text-2xl tracking-wider">{countdown}</p></div>}
-                    {classDetails.isApproved && (<div className="border-t border-gray-700 pt-4"><p className="text-sm text-gray-400">{t('joinClassPaymentStatus')}</p>{classDetails.paid_state === 'PAID' ? (<><div className="text-lg font-bold p-2 rounded-md text-center bg-green-500/20 text-green-300">{t('statusPaid')}</div>{classDetails.next_paid && (<p className="text-center text-sm text-red-400 mt-2">{t('nextPaymentDue').replace('{date}', new Date(classDetails.next_paid).toLocaleDateString())}</p>)}</>) : (<><div className="text-lg font-bold p-2 rounded-md text-center bg-red-500/20 text-red-300">{t('statusUnpaid')}</div>{expirationCountdown && (<p className="text-center text-sm text-yellow-300 mt-2">{t('cardExpirationInfo').replace('{time}', expirationCountdown)}</p>)}</>)}</div>)}
-                    
-                    {classDetails.isApproved && (
-                         <div className="border-t border-gray-700 pt-4">
-                            <details className="group">
-                                <summary className="list-none flex justify-between items-center cursor-pointer p-2 rounded-lg hover:bg-gray-700/50 transition-colors">
-                                    <h4 className="text-lg font-semibold text-gray-200">{t('viewMonthlyLessons')}</h4>
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 transform transition-transform duration-300 group-open:rotate-180" fill="none" viewBox="0 0 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                </summary>
-                                <div className="mt-4">
-                                    <div className="flex justify-between items-center mb-4 bg-gray-700/50 p-2 rounded-lg">
-                                        <button onClick={() => handleMonthChange(-1)} className="p-2 rounded-full hover:bg-gray-600 transition-colors">&lt;</button>
-                                        <span className="font-semibold text-lg">{currentDate.toLocaleString(langForLocale, { month: 'long', year: 'numeric' })}</span>
-                                        <button onClick={() => handleMonthChange(1)} className="p-2 rounded-full hover:bg-gray-600 transition-colors">&gt;</button>
-                                    </div>
-                                    {isLoadingCalendar ? <div className="text-center p-4">Loading calendar...</div> : 
-                                        <AttendanceCalendar 
-                                            year={currentDate.getFullYear()}
-                                            month={currentDate.getMonth()}
-                                            scheduledDays={scheduledDaysNumbers}
-                                            attendanceData={attendanceData}
-                                            t={t}
-                                        />
-                                    }
-                                    <p className="text-center mt-2 text-sm text-gray-400">{t('sessionsThisMonth').replace('{count}', String(sessionsThisMonth))}</p>
-                                </div>
-                            </details>
-                        </div>
-                    )}
+        <div className="page-transition space-y-6">
+            <h2 className="text-center text-3xl font-bold text-gray-100">{t('joinClassDetailsTitle')}</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-gray-800 p-4 rounded-lg text-center"><p className="text-sm text-gray-400">{t('joinClassSelectedIjazah')}</p><p className="font-bold text-lg text-gray-200">{t(PATH_TRANSLATION_KEYS[classDetails.path] || classDetails.path)}</p></div>
+                <div className="bg-gray-800 p-4 rounded-lg text-center"><p className="text-sm text-gray-400">{t('joinClassSelectedTime')}</p><p className="font-bold text-lg text-gray-200">{scheduledTimeText}</p></div>
+                <div className="bg-gray-800 p-4 rounded-lg text-center"><p className="text-sm text-gray-400">{t('joinClassPaymentStatus')}</p><p className={`font-bold text-lg ${classDetails.paid_state === 'PAID' ? 'text-green-400' : 'text-red-400'}`}>{classDetails.paid_state === 'PAID' ? t('statusPaid') : t('statusUnpaid')}</p></div>
+                <div className="bg-gray-800 p-4 rounded-lg text-center"><p className="text-sm text-gray-400">{t('joinClassNextSession')}</p><p className="font-bold text-lg text-gray-200">{countdown}</p></div>
+            </div>
+            {isTodayASessionDay && (
+                <div className="flex flex-col sm:flex-row gap-2">
+                    <button onClick={handleReadyClick} disabled={readyStatus !== 'ready'} className="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg disabled:opacity-50">{t(readyStatus === 'ready' ? 'imReadyButton' : (readyStatus === 'notifying' ? 'imReadyButtonSending' : 'imReadyButtonSent'))}</button>
+                    <button onClick={handleAbsentClick} disabled={absentStatus !== 'ready'} className="w-full bg-red-600 text-white font-bold py-3 px-4 rounded-lg disabled:opacity-50">{t(absentStatus === 'ready' ? 'cantAttendButton' : (absentStatus === 'notifying' ? 'cantAttendButtonSending' : 'cantAttendButtonSent'))}</button>
                 </div>
+            )}
+            <div className="space-y-2">
+                <a href={currentMeetingUrl} target="_blank" rel="noopener noreferrer" className="block w-full text-center bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg">{t('joinClassJoinButton')}</a>
+                <button onClick={() => onOpenChat(classDetails.name)} className="relative w-full text-center bg-gray-700 text-gray-200 font-bold py-3 px-6 rounded-lg shadow-sm hover:bg-gray-600">{t('chatWithTeacher')} {unreadCount > 0 && <span className="absolute top-2 right-2 flex h-5 w-5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span className="relative inline-flex rounded-full h-5 w-5 bg-red-500 items-center justify-center text-xs">{unreadCount}</span></span>}</button>
+                <button onClick={onHomeworkClick} className="w-full text-center bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-sm hover:bg-blue-700">{t('homeworkButton')}</button>
             </div>
             
-            {classDetails.isApproved ? (
-                <div className="mt-6 max-w-lg mx-auto space-y-4">
-                     <div className="flex items-stretch justify-center gap-4">
-                        {showNotifyButton && (<button onClick={handleNotifyTeacher} disabled={notificationStatus !== 'ready'} className="flex-grow bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-60 disabled:cursor-wait">{notifyButtonText}</button>)}
-                        <div className="relative flex-shrink-0"><button onClick={() => onOpenChat(classDetails.name)} className="h-full bg-gray-700/80 text-gray-200 p-3 rounded-lg hover:bg-gray-600 transition-colors" aria-label="Open Live Chat"><svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg></button>{unreadCount > 0 && (<span className="absolute top-[-4px] right-[-4px] w-5 h-5 bg-red-500 rounded-full text-white text-[10px] flex items-center justify-center font-bold border-2 border-gray-800">{unreadCount}</span>)}</div>
-                    </div>
-                    <a href={currentMeetingUrl} target="_blank" rel="noopener noreferrer" className={`inline-block w-full text-center bg-gradient-to-r from-blue-500 to-sky-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300 ${currentMeetingUrl === '#' ? 'opacity-50 cursor-not-allowed' : ''}`} onClick={(e) => { if (currentMeetingUrl === '#') e.preventDefault(); }}>{t('joinClassJoinButton')}</a>
+            <details className="bg-gray-800 rounded-lg">
+                <summary className="p-4 cursor-pointer font-semibold text-gray-200">{t('viewMonthlyLessons')}</summary>
+                <div className="p-4 border-t border-gray-700">
+                    <AttendanceCalendar year={currentDate.getFullYear()} month={currentDate.getMonth()} scheduledDays={scheduledDaysNumbers} attendanceData={attendanceData} t={t} />
                 </div>
-            ) : (
-                <div className="mt-6 text-center bg-gray-700 p-4 rounded-lg max-w-lg mx-auto"><p className="font-semibold text-yellow-300">{t('pendingApproval')}</p></div>
-            )}
-
-            <div className="mt-12 text-center"><button onClick={() => navigateTo('home')} className="text-sm font-semibold text-gray-400 hover:text-amber-400 transition-colors">{t('backToHome')}</button></div>
+            </details>
+            
+            <p className="text-center text-xs text-gray-500">{expirationCountdown}</p>
         </div>
     );
 };
 
+const LoginPage: React.FC<{ t: (key: string) => string; onLogin: (name: string, passcode: string) => Promise<void>; loading: boolean; error: string | null; onForgot: () => void; }> = ({ t, onLogin, loading, error, onForgot }) => {
+    const [name, setName] = useState('');
+    const [passcode, setPasscode] = useState('');
+    return (
+        <form onSubmit={(e) => { e.preventDefault(); onLogin(name, passcode); }} className="space-y-6">
+            <h2 className="text-center text-3xl font-bold text-gray-100">{t('joinClassPageTitle')}</h2>
+            <div><label htmlFor="join-name" className="block text-sm font-medium text-gray-300">{t('accountNameLabel')}</label><input type="text" id="join-name" value={name} onChange={(e) => setName(e.target.value)} required className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-200" /></div>
+            <div><label htmlFor="join-passcode" className="block text-sm font-medium text-gray-300">{t('passwordLabel')}</label><input type="password" id="join-passcode" value={passcode} onChange={(e) => setPasscode(e.target.value)} required pattern="\d{3}" maxLength={3} className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-200 text-center tracking-[0.5em]" /></div>
+            {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+            <button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg disabled:opacity-50">{loading ? '...' : t('joinClassSubmitButton')}</button>
+            <div className="text-center"><button type="button" onClick={onForgot} className="text-xs text-gray-400 hover:text-amber-400">{t('forgotPasscodeLink')}</button></div>
+        </form>
+    );
+};
+
+const ForgotPasscodePage: React.FC<{ t: (key: string) => string; onBack: () => void; }> = ({ t, onBack }) => {
+    const [name, setName] = useState('');
+    const [whatsapp, setWhatsapp] = useState('');
+    const [isSending, setIsSending] = useState(false);
+    const [isSent, setIsSent] = useState(false);
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsSending(true);
+        await sendForgotPasscodeToDiscord({ name, whatsapp });
+        setIsSending(false);
+        setIsSent(true);
+    };
+    return (
+        <div className="space-y-6"><h2 className="text-center text-2xl font-bold text-gray-100">{t('forgotPasscodeTitle')}</h2>{isSent ? <p className="text-center text-green-400">{t('forgotPasscodeSuccessMessage')}</p> : <form onSubmit={handleSubmit} className="space-y-4"><div><label htmlFor="forgot-name" className="block text-sm font-medium text-gray-300">{t('forgotPasscodeNameLabel')}</label><input type="text" id="forgot-name" value={name} onChange={(e) => setName(e.target.value)} required className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-200" /></div><div><label htmlFor="forgot-whatsapp" className="block text-sm font-medium text-gray-300">{t('forgotPasscodeWhatsappLabel')}</label><input type="tel" id="forgot-whatsapp" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} required className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-200" /></div><button type="submit" disabled={isSending} className="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 disabled:opacity-50">{isSending ? '...' : t('forgotPasscodeSendButton')}</button></form>}<button onClick={onBack} className="w-full text-sm font-semibold text-gray-400 hover:text-amber-400">&larr; {t('backButton')}</button></div>
+    );
+};
+
+
+// --- Main Component ---
 interface JoinClassPageProps {
     navigateTo: (page: Page) => void;
     t: (key: string) => string;
@@ -265,56 +386,50 @@ interface JoinClassPageProps {
 }
 
 const JoinClassPage: React.FC<JoinClassPageProps> = ({ navigateTo, t, onOpenChat, unreadCount }) => {
-    const [name, setName] = useState('');
-    const [passcode, setPasscode] = useState('');
-    const [classDetails, setClassDetails] = useState<ClassDetails | null>(null);
+    const [view, setView] = useState<'login' | 'details' | 'forgot' | 'homework'>('login');
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const [showForgotPasscodeForm, setShowForgotPasscodeForm] = useState(false);
-    const [forgotPasscodeSuccess, setForgotPasscodeSuccess] = useState(false);
-    const [forgotPasscodeName, setForgotPasscodeName] = useState('');
-    const [forgotPasscodeWhatsapp, setForgotPasscodeWhatsapp] = useState('');
+    const [classDetails, setClassDetails] = useState<ClassDetails | null>(null);
 
-    const handleJoinSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        if (!name.trim() || !passcode.trim() || isLoading) return;
-        setIsLoading(true);
+    const handleLogin = async (name: string, passcode: string) => {
+        setLoading(true);
         setError(null);
         try {
-            const { data, error: queryError } = await supabase.from('passcodes').select('id, name, path, start_time_id, selected_days, paid_state, next_paid, date_approved').eq('name', name.trim()).eq('code', passcode.trim()).limit(1).single();
-            if (queryError) {
-                 if (queryError.code === 'PGRST116') { setError(t('joinClassInvalidCredentials')); setName(''); setPasscode(''); return; }
-                throw queryError;
-            }
-            if (data) setClassDetails({ ...data, isApproved: !!data.date_approved, selected_days: typeof data.selected_days === 'string' ? data.selected_days.split(',').map((d: string) => d.trim()) : (data.selected_days || []) });
-            else { setError(t('joinClassInvalidCredentials')); setName(''); setPasscode(''); }
-        } catch (err: any) {
-            console.error("Error during class join authentication:", JSON.stringify(err, null, 2));
-            setError("An unexpected error occurred. Please try again.");
-        } finally { setIsLoading(false); }
+            const { data, error: queryError } = await supabase.from('passcodes').select('*').eq('name', name.trim()).eq('code', passcode.trim()).limit(1).single();
+            if (queryError || !data) throw new Error(t('joinClassInvalidCredentials'));
+            const details: ClassDetails = {
+                id: data.id,
+                name: data.name,
+                path: data.path,
+                start_time_id: data.start_time_id,
+                selected_days: data.selected_days ? data.selected_days.split(',').map((s: string) => s.trim()) : [],
+                paid_state: data.paid_state,
+                next_paid: data.next_paid,
+                date_approved: data.date_approved,
+                isApproved: !!data.date_approved
+            };
+            setClassDetails(details);
+            setView('details');
+        } catch (e: any) {
+            setError(e.message);
+        } finally {
+            setLoading(false);
+        }
     };
     
-    const handleForgotPasscodeSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        if (!forgotPasscodeName.trim() || !forgotPasscodeWhatsapp.trim()) return;
-        try {
-            await sendForgotPasscodeToDiscord({ name: forgotPasscodeName, whatsapp: forgotPasscodeWhatsapp });
-            setForgotPasscodeSuccess(true);
-            setShowForgotPasscodeForm(false);
-        } catch (err) { console.error("Failed to send forgot passcode request", err); }
-    };
-
-    if (classDetails) {
-        return <ClassDetailsView classDetails={classDetails} t={t} navigateTo={navigateTo} onOpenChat={onOpenChat} unreadCount={unreadCount} />;
-    }
-
     return (
-        <div className="page-transition">
-            <div className="text-center mb-8"><h2 className="text-3xl font-bold text-gray-100">{t('joinClassPageTitle')}</h2></div>
-            {!showForgotPasscodeForm && !forgotPasscodeSuccess && (<form onSubmit={handleJoinSubmit} className="max-w-sm mx-auto"><div className="space-y-4"><div><label htmlFor="name" className="block text-sm font-medium text-gray-300 sr-only">{t('joinClassNameLabel')}</label><input type="text" id="name" name="name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t('joinClassNameLabel')} required autoFocus className="mt-1 block w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-amber-500 focus:border-amber-500 text-gray-200 text-center text-lg"/></div><div><label htmlFor="passcode" className="block text-sm font-medium text-gray-300 sr-only">{t('joinClassPasscodeLabel')}</label><input type="password" id="passcode" name="passcode" value={passcode} onChange={(e) => setPasscode(e.target.value)} placeholder={t('joinClassPasscodeLabel')} required className="mt-1 block w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-amber-500 focus:border-amber-500 text-gray-200 text-center text-lg tracking-widest"/></div>{error && (<div className="text-center pt-2"><p className="text-red-400 text-sm">{error}</p><button type="button" onClick={() => { setShowForgotPasscodeForm(true); setError(null); }} className="mt-2 text-sm font-semibold text-amber-400 hover:text-amber-300 underline">{t('forgotPasscodeLink')}</button></div>)}</div><div className="mt-6"><button type="submit" disabled={isLoading} className="w-full flex justify-center items-center bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300 ease-in-out disabled:opacity-60 disabled:cursor-wait">{isLoading ? (<svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>) : (t('joinClassSubmitButton'))}</button></div></form>)}
-            {showForgotPasscodeForm && (<div className="max-w-sm mx-auto page-transition"><h3 className="text-xl font-bold text-center text-gray-100 mb-4">{t('forgotPasscodeTitle')}</h3><form onSubmit={handleForgotPasscodeSubmit}><div className="space-y-4"><div><label htmlFor="forgot-name" className="sr-only">{t('forgotPasscodeNameLabel')}</label><input type="text" id="forgot-name" value={forgotPasscodeName} onChange={(e) => setForgotPasscodeName(e.target.value)} placeholder={t('forgotPasscodeNameLabel')} required className="mt-1 block w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-amber-500 focus:border-amber-500 text-gray-200 text-center"/></div><div><label htmlFor="forgot-whatsapp" className="sr-only">{t('forgotPasscodeWhatsappLabel')}</label><input type="tel" id="forgot-whatsapp" value={forgotPasscodeWhatsapp} onChange={(e) => setForgotPasscodeWhatsapp(e.target.value)} placeholder={t('forgotPasscodeWhatsappLabel')} required className="mt-1 block w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-amber-500 focus:border-amber-500 text-gray-200 text-center"/></div></div><div className="mt-6"><button type="submit" className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-3 px-6 rounded-lg">{t('forgotPasscodeSendButton')}</button></div></form></div>)}
-            {forgotPasscodeSuccess && (<div className="max-w-sm mx-auto text-center page-transition bg-green-900/50 border border-green-500/30 p-6 rounded-lg"><p className="text-green-300 font-semibold">{t('forgotPasscodeSuccessMessage')}</p></div>)}
-            <div className="mt-12 text-center"><button onClick={() => navigateTo('home')} className="text-sm font-semibold text-gray-400 hover:text-amber-400 transition-colors">{t('backToHome')}</button></div>
+        <div className="max-w-xl mx-auto">
+            {view === 'login' && <LoginPage t={t} onLogin={handleLogin} loading={loading} error={error} onForgot={() => setView('forgot')} />}
+            {view === 'forgot' && <ForgotPasscodePage t={t} onBack={() => setView('login')} />}
+            {view === 'details' && classDetails && (
+                classDetails.isApproved
+                    ? <ClassDetailsView classDetails={classDetails} t={t} navigateTo={navigateTo} onOpenChat={onOpenChat} unreadCount={unreadCount} onHomeworkClick={() => setView('homework')} />
+                    : <div className="text-center bg-blue-900/50 p-6 rounded-lg border border-blue-500/30 text-blue-200 font-semibold">{t('pendingApproval')}</div>
+            )}
+            {view === 'homework' && classDetails && <HomeworkView studentName={classDetails.name} t={t} onBack={() => setView('details')} />}
+            <div className="mt-12 text-center">
+                <button onClick={() => navigateTo('home')} className="text-sm font-semibold text-gray-400 hover:text-amber-400 transition-colors">{t('backToHome')}</button>
+            </div>
         </div>
     );
 };
