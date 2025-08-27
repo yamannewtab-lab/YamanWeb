@@ -10,6 +10,9 @@ export const tajwidTranslations: LanguageData = {
         tajwidLevelBad: "Bad",
         tajwidLevelReallyBad: "Really bad",
         priceDisplay: "Price: {price} IDR",
+        requestedSessionsLabel: "How many sessions do you want? (Optional)",
+        summaryRequestedSessions: "Requested Sessions",
+        discordRequestedSessions: "Requested Sessions",
     },
     ar: {
         tajwidQuizTitle: "جلسة تحسين التجويد",
@@ -20,6 +23,9 @@ export const tajwidTranslations: LanguageData = {
         tajwidLevelBad: "سيئ",
         tajwidLevelReallyBad: "سيئ جداً",
         priceDisplay: "السعر: {price} روبية إندونيسية",
+        requestedSessionsLabel: "كم عدد الجلسات التي تريدها؟ (اختياري)",
+        summaryRequestedSessions: "الجلسات المطلوبة",
+        discordRequestedSessions: "الجلسات المطلوبة",
     },
     id: {
         tajwidQuizTitle: "Sesi Perbaikan Tajwid",
@@ -30,5 +36,8 @@ export const tajwidTranslations: LanguageData = {
         tajwidLevelBad: "Buruk",
         tajwidLevelReallyBad: "Sangat buruk",
         priceDisplay: "Harga: {price} IDR",
+        requestedSessionsLabel: "Berapa sesi yang Anda inginkan? (Opsional)",
+        summaryRequestedSessions: "Sesi yang Diminta",
+        discordRequestedSessions: "Sesi yang Diminta",
     }
 };

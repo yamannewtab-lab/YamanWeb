@@ -65,12 +65,22 @@ const IhyaCoursePage: React.FC<IhyaCoursePageProps> = ({ navigateTo, t }) => {
                 </div>
 
                 <div className="mt-8 border-t border-gray-700 pt-6 text-center">
-                    <button 
-                        onClick={() => navigateTo('ihyaRegister')}
-                        className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-sky-500 to-blue-600 text-white font-bold text-base rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 ease-in-out focus:outline-none focus:ring-4 focus:ring-blue-800"
-                    >
-                        {t('ihyaJoinButton')}
-                    </button>
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                        <button 
+                            onClick={() => navigateTo('ihyaRegister')}
+                            className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-sky-500 to-blue-600 text-white font-bold text-base rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 ease-in-out focus:outline-none focus:ring-4 focus:ring-blue-800"
+                        >
+                            {t('ihyaJoinButton')}
+                        </button>
+                        <a 
+                            href="https://chat.whatsapp.com/BfQyVaqRdBADCbJ6s8wYOx?mode=ems_copy_c"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full sm:w-auto text-center px-8 py-3 bg-gray-700/80 backdrop-blur-sm text-gray-200 font-bold text-base rounded-lg shadow-md hover:shadow-lg hover:bg-gray-600 transform hover:scale-105 transition-all duration-300 ease-in-out focus:outline-none focus:ring-4 focus:ring-gray-600 border border-gray-600"
+                        >
+                            {t('ihyaJoinWhatsappButton')}
+                        </a>
+                    </div>
                 </div>
             </div>
 

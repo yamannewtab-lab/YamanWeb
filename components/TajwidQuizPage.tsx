@@ -20,6 +20,7 @@ interface TajwidFormData {
     daysPerWeek: number;
     selectedDays: string[];
     additionalNotes: string;
+    requestedSessions?: string;
     paymentPreference?: string;
     paymentMethod?: string;
     agreedToTerms?: boolean;
@@ -382,7 +383,18 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t, setLastS
                         <Card title={t('cardTitleAdditionalNotes')}>
                             <div>
                                 <label htmlFor="additionalNotes" className="block text-sm font-medium text-gray-300">{t('infoLabel')}</label>
-                                <textarea id="additionalNotes" name="additionalNotes" rows={6} value={formData.additionalNotes} onChange={handleInputChange} className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-200"></textarea>
+                                <textarea id="additionalNotes" name="additionalNotes" rows={4} value={formData.additionalNotes} onChange={handleInputChange} className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-200"></textarea>
+                            </div>
+                             <div>
+                                <label htmlFor="requestedSessions" className="block text-sm font-medium text-gray-300">{t('requestedSessionsLabel')}</label>
+                                <input 
+                                    type="text" 
+                                    id="requestedSessions" 
+                                    name="requestedSessions" 
+                                    value={formData.requestedSessions || ''} 
+                                    onChange={handleInputChange} 
+                                    className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm text-gray-200"
+                                />
                             </div>
                         </Card>
                     </div>
@@ -412,10 +424,22 @@ const TajwidQuizPage: React.FC<TajwidQuizPageProps> = ({ navigateTo, t, setLastS
                                         <p className="font-semibold text-gray-200">{formData.selectedDays.map(day => t(`day${day}`)).join(', ')}</p>
                                     </div>
                                 )}
-                                {formData.additionalNotes && (
-                                     <div className="border-t border-gray-600 pt-4">
-                                        <p className="text-sm text-gray-400">{t('infoLabel')}</p>
-                                        <p className="font-semibold text-gray-200 whitespace-pre-wrap">{formData.additionalNotes}</p>
+                                {(formData.additionalNotes || formData.requestedSessions) && (
+                                    <div className="border-t border-gray-600 pt-4">
+                                        <div className="space-y-3">
+                                            {formData.additionalNotes && (
+                                                <div>
+                                                    <p className="text-sm text-gray-400">{t('infoLabel')}</p>
+                                                    <p className="font-semibold text-gray-200 whitespace-pre-wrap">{formData.additionalNotes}</p>
+                                                </div>
+                                            )}
+                                            {formData.requestedSessions && (
+                                                <div>
+                                                    <p className="text-sm text-gray-400">{t('summaryRequestedSessions')}</p>
+                                                    <p className="font-semibold text-gray-200 whitespace-pre-wrap">{formData.requestedSessions}</p>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 )}
                                 <div className="border-t border-gray-600 pt-4">

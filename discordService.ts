@@ -60,6 +60,7 @@ interface TajwidRequest {
     time: string; // Time text
     tajwidLevel: string;
     additionalNotes?: string;
+    requestedSessions?: string;
     daysPerWeek: number;
     selectedDays: string[];
     priceText: string; // Monthly price string
@@ -283,8 +284,16 @@ export async function sendTajwidRequestToDiscord(request: TajwidRequest, t: (key
         timestamp: new Date().toISOString()
     };
 
+    const descriptionParts = [];
     if (request.additionalNotes) {
-        embed.description = `**${t('infoLabel')}**\n${request.additionalNotes}`;
+        descriptionParts.push(`**${t('infoLabel')}**\n${request.additionalNotes}`);
+    }
+    if (request.requestedSessions) {
+        descriptionParts.push(`**${t('discordRequestedSessions')}**\n${request.requestedSessions}`);
+    }
+
+    if (descriptionParts.length > 0) {
+        embed.description = descriptionParts.join('\n\n');
     }
 
     const payload = {
