@@ -4,6 +4,7 @@ import { supabase } from '../supabaseClient';
 import { TIME_SLOTS, PATH_TRANSLATION_KEYS } from '../constants';
 import { sendForgotPasscodeToDiscord, sendTeacherNotification, sendTeacherAbsentNotification, sendHomeworkToDiscord } from '../discordService';
 import AttendanceCalendar from './AttendanceCalendar';
+import { subscribeUser, unsubscribeUser, getSubscription } from '../pushService';
 
 // --- Sub-Components ---
 
@@ -26,9 +27,12 @@ const HomeworkView: React.FC<{ studentName: string; t: (key: string) => string; 
     const [recordingStatus, setRecordingStatus] = useState<'idle' | 'recording' | 'paused' | 'finished'>('idle');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+    const [files, setFiles] = useState<File[]>([]);
+    const [isDragging, setIsDragging] = useState(false);
 
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const audioChunksRef = useRef<Blob[]>([]);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const startRecording = async () => {
         try {
@@ -76,7 +80,7 @@ const HomeworkView: React.FC<{ studentName: string; t: (key: string) => string; 
         }
     };
     
-    const handleReset = () => {
+    const handleAudioReset = () => {
         setAudioBlob(null);
         if(audioUrl) URL.revokeObjectURL(audioUrl);
         setAudioUrl(null);
@@ -85,14 +89,14 @@ const HomeworkView: React.FC<{ studentName: string; t: (key: string) => string; 
     };
 
     const handleSubmit = async () => {
-        if (!text.trim() && !audioBlob) {
-            alert("Please provide either text or an audio recording for your homework.");
+        if (!text.trim() && !audioBlob && files.length === 0) {
+            alert("Please provide either text, an audio recording, or a file for your homework.");
             return;
         }
         setIsSubmitting(true);
         setSubmitStatus('idle');
         try {
-            await sendHomeworkToDiscord({ studentName, text, audioBlob });
+            await sendHomeworkToDiscord({ studentName, text, audioBlob, files });
             setSubmitStatus('success');
             setTimeout(() => {
                 onBack();
@@ -105,8 +109,39 @@ const HomeworkView: React.FC<{ studentName: string; t: (key: string) => string; 
         }
     };
 
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        setIsDragging(false);
+    };
+
+    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        setIsDragging(false);
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            setFiles(prev => [...prev, ...Array.from(e.dataTransfer.files)]);
+        }
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            setFiles(prev => [...prev, ...Array.from(e.target.files!)]);
+        }
+    };
+
+    const removeFile = (indexToRemove: number) => {
+        setFiles(prev => prev.filter((_, index) => index !== indexToRemove));
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
+    };
+
     const RecorderControls = () => (
-        <div className="bg-gray-700/50 p-4 rounded-lg space-y-4">
+        <div className="bg-gray-700/50 p-4 rounded-lg space-y-4 h-full flex flex-col justify-between">
             <div className="text-center font-semibold text-gray-300 capitalize">{recordingStatus}</div>
             {recordingStatus === 'finished' && audioUrl && (
                 <audio src={audioUrl} controls className="w-full" />
@@ -128,11 +163,64 @@ const HomeworkView: React.FC<{ studentName: string; t: (key: string) => string; 
                     </>
                 )}
                 {recordingStatus === 'finished' && (
-                    <button onClick={handleReset} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-full">{t('resetButton')}</button>
+                    <button onClick={handleAudioReset} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-full">{t('resetButton')}</button>
                 )}
             </div>
         </div>
     );
+
+    const FileUploader = () => (
+        <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={`relative flex flex-col w-full h-full p-4 bg-gray-700/50 rounded-lg border-2 border-dashed transition-all duration-300 ${isDragging ? 'border-amber-500 bg-gray-700' : 'border-gray-600'}`}
+        >
+            <div
+                onClick={() => fileInputRef.current?.click()}
+                className="flex flex-col items-center justify-center flex-grow cursor-pointer"
+            >
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    onChange={handleFileChange}
+                    className="hidden"
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                    multiple
+                />
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-500 mb-2" fill="none" viewBox="0 0 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                <p className="text-sm font-semibold text-gray-300">{t('homeworkFilePlaceholder')}</p>
+                <p className="text-xs text-gray-500 mt-1">{t('homeworkFileTypes')}</p>
+            </div>
+
+            {files.length > 0 && (
+                <div className="mt-4 border-t border-gray-600 pt-2">
+                    <ul className="space-y-2 max-h-24 overflow-y-auto custom-scrollbar pr-2">
+                        {files.map((file, index) => (
+                             <li key={`${file.name}-${index}`} className="flex items-center justify-between bg-gray-600/50 p-2 rounded-md animate-fade-in">
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm text-gray-200 truncate">{file.name}</p>
+                                    <p className="text-xs text-gray-400">{(file.size / 1024).toFixed(2)} KB</p>
+                                </div>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); removeFile(index); }}
+                                    className="ml-2 flex-shrink-0 text-red-400 hover:text-red-300 p-1 rounded-full hover:bg-red-500/20"
+                                    aria-label={`Remove ${file.name}`}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24" stroke="currentColor" strokeWidth="2">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+        </div>
+    );
+
 
     return (
         <div className="page-transition">
@@ -152,9 +240,15 @@ const HomeworkView: React.FC<{ studentName: string; t: (key: string) => string; 
                         placeholder={t('homeworkTextPlaceholder')}
                     />
                 </div>
-                <div>
-                     <label className="block text-sm font-medium text-gray-300 mb-2">{t('homeworkAudioLabel')}</label>
-                     <RecorderControls />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">{t('homeworkAudioLabel')}</label>
+                        <RecorderControls />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">{t('homeworkFileLabel')}</label>
+                        <FileUploader />
+                    </div>
                 </div>
                 <div>
                     <button 
@@ -182,6 +276,43 @@ const ClassDetailsView: React.FC<{ classDetails: ClassDetails; t: (key: string) 
     const [currentDate, setCurrentDate] = useState(new Date());
     const [attendanceData, setAttendanceData] = useState<{ [day: string]: 'attended' | 'missed' }>({});
     const [isLoadingCalendar, setIsLoadingCalendar] = useState(true);
+
+    const [isSubscribed, setIsSubscribed] = useState(false);
+    const [isSubscriptionLoading, setIsSubscriptionLoading] = useState(true);
+
+    useEffect(() => {
+        const checkSubscription = async () => {
+            setIsSubscriptionLoading(true);
+            const sub = await getSubscription();
+            setIsSubscribed(!!sub);
+            setIsSubscriptionLoading(false);
+        };
+        checkSubscription();
+    }, []);
+
+    const handleSubscriptionToggle = async () => {
+        setIsSubscriptionLoading(true);
+        try {
+            if (isSubscribed) {
+                await unsubscribeUser();
+                setIsSubscribed(false);
+                alert(t('notificationsDisabled'));
+            } else {
+                if (Notification.permission === 'denied') {
+                    alert(t('notificationsBlocked'));
+                    setIsSubscriptionLoading(false);
+                    return;
+                }
+                await subscribeUser(classDetails.id);
+                setIsSubscribed(true);
+                alert(t('notificationsEnabled'));
+            }
+        } catch (error: any) {
+            alert(`Error: ${error.message}`);
+        } finally {
+            setIsSubscriptionLoading(false);
+        }
+    };
 
     const timeSlotDetails = useMemo(() => {
         return Object.values(TIME_SLOTS).flat().find(slot => slot.id === classDetails.start_time_id);
@@ -330,6 +461,13 @@ const ClassDetailsView: React.FC<{ classDetails: ClassDetails; t: (key: string) 
                 <a href={currentMeetingUrl} target="_blank" rel="noopener noreferrer" className="block w-full text-center bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg">{t('joinClassJoinButton')}</a>
                 <button onClick={() => onOpenChat(classDetails.name)} className="relative w-full text-center bg-gray-700 text-gray-200 font-bold py-3 px-6 rounded-lg shadow-sm hover:bg-gray-600">{t('chatWithTeacher')} {unreadCount > 0 && <span className="absolute top-2 right-2 flex h-5 w-5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span className="relative inline-flex rounded-full h-5 w-5 bg-red-500 items-center justify-center text-xs">{unreadCount}</span></span>}</button>
                 <button onClick={onHomeworkClick} className="w-full text-center bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-sm hover:bg-blue-700">{t('homeworkButton')}</button>
+                 <button 
+                    onClick={handleSubscriptionToggle} 
+                    disabled={isSubscriptionLoading}
+                    className="w-full text-center bg-gray-600 text-white font-bold py-3 px-6 rounded-lg shadow-sm hover:bg-gray-500 disabled:opacity-60"
+                >
+                    {isSubscriptionLoading ? t('loading') : (isSubscribed ? t('disableNotifications') : t('enableNotifications'))}
+                </button>
             </div>
             
             <details className="bg-gray-800 rounded-lg">
@@ -395,8 +533,16 @@ const JoinClassPage: React.FC<JoinClassPageProps> = ({ navigateTo, t, onOpenChat
         setLoading(true);
         setError(null);
         try {
-            const { data, error: queryError } = await supabase.from('passcodes').select('*').eq('name', name.trim()).eq('code', passcode.trim()).limit(1).single();
+            const { data, error: queryError } = await supabase
+                .from('passcodes')
+                .select('*')
+                .eq('name', name.trim())
+                .eq('code', passcode.trim())
+                .limit(1)
+                .single();
+                
             if (queryError || !data) throw new Error(t('joinClassInvalidCredentials'));
+
             const details: ClassDetails = {
                 id: data.id,
                 name: data.name,
@@ -408,8 +554,10 @@ const JoinClassPage: React.FC<JoinClassPageProps> = ({ navigateTo, t, onOpenChat
                 date_approved: data.date_approved,
                 isApproved: !!data.date_approved
             };
+            
             setClassDetails(details);
             setView('details');
+
         } catch (e: any) {
             setError(e.message);
         } finally {

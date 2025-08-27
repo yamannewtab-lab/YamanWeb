@@ -437,13 +437,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
                 throw new Error('Please provide a valid Zoom link.');
             }
 
-            // CRITICAL FIX: Check for accountName and throw a clear error if missing
             const studentAccountName = approvalForLink.data?.accountName;
             if (!studentAccountName) {
                 throw new Error(`Critical error: 'accountName' is missing from application data for '${approvalForLink.name}'. This application cannot be auto-approved and must be handled manually.`);
             }
 
-            // Fetch the student's record from the passcodes table using their account name.
             const { data: passcodeData, error: passcodeFetchError } = await supabase
                 .from('passcodes')
                 .select('*')
@@ -456,7 +454,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
                 throw new Error(`Could not find the student account for "${studentAccountName}". Please ensure the account was created successfully. Error: ${errorMsg}`);
             }
 
-            // Book the slots in the 'booking' table
             if (approvalForLink.slots && approvalForLink.slots.length > 0) {
                 const bookingsToInsert = approvalForLink.slots.map(slot => ({
                     time_slot: slot.time_slot,
@@ -467,25 +464,35 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
                 if (bookingError) throw new Error(`Failed to book slots: ${bookingError.message}`);
             }
 
-            // Insert the zoom link into the 'links' table
             const { error: linkInsertError } = await supabase.from('links').insert([{
-                name: approvalForLink.name, // Use student's full name for display
+                name: approvalForLink.name,
                 passcode: passcodeData.code,
                 zoom_link: zoomLinkInput.trim()
             }]);
             if (linkInsertError) throw new Error(`Failed to store Zoom link: ${linkInsertError.message}`);
             
-            // Update the student's record in 'passcodes' to mark as approved
             const { error: passcodeUpdateError } = await supabase.from('passcodes').update({
                 date_approved: new Date().toISOString(),
                 paid_state: 'unpaid',
             }).eq('id', passcodeData.id);
             if (passcodeUpdateError) throw new Error(`Could not update student's approval status: ${passcodeUpdateError.message}. Please check manually.`);
 
-            // Finally, update the approval request to 'approved' status
             const { error: approvalUpdateError } = await supabase.from('approvals').update({ status: 'approved' }).eq('id', approvalForLink.id);
             if (approvalUpdateError) throw new Error(`Failed to update approval status: ${approvalUpdateError.message}`);
             
+            // Invoke edge function to send notification
+            try {
+                const { error: functionError } = await supabase.functions.invoke('send-push-notification', {
+                    body: { userId: passcodeData.id },
+                });
+                if (functionError) {
+                    console.error('Failed to send push notification:', functionError);
+                    alert('Application approved, but failed to send the push notification. The user will not be actively notified.');
+                }
+            } catch (e) {
+                console.error('Error invoking push notification function:', e);
+            }
+
             alert('Application approved, slots booked, and Zoom link stored successfully!');
             setApprovals(current => current.filter(a => a.id !== approvalForLink.id));
 

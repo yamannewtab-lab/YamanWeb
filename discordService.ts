@@ -14,7 +14,7 @@ const WEBHOOK_URLS = {
     AI_QUESTIONS: 'https://discord.com/api/webhooks/1408380025983602688/9wlOyBOt0RYed0ftJVXjRhNelhcIjECYzKSOnIaa0JyxnSrCQYQ-W3geQrKcivpjsqfL',
     FORGOT_PASSCODE: 'https://discord.com/api/webhooks/1409207667360010421/IY9TSrUhUniyhuLRVRtDDneMw-e_ozf8LKG7y7GelYlgM1A-96VK9mfA-srFSBMz8FtB',
     TEACHER_NOTIFICATION: 'https://discord.com/api/webhooks/1410127945657352312/GzjZMclkR9j0pJBVDBjyOGOn4ktYLcY3f2MvNH2R-5UhtJWLqAmTURzOHOaFLSh1fBeW',
-    TEACHER_ABSENT_NOTIFICATION: 'https://discord.com/api/webhooks/1410128137429192796/K9VhoitpLcPbahZFKYPZql4LTsLpEUK7qXSSDOqMYzGAbEIy1VYyZ1ZSrVtBuKvl33ch',
+    TEACHER_ABSENT_NOTIFICATION: 'https://discord.com/api/webhooks/1410128137429192796/K9VhoitpLcPbahZFKYPZql4LTsLpEUK7yVqSSDOqMYzGAbEIy1VYyZ1ZSrVtBuKvl33ch',
     HOMEWORK: 'https://discord.com/api/webhooks/1410135598844350495/8V794jeUKiQBC_4DILu18NrUq-U6Xgw1EzmpKXJHrgvjd1mL2iPNRbeYHKtlSEwxxDVD',
     CHAT_MESSAGES: 'https://discord.com/api/webhooks/1409537105243279442/3X_LGP8m9cPv3Z5Yp5uPkoFlNRjKIdQxkt_m7odxFfn3UFqtnB3D4QfoKhXqDp5nCPHm', // Reusing teacher webhook, can be changed.
     IHYA_COURSE: 'https://discord.com/api/webhooks/1409889821228269598/jIjBKhpXvnxl0giXWyt8OPNGlm4D8k1iUY7iUelfNHqJ7pIoklaqBN3HJZ3CTAlndEFd',
@@ -105,6 +105,7 @@ interface HomeworkRequest {
     studentName: string;
     text: string;
     audioBlob: Blob | null;
+    files: File[] | null;
 }
 
 
@@ -567,15 +568,31 @@ export async function sendTeacherAbsentNotification(request: TeacherNotification
 export async function sendHomeworkToDiscord(request: HomeworkRequest) {
     const formData = new FormData();
     
-    const content = `New homework submission from **${request.studentName}**:\n\n**Text:**\n${request.text || "No text submitted."}`;
+    const contentParts = [`New homework submission from **${request.studentName}**:`];
+    if (request.text) {
+        contentParts.push(`\n**Text:**\n${request.text}`);
+    }
+    if (!request.text && !request.audioBlob && (!request.files || request.files.length === 0)) {
+        contentParts.push("_(No text, audio, or file submitted)_");
+    }
+    
     formData.append('payload_json', JSON.stringify({
         username: "Homework Bot",
         avatar_url: "https://i.imgur.com/uFPNd22.png",
-        content: content,
+        content: contentParts.join('\n'),
     }));
 
+    let fileCounter = 1;
     if (request.audioBlob) {
-        formData.append('file1', request.audioBlob, 'homework_recording.mp3');
+        formData.append(`file${fileCounter}`, request.audioBlob, 'homework_recording.mp3');
+        fileCounter++;
+    }
+    if (request.files) {
+        // Discord allows up to 10 files per message
+        for (const file of request.files.slice(0, 10 - (request.audioBlob ? 1 : 0))) {
+            formData.append(`file${fileCounter}`, file, file.name);
+            fileCounter++;
+        }
     }
 
     try {
