@@ -480,19 +480,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
             const { error: approvalUpdateError } = await supabase.from('approvals').update({ status: 'approved' }).eq('id', approvalForLink.id);
             if (approvalUpdateError) throw new Error(`Failed to update approval status: ${approvalUpdateError.message}`);
             
-            // Invoke edge function to send notification
-            try {
-                const { error: functionError } = await supabase.functions.invoke('send-push-notification', {
-                    body: { userId: passcodeData.id },
-                });
-                if (functionError) {
-                    console.error('Failed to send push notification:', functionError);
-                    alert('Application approved, but failed to send the push notification. The user will not be actively notified.');
-                }
-            } catch (e) {
-                console.error('Error invoking push notification function:', e);
-            }
-
             alert('Application approved, slots booked, and Zoom link stored successfully!');
             setApprovals(current => current.filter(a => a.id !== approvalForLink.id));
 

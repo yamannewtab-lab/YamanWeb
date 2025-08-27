@@ -1,6 +1,5 @@
 
 
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Page, IjazahApplication, SubmissionType } from './types';
 import { LANGUAGE_DATA, LANGUAGES } from './constants';
@@ -55,18 +54,6 @@ const App: React.FC = () => {
     
     useEffect(() => {
         window.history.scrollRestoration = 'manual';
-    }, []);
-
-    useEffect(() => {
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/service-worker.js')
-                .then(registration => {
-                    console.log('Service Worker registered with scope:', registration.scope);
-                })
-                .catch(error => {
-                    console.error('Service Worker registration failed:', error);
-                });
-        }
     }, []);
 
     useEffect(() => {

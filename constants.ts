@@ -8,10 +8,6 @@ export { LANGUAGE_DATA };
 export const LOCK_CHECK = true;
 export const LANGUAGES: Language[] = ['en', 'ar', 'id'];
 
-// IMPORTANT: Replace with your generated VAPID public key.
-// You can generate one by running `npx web-push generate-vapid-keys` in your terminal.
-export const VAPID_PUBLIC_KEY = 'YOUR_VAPID_PUBLIC_KEY_HERE';
-
 export const IJAZAH_PRICES: IjazahPrices = {
     'Hafs \'an \'Asim':    { 1: 40000, 2: 80000, 3: 120000, 4: 160000, 5: 200000, 6: 240000, 7: 280000 },
     'The Ten Recitations': { 1: 48000, 2: 92000, 3: 140000, 4: 188000, 5: 232000, 6: 280000, 7: 328000 },
