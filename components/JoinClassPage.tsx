@@ -274,6 +274,7 @@ const JoinClassPage: React.FC<JoinClassPageProps> = ({ navigateTo, t, onOpenChat
     const [isLoading, setIsLoading] = useState(false);
     const [classDetails, setClassDetails] = useState<ClassDetails | null>(null);
     const [link, setLink] = useState<string | null>(null);
+    const [joinLink, setJoinLink] = useState<string | null>(null);
     const [forgotName, setForgotName] = useState('');
     const [forgotWhatsapp, setForgotWhatsapp] = useState('');
     const [forgotSuccess, setForgotSuccess] = useState(false);
@@ -345,6 +346,42 @@ const JoinClassPage: React.FC<JoinClassPageProps> = ({ navigateTo, t, onOpenChat
         }
     }, [classDetails]);
     
+    useEffect(() => {
+        if (link) {
+            const isAndroid = /android/i.test(navigator.userAgent);
+            
+            if (isAndroid) {
+                try {
+                    const url = new URL(link);
+                    // More robust regex to find the meeting ID from the path
+                    const meetingIdMatch = url.pathname.match(/\/j\/(\d+)/);
+                    const meetingId = meetingIdMatch ? meetingIdMatch[1] : null;
+                    const password = url.searchParams.get('pwd');
+
+                    if (meetingId) {
+                        let intentUrl = `intent://zoom.us/join?confno=${meetingId}`;
+                        if (password) {
+                            intentUrl += `&pwd=${password}`;
+                        }
+                        intentUrl += `#Intent;package=us.zoom.videomeetings;scheme=zoom;end;`;
+                        setJoinLink(intentUrl);
+                    } else {
+                        // Fallback to the original link if parsing fails to find an ID
+                        setJoinLink(link);
+                    }
+                } catch (e) {
+                    // Fallback if URL parsing fails for any reason
+                    console.error("Failed to parse Zoom link for intent URL:", e);
+                    setJoinLink(link);
+                }
+            } else {
+                // For non-Android devices, use the original web link
+                setJoinLink(link);
+            }
+        }
+    }, [link]);
+
+
     const timeSlotToKey = (slotId: string): string => {
         for (const block of Object.values(TIME_SLOTS)) {
             const found = block.find(s => s.id === slotId);
@@ -414,9 +451,9 @@ const JoinClassPage: React.FC<JoinClassPageProps> = ({ navigateTo, t, onOpenChat
                             {classDetails.paid_state === 'PAID' ? t('statusPaid') : t('statusUnpaid')}
                         </p>
                     </div>
-                    {link ? (
+                    {joinLink ? (
                         <div className="flex flex-col gap-3 pt-4">
-                            <a href={link} target="_blank" rel="noopener noreferrer" className="w-full text-center bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold py-3 px-4 rounded-lg shadow-md">{t('joinClassJoinButton')}</a>
+                            <a href={joinLink} target="_blank" rel="noopener noreferrer" className="w-full text-center bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold py-3 px-4 rounded-lg shadow-md">{t('joinClassJoinButton')}</a>
                              <button onClick={handleImReady} disabled={readyButtonState !== 'idle'} className="w-full text-center bg-blue-600 text-white font-bold py-2 px-4 rounded-lg disabled:opacity-50">{readyButtonState === 'idle' ? t('imReadyButton') : (readyButtonState === 'sending' ? t('imReadyButtonSending') : t('imReadyButtonSent'))}</button>
                              <button onClick={handleCantAttend} className="w-full text-center bg-red-600 text-white font-bold py-2 px-4 rounded-lg">{t('cantAttendButton')}</button>
                         </div>

@@ -465,7 +465,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
             }
 
             const { error: linkInsertError } = await supabase.from('links').insert([{
-                name: approvalForLink.name,
+                name: studentAccountName,
                 passcode: passcodeData.code,
                 zoom_link: zoomLinkInput.trim()
             }]);
