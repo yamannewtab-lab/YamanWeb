@@ -1,17 +1,17 @@
 
 
-
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Page } from '../types';
 import { supabase } from '../supabaseClient';
 import { TIME_SLOTS, PATH_TRANSLATION_KEYS } from '../constants';
 import { sendForgotPasscodeToDiscord, sendTeacherNotification, sendTeacherAbsentNotification, sendHomeworkToDiscord } from '../discordService';
 import AttendanceCalendar from './AttendanceCalendar';
+import WelcomeView from './WelcomeView';
 
 // --- Sub-Components ---
 
 interface ClassDetails {
-    id: string;
+    id: number;
     name: string;
     path: string;
     start_time_id: string;
@@ -20,6 +20,7 @@ interface ClassDetails {
     next_paid: string | null;
     date_approved: string | null;
     isApproved: boolean;
+    has_seen_welcome: boolean;
 }
 
 const HomeworkView: React.FC<{ studentName: string; t: (key: string) => string; onBack: () => void; }> = ({ studentName, t, onBack }) => {
@@ -239,27 +240,334 @@ const HomeworkView: React.FC<{ studentName: string; t: (key: string) => string; 
                     <h4 className="font-semibold mb-2">{t('uploadedFilesTitle')}:</h4>
                     <ul className="space-y-2">
                         {files.map((file, index) => (
-                            <li key={index} className="flex justify-between items-center bg-gray-700/50 p-2 rounded-lg text-sm">
-                                <span>{file.name}</span>
-                                <button onClick={() => removeFile(index)} className="text-red-400 hover:text-red-300 font-bold text-lg px-2" aria-label={t('removeFileButton')}>&times;</button>
+                            <li key={index} className="flex justify-between items-center bg-gray-700/50 p-2 rounded-md text-sm">
+                                <span className="truncate">{file.name}</span>
+                                <button onClick={() => removeFile(index)} className="text-red-400 hover:text-red-300 font-bold ml-2">&times;</button>
                             </li>
                         ))}
                     </ul>
                 </div>
             )}
-            <div className="mt-8 text-center">
-                <button 
-                    onClick={handleSubmit} 
-                    disabled={isSubmitting || submitStatus === 'success'}
-                    className="w-full sm:w-auto bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition-all disabled:opacity-60"
+            <div className="mt-8 flex justify-end">
+                <button
+                    onClick={handleSubmit}
+                    disabled={isSubmitting}
+                    className="w-full sm:w-auto bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition-all disabled:opacity-60"
                 >
-                    {isSubmitting ? t('submittingHomework') : submitStatus === 'success' ? t('homeworkSubmittedSuccess') : t('submitHomeworkButton')}
+                    {isSubmitting ? t('submittingHomework') : (submitStatus === 'success' ? t('homeworkSubmittedSuccess') : (submitStatus === 'error' ? t('homeworkSubmittedError') : t('submitHomeworkButton')))}
                 </button>
-                {submitStatus === 'error' && <p className="text-red-400 mt-2">{t('homeworkSubmittedError')}</p>}
             </div>
         </div>
     );
 };
+
+
+const ClassDetailsView: React.FC<{
+    classDetails: ClassDetails;
+    t: (key: string) => string;
+    onOpenChat: (name: string) => void;
+    unreadCount: number;
+    onShowHomework: () => void;
+}> = ({ classDetails, t, onOpenChat, unreadCount, onShowHomework }) => {
+    
+    const [currentTime, setCurrentTime] = useState(new Date());
+    const [imReadyStatus, setImReadyStatus] = useState<'idle' | 'sending' | 'sent'>('idle');
+    const [cantAttendStatus, setCantAttendStatus] = useState<'idle' | 'sending' | 'sent'>('idle');
+    const [attendance, setAttendance] = useState<{ [day: string]: 'attended' | 'missed' }>({});
+    const [isCalendarVisible, setIsCalendarVisible] = useState(false);
+
+    const staticZoomLink = "https://us05web.zoom.us/j/2220657355?pwd=5LYF7JxcuWGqYqwIydNbi3cA8uAlxV.1";
+
+    const timeSlot = useMemo(() => {
+        return Object.values(TIME_SLOTS).flat().find(slot => slot.id === classDetails.start_time_id);
+    }, [classDetails.start_time_id]);
+    
+    const timeText = timeSlot ? t(timeSlot.key) : 'N/A';
+    
+    useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+        return () => clearInterval(timer);
+    }, []);
+
+    const nextSession = useMemo(() => {
+        const dayMap: { [key: string]: number } = { 'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6 };
+        const scheduledDays = classDetails.selected_days.map(d => dayMap[d]);
+
+        if (!classDetails.start_time_id || scheduledDays.length === 0) return null;
+
+        // Correctly parse time from the ID, e.g., 'E_1820_1835' -> '1820'
+        const timeParts = classDetails.start_time_id.split('_');
+        if (timeParts.length < 2) return null;
+
+        const timeString = timeParts[1];
+        const hour = parseInt(timeString.substring(0, 2), 10);
+        const minute = parseInt(timeString.substring(2, 4), 10);
+
+        if (isNaN(hour) || isNaN(minute)) return null;
+        
+        let now = new Date();
+        for (let i = 0; i < 14; i++) { // Check for the next two weeks
+            let nextDate = new Date(now);
+            nextDate.setDate(now.getDate() + i);
+            nextDate.setHours(hour, minute, 0, 0);
+
+            if (scheduledDays.includes(nextDate.getDay()) && nextDate > new Date(Date.now() - 20 * 60 * 1000)) { // 20 min grace period
+                return nextDate;
+            }
+        }
+        return null;
+    }, [classDetails.selected_days, classDetails.start_time_id]);
+    
+    const timeDiff = nextSession ? nextSession.getTime() - currentTime.getTime() : null;
+    
+    const Countdown: React.FC<{ diff: number | null }> = ({ diff }) => {
+        if (diff === null) return <p>{t('joinClassNoUpcoming')}</p>;
+        if (diff <= 1000) return <p className="font-bold text-green-400">{t('joinClassStartsNow')}</p>;
+
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const minutes = Math.floor((diff / 1000 / 60) % 60);
+        const seconds = Math.floor((diff / 1000) % 60);
+
+        if (days > 0) return <p>{days}d {hours}h</p>;
+        if (hours > 0) return <p>{hours}h {minutes}m</p>;
+        return <p>{minutes}m {seconds}s</p>;
+    };
+
+    const isJoinButtonEnabled = timeDiff !== null && timeDiff <= 5 * 60 * 1000 && timeDiff > -20 * 60 * 1000;
+
+    const handleImReady = async () => {
+        setImReadyStatus('sending');
+        try {
+            await sendTeacherNotification({
+                name: classDetails.name,
+                program: t(PATH_TRANSLATION_KEYS[classDetails.path] || classDetails.path),
+                time: timeText
+            });
+            setImReadyStatus('sent');
+            setTimeout(() => setImReadyStatus('idle'), 5000);
+        } catch (error) {
+            console.error("Failed to send 'I'm Ready' notification:", error);
+            setImReadyStatus('idle');
+        }
+    };
+    
+    const handleCantAttend = async () => {
+        setCantAttendStatus('sending');
+        try {
+            const today = new Date();
+            const dateString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+            
+            const { error } = await supabase
+                .from('attendance')
+                .upsert({ student_name: classDetails.name, session_date: dateString, status: 'missed' }, { onConflict: 'student_name, session_date' });
+
+            if (error) throw error;
+            
+            await sendTeacherAbsentNotification({
+                name: classDetails.name,
+                program: t(PATH_TRANSLATION_KEYS[classDetails.path] || classDetails.path),
+                time: timeText
+            });
+
+            setCantAttendStatus('sent');
+            setTimeout(() => setCantAttendStatus('idle'), 5000);
+        } catch (error) {
+            console.error("Failed to mark as absent:", error);
+            alert("Failed to update status. Please try again.");
+            setCantAttendStatus('idle');
+        }
+    };
+    
+    useEffect(() => {
+        if (isCalendarVisible) {
+            const fetchAttendance = async () => {
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = today.getMonth() + 1;
+                const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+                const endDate = `${year}-${String(month).padStart(2, '0')}-${new Date(year, month, 0).getDate()}`;
+                
+                const { data, error } = await supabase
+                    .from('attendance')
+                    .select('session_date, status')
+                    .eq('student_name', classDetails.name)
+                    .gte('session_date', startDate)
+                    .lte('session_date', endDate);
+                
+                if (error) console.error("Error fetching attendance:", error);
+                else {
+                    const formattedData = data.reduce((acc: any, record: any) => {
+                        acc[record.session_date] = record.status;
+                        return acc;
+                    }, {});
+                    setAttendance(formattedData);
+                }
+            };
+            fetchAttendance();
+        }
+    }, [isCalendarVisible, classDetails.name]);
+    
+     const dayStringToNumber = (day: string): number => {
+        const map: { [key: string]: number } = { 'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6 };
+        return map[day.trim()] ?? -1;
+    };
+    
+    const sessionsInCurrentMonth = useMemo(() => {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = today.getMonth();
+        const scheduledDayNumbers = classDetails.selected_days.map(dayStringToNumber);
+        
+        let count = 0;
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        for (let day = 1; day <= daysInMonth; day++) {
+            const currentDate = new Date(year, month, day);
+            if (scheduledDayNumbers.includes(currentDate.getDay())) {
+                count++;
+            }
+        }
+        return count;
+    }, [classDetails.selected_days]);
+
+    return (
+        <div className="page-transition">
+            <h2 className="text-2xl font-bold text-center text-gray-100">{t('helloUser').replace('{name}', classDetails.name)}</h2>
+            
+            <div className="mt-6 p-6 bg-gray-800/50 rounded-xl shadow-lg border border-gray-700/50 space-y-4">
+                <div>
+                    <p className="text-sm text-gray-400">{t('joinClassSelectedIjazah')}</p>
+                    <p className="font-semibold text-gray-200">{t(PATH_TRANSLATION_KEYS[classDetails.path] || classDetails.path)}</p>
+                </div>
+                <div>
+                    <p className="text-sm text-gray-400">{t('joinClassSelectedTime')}</p>
+                    <p className="font-semibold text-gray-200">{timeText}</p>
+                </div>
+                <div>
+                    <p className="text-sm text-gray-400">{t('joinClassNextSession')}</p>
+                    <div className="text-2xl font-bold text-amber-400"><Countdown diff={timeDiff} /></div>
+                </div>
+            </div>
+
+            <div className="mt-8 flex flex-col items-center gap-4">
+                <a href={staticZoomLink} target="_blank" rel="noopener noreferrer" className={`w-full text-center font-bold py-3 px-6 rounded-lg shadow-md transition-all duration-300 text-lg ${isJoinButtonEnabled ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:shadow-lg transform hover:-translate-y-0.5' : 'bg-gray-700 text-gray-500 cursor-not-allowed'}`} aria-disabled={!isJoinButtonEnabled}>
+                    {t('joinClassJoinButton')}
+                </a>
+                 <div className="grid grid-cols-2 gap-4 w-full">
+                    <button onClick={handleImReady} disabled={imReadyStatus !== 'idle'} className="w-full bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-sm hover:bg-green-700 disabled:opacity-50 transition-all">
+                        {imReadyStatus === 'sending' ? t('imReadyButtonSending') : imReadyStatus === 'sent' ? t('imReadyButtonSent') : t('imReadyButton')}
+                    </button>
+                    <button onClick={handleCantAttend} disabled={cantAttendStatus !== 'idle'} className="w-full bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow-sm hover:bg-red-700 disabled:opacity-50 transition-all">
+                        {cantAttendStatus === 'sending' ? t('cantAttendButtonSending') : cantAttendStatus === 'sent' ? t('cantAttendButtonSent') : t('cantAttendButton')}
+                    </button>
+                 </div>
+                  <p className="text-xs text-center text-gray-500">{t('cantAttendWarning')}</p>
+            </div>
+
+             <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+                 <button onClick={() => setIsCalendarVisible(!isCalendarVisible)} className="w-full bg-gray-700 text-gray-200 font-bold py-3 px-4 rounded-lg shadow-sm hover:bg-gray-600 transition-colors flex items-center justify-center gap-2">
+                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" /></svg>
+                     {t('viewMonthlyLessons')}
+                 </button>
+                 <button onClick={onShowHomework} className="w-full bg-gray-700 text-gray-200 font-bold py-3 px-4 rounded-lg shadow-sm hover:bg-gray-600 transition-colors flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fillRule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" /></svg>
+                    {t('homeworkButton')}
+                </button>
+                <button onClick={() => onOpenChat(classDetails.name)} className="relative w-full sm:col-span-2 bg-gray-700 text-gray-200 font-bold py-3 px-4 rounded-lg shadow-sm hover:bg-gray-600 transition-colors flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M2 5a2 2 0 012-2h12a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm14 1a1 1 0 00-1-1H5a1 1 0 00-1 1v5l4-3 4 3 4-3v-5z" /></svg>
+                    {t('chatWithTeacher')}
+                    {unreadCount > 0 && <span className="absolute top-0 right-0 -mt-2 -mr-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">{unreadCount}</span>}
+                </button>
+            </div>
+            
+            {isCalendarVisible && (
+                 <div className="mt-6 page-transition">
+                    <h3 className="text-lg font-bold text-center mb-2">{t('attendanceCalendarTitle')}</h3>
+                    <p className="text-center text-sm text-gray-400 mb-4">{t('sessionsThisMonth').replace('{count}', String(sessionsInCurrentMonth))}</p>
+                    <AttendanceCalendar 
+                        year={currentTime.getFullYear()} 
+                        month={currentTime.getMonth()} 
+                        scheduledDays={classDetails.selected_days.map(dayStringToNumber)}
+                        attendanceData={attendance}
+                        t={t}
+                    />
+                </div>
+            )}
+        </div>
+    );
+};
+
+
+const LoginView: React.FC<{
+    onLogin: (name: string, code: string) => void;
+    isLoading: boolean;
+    error: string | null;
+    t: (key: string) => string;
+}> = ({ onLogin, isLoading, error, t }) => {
+    const [name, setName] = useState('');
+    const [code, setCode] = useState('');
+    const [showForgot, setShowForgot] = useState(false);
+    const [forgotName, setForgotName] = useState('');
+    const [forgotWhatsapp, setForgotWhatsapp] = useState('');
+    const [forgotStatus, setForgotStatus] = useState<'idle' | 'sending' | 'sent'>('idle');
+
+    const handleLoginSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        onLogin(name, code);
+    };
+
+    const handleForgotSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setForgotStatus('sending');
+        try {
+            await sendForgotPasscodeToDiscord({ name: forgotName, whatsapp: forgotWhatsapp });
+            setForgotStatus('sent');
+        } catch (err) {
+            console.error(err);
+            setForgotStatus('idle');
+            alert("An error occurred. Please try again.");
+        }
+    };
+    
+    return (
+        <div className="page-transition">
+            {showForgot ? (
+                <div>
+                    <h2 className="text-2xl font-bold text-center text-gray-100">{t('forgotPasscodeTitle')}</h2>
+                    {forgotStatus === 'sent' ? (
+                        <div className="mt-6 text-center">
+                            <p className="text-green-400">{t('forgotPasscodeSuccessMessage')}</p>
+                            <button onClick={() => setShowForgot(false)} className="mt-4 text-sm font-semibold text-gray-400 hover:text-amber-400">&larr; {t('backButton')}</button>
+                        </div>
+                    ) : (
+                        <form onSubmit={handleForgotSubmit} className="mt-6 space-y-4">
+                            <div><label htmlFor="forgot-name" className="block text-sm font-medium text-gray-300">{t('forgotPasscodeNameLabel')}</label><input type="text" id="forgot-name" value={forgotName} onChange={(e) => setForgotName(e.target.value)} required className="w-full bg-gray-700 p-2 rounded-md" /></div>
+                            <div><label htmlFor="forgot-whatsapp" className="block text-sm font-medium text-gray-300">{t('forgotPasscodeWhatsappLabel')}</label><input type="tel" id="forgot-whatsapp" value={forgotWhatsapp} onChange={(e) => setForgotWhatsapp(e.target.value)} required className="w-full bg-gray-700 p-2 rounded-md" /></div>
+                            <button type="submit" disabled={forgotStatus === 'sending'} className="w-full bg-amber-500 text-white font-bold p-2 rounded-md">{forgotStatus === 'sending' ? t('loading') : t('forgotPasscodeSendButton')}</button>
+                            <button type="button" onClick={() => setShowForgot(false)} className="w-full text-center text-sm mt-2 text-gray-400 hover:text-amber-400">&larr; {t('backButton')}</button>
+                        </form>
+                    )}
+                </div>
+            ) : (
+                <div>
+                    <h2 className="text-2xl font-bold text-center text-gray-100">{t('joinClassPageTitle')}</h2>
+                    <form onSubmit={handleLoginSubmit} className="mt-6 space-y-4">
+                        <div><label htmlFor="join-name" className="block text-sm font-medium text-gray-300">{t('joinClassNameLabel')}</label><input type="text" id="join-name" value={name} onChange={(e) => setName(e.target.value)} required className="w-full bg-gray-700 p-2 rounded-md" /></div>
+                        <div><label htmlFor="join-code" className="block text-sm font-medium text-gray-300">{t('joinClassPasscodeLabel')}</label><input type="password" id="join-code" value={code} onChange={(e) => setCode(e.target.value)} required pattern="[0-9]*" inputMode="numeric" maxLength={3} className="w-full bg-gray-700 p-2 rounded-md text-center tracking-[0.5em]" /></div>
+                        {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+                        <button type="submit" disabled={isLoading} className="w-full bg-amber-500 text-white font-bold p-2 rounded-md">{isLoading ? t('loading') : t('joinClassSubmitButton')}</button>
+                    </form>
+                    <div className="text-center mt-4">
+                        <button onClick={() => setShowForgot(true)} className="text-sm text-gray-400 hover:text-amber-400">{t('forgotPasscodeLink')}</button>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+
+// --- Main Component ---
 
 interface JoinClassPageProps {
     navigateTo: (page: Page) => void;
@@ -269,349 +577,119 @@ interface JoinClassPageProps {
 }
 
 const JoinClassPage: React.FC<JoinClassPageProps> = ({ navigateTo, t, onOpenChat, unreadCount }) => {
-    const [view, setView] = useState<'login' | 'details' | 'homework' | 'forgot_passcode' | 'calendar'>('login');
-    const [name, setName] = useState('');
-    const [passcode, setPasscode] = useState('');
-    const [error, setError] = useState<string | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
+    const [view, setView] = useState<'login' | 'details' | 'homework' | 'pending'>('login');
     const [classDetails, setClassDetails] = useState<ClassDetails | null>(null);
-    const [link, setLink] = useState<string | null>(null);
-    const [joinLink, setJoinLink] = useState<string | null>(null);
-    const [forgotName, setForgotName] = useState('');
-    const [forgotWhatsapp, setForgotWhatsapp] = useState('');
-    const [forgotSuccess, setForgotSuccess] = useState(false);
-    const [readyButtonState, setReadyButtonState] = useState<'idle' | 'sending' | 'sent'>('idle');
-    const [attendanceData, setAttendanceData] = useState<{ [day: string]: 'attended' | 'missed' }>({});
-    const [countdown, setCountdown] = useState<string>('');
-    
-    const dayStringToNumber = (day: string): number => {
-        const map: { [key: string]: number } = { 'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6 };
-        return map[day.trim() as keyof typeof map] ?? -1;
-    };
+    const [loginError, setLoginError] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [showWelcome, setShowWelcome] = useState(false);
 
-    const handleLogin = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError(null);
+    const handleLogin = async (name: string, code: string) => {
         setIsLoading(true);
+        setLoginError(null);
         try {
-            const { data, error: queryError } = await supabase
+            // Fetch the user record by name first (case-insensitive).
+            const { data, error } = await supabase
                 .from('passcodes')
-                .select('id, name, path, start_time_id, selected_days, paid_state, next_paid, date_approved')
-                .eq('name', name.trim())
-                .eq('code', passcode.trim())
-                .single();
+                // Select the 'code' field to perform verification on the client side.
+                .select('id, name, code, path, start_time_id, selected_days, paid_state, next_paid, date_approved, has_seen_welcome')
+                .ilike('name', name.trim())
+                .single(); // .single() will error if no user is found.
 
-            if (queryError || !data) {
-                throw new Error(t('joinClassInvalidCredentials'));
+            // If no user is found (or another error occurs), show invalid credentials.
+            if (error || !data) {
+                if (error && error.code !== 'PGRST116') { // PGRST116 is the code for "0 rows returned"
+                    console.error("Supabase login error:", JSON.stringify(error, null, 2));
+                }
+                setLoginError(t('joinClassInvalidCredentials'));
+                return;
             }
 
-            setClassDetails({
-                ...data,
+            // Verify the passcode on the client. This is robust against type differences (e.g. '000' vs 0).
+            if (Number(data.code) !== Number(code.trim())) {
+                 setLoginError(t('joinClassInvalidCredentials'));
+                 return;
+            }
+            
+            const details: ClassDetails = {
+                id: data.id,
+                name: data.name,
+                path: data.path,
+                start_time_id: data.start_time_id,
                 selected_days: data.selected_days ? data.selected_days.split(',').map((d: string) => d.trim()) : [],
+                paid_state: data.paid_state,
+                next_paid: data.next_paid,
+                date_approved: data.date_approved,
                 isApproved: !!data.date_approved,
-            });
-            setView('details');
-
+                has_seen_welcome: data.has_seen_welcome,
+            };
+            setClassDetails(details);
+            if (details.isApproved && !details.has_seen_welcome) {
+                setShowWelcome(true);
+            } else {
+                setView(details.isApproved ? 'details' : 'pending');
+            }
         } catch (err: any) {
-            setError(err.message);
+            setLoginError('An unexpected error occurred.');
+            console.error("Supabase login error:", err.message, err);
         } finally {
             setIsLoading(false);
         }
     };
     
-     const handleForgotPasscode = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsLoading(true);
-        await sendForgotPasscodeToDiscord({ name: forgotName, whatsapp: forgotWhatsapp });
-        setIsLoading(false);
-        setForgotSuccess(true);
-    };
-
-    useEffect(() => {
-        if (classDetails?.isApproved) {
-            const fetchLink = async () => {
-                const { data, error } = await supabase.from('links').select('zoom_link').eq('name', classDetails.name).single();
-                if (!error && data) setLink(data.zoom_link);
-            };
-            fetchLink();
-            
-            const fetchAttendance = async () => {
-                const { data, error } = await supabase.from('attendance').select('session_date, status').eq('student_name', classDetails.name);
-                if (!error && data) {
-                    const formattedData = data.reduce((acc: any, record: any) => {
-                        acc[record.session_date] = record.status;
-                        return acc;
-                    }, {});
-                    setAttendanceData(formattedData);
-                }
-            };
-            fetchAttendance();
-        }
-    }, [classDetails]);
-    
-    useEffect(() => {
-        if (link) {
-            const isAndroid = /android/i.test(navigator.userAgent);
-            
-            if (isAndroid) {
-                try {
-                    const url = new URL(link);
-                    // More robust regex to find the meeting ID from the path
-                    const meetingIdMatch = url.pathname.match(/\/j\/(\d+)/);
-                    const meetingId = meetingIdMatch ? meetingIdMatch[1] : null;
-                    const password = url.searchParams.get('pwd');
-
-                    if (meetingId) {
-                        let intentUrl = `intent://zoom.us/join?confno=${meetingId}`;
-                        if (password) {
-                            intentUrl += `&pwd=${password}`;
-                        }
-                        intentUrl += `#Intent;package=us.zoom.videomeetings;scheme=zoom;end;`;
-                        setJoinLink(intentUrl);
-                    } else {
-                        // Fallback to the original link if parsing fails to find an ID
-                        setJoinLink(link);
-                    }
-                } catch (e) {
-                    // Fallback if URL parsing fails for any reason
-                    console.error("Failed to parse Zoom link for intent URL:", e);
-                    setJoinLink(link);
-                }
-            } else {
-                // For non-Android devices, use the original web link
-                setJoinLink(link);
-            }
-        }
-    }, [link]);
-
-    useEffect(() => {
-        if (view !== 'details' || !classDetails) {
-            return;
-        }
-
-        const intervalId = setInterval(() => {
-            const dayMap: { [key: string]: number } = {
-                Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3,
-                Thursday: 4, Friday: 5, Saturday: 6
-            };
-            const scheduledDayNumbers = classDetails.selected_days.map(day => dayMap[day.trim()]);
-            
-            const timeParts = classDetails.start_time_id.split('_')[1];
-            if (!timeParts || timeParts.length < 4) {
-                setCountdown(t('joinClassNoUpcoming'));
-                return;
-            }
-            const startHour = parseInt(timeParts.substring(0, 2), 10);
-            const startMinute = parseInt(timeParts.substring(2, 4), 10);
-
-            const calculateNextSession = (): Date | null => {
-                const now = new Date();
-                for (let i = 0; i < 14; i++) {
-                    const checkDate = new Date();
-                    checkDate.setDate(now.getDate() + i);
-                    checkDate.setHours(startHour, startMinute, 0, 0);
-
-                    // A session is considered "next" if it's a scheduled day AND it hasn't ended more than 20 minutes ago.
-                    // This allows us to catch currently active sessions.
-                    if (scheduledDayNumbers.includes(checkDate.getDay()) && checkDate.getTime() > now.getTime() - (20 * 60 * 1000)) {
-                        return checkDate;
-                    }
-                }
-                return null;
-            };
-
-            const nextSessionDate = calculateNextSession();
-
-            if (!nextSessionDate) {
-                setCountdown(t('joinClassNoUpcoming'));
-                return;
-            }
-
-            const now = new Date();
-            const diff = nextSessionDate.getTime() - now.getTime();
-
-            // Show "Join Now" from 1 second before until 20 minutes after the start time
-            if (diff <= 1000 && diff > -20 * 60 * 1000) {
-                setCountdown(t('joinClassStartsNow'));
-                return;
-            }
-
-            if (diff <= 0) {
-                setCountdown(t('joinClassNoUpcoming')); // Should be caught by calculateNextSession, but as a fallback
-                return;
-            }
-
-            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-            
-            let countdownString = '';
-            if (days > 0) {
-                countdownString = `${days}d ${hours}h`;
-            } else if (hours > 0) {
-                countdownString = `${hours}h ${minutes}m`;
-            } else {
-                countdownString = `${minutes}m ${seconds}s`;
-            }
-
-            setCountdown(countdownString.trim());
-        }, 1000); // Update every second
-
-        return () => clearInterval(intervalId);
-    }, [view, classDetails, t]);
-
-
-    const timeSlotToKey = (slotId: string): string => {
-        for (const block of Object.values(TIME_SLOTS)) {
-            const found = block.find(s => s.id === slotId);
-            if (found) return t(found.key);
-        }
-        return slotId;
-    };
-
-    const handleImReady = async () => {
+    const handleWelcomeContinue = async () => {
         if (!classDetails) return;
-        setReadyButtonState('sending');
-        await sendTeacherNotification({
-            name: classDetails.name,
-            program: t(PATH_TRANSLATION_KEYS[classDetails.path] || classDetails.path),
-            time: timeSlotToKey(classDetails.start_time_id)
-        });
-        setReadyButtonState('sent');
-        setTimeout(() => setReadyButtonState('idle'), 5000);
+        // Mark that the user has seen the welcome message
+        const { error } = await supabase
+            .from('passcodes')
+            .update({ has_seen_welcome: true })
+            .eq('id', classDetails.id);
+
+        if (error) {
+            console.error("Failed to update welcome status:", error);
+            // Don't block the user, just log the error and proceed
+        }
+        setShowWelcome(false);
+        setView('details');
     };
 
-    const handleCantAttend = async () => {
-        if (!classDetails) return;
-        setReadyButtonState('sending');
-        const today = new Date();
-        const dateString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-        
-        await supabase.from('attendance').upsert({ student_name: classDetails.name, session_date: dateString, status: 'missed' }, { onConflict: 'student_name, session_date' });
-        
-        await sendTeacherAbsentNotification({
-            name: classDetails.name,
-            program: t(PATH_TRANSLATION_KEYS[classDetails.path] || classDetails.path),
-            time: timeSlotToKey(classDetails.start_time_id)
-        });
-        setReadyButtonState('sent');
-    };
-
-    if (isLoading) return <p className="text-center">{t('loading')}</p>;
-    
-    if (view === 'homework' && classDetails) {
-        return <HomeworkView studentName={classDetails.name} t={t} onBack={() => setView('details')} />;
-    }
-
-    if (view === 'details' && classDetails) {
-        if (!classDetails.isApproved) {
+    const renderContent = () => {
+        if (showWelcome && classDetails) {
             return (
-                <div className="text-center py-10">
-                    <h2 className="text-2xl font-bold">{t('helloUser').replace('{name}', classDetails.name)}</h2>
-                    <p className="mt-4 text-gray-400 bg-blue-900/50 p-4 rounded-lg">{t('pendingApproval')}</p>
-                </div>
+                <WelcomeView 
+                    studentName={classDetails.name}
+                    programName={t(PATH_TRANSLATION_KEYS[classDetails.path] || classDetails.path)}
+                    t={t}
+                    onContinue={handleWelcomeContinue}
+                />
             );
         }
-        return (
-            <div>
-                 <h2 className="text-3xl font-bold text-center mb-6">{t('joinClassWelcomeTitle').replace('{name}', classDetails.name)}</h2>
-                 <div className="space-y-4 max-w-md mx-auto">
-                    <div className="bg-gray-800/50 p-4 rounded-lg text-center">
-                        <p className="text-sm text-gray-400">{t('joinClassNextSession')}</p>
-                        <p className={`font-bold text-2xl ${countdown === t('joinClassStartsNow') ? 'text-green-400 animate-pulse' : 'text-amber-400'}`}>
-                            {countdown}
-                        </p>
+        
+        switch (view) {
+            case 'login':
+                return <LoginView onLogin={handleLogin} isLoading={isLoading} error={loginError} t={t} />;
+            case 'details':
+                if (classDetails) {
+                    return <ClassDetailsView classDetails={classDetails} t={t} onOpenChat={onOpenChat} unreadCount={unreadCount} onShowHomework={() => setView('homework')} />;
+                }
+                return null;
+            case 'homework':
+                if (classDetails) {
+                    return <HomeworkView studentName={classDetails.name} t={t} onBack={() => setView('details')} />;
+                }
+                return null;
+            case 'pending':
+                 return (
+                    <div className="text-center py-16 page-transition">
+                         <h2 className="text-2xl font-bold text-center text-gray-100">{t('helloUser').replace('{name}', classDetails?.name || '')}</h2>
+                         <p className="mt-4 text-gray-400">{t('pendingApproval')}</p>
                     </div>
-                    <div className="bg-gray-800/50 p-4 rounded-lg">
-                        <p className="text-sm text-gray-400">{t('joinClassSelectedIjazah')}</p>
-                        <p className="font-semibold text-lg">{t(PATH_TRANSLATION_KEYS[classDetails.path] || classDetails.path)}</p>
-                    </div>
-                    <div className="bg-gray-800/50 p-4 rounded-lg">
-                        <p className="text-sm text-gray-400">{t('joinClassSelectedTime')}</p>
-                        <p className="font-semibold text-lg">{timeSlotToKey(classDetails.start_time_id)}</p>
-                    </div>
-                    <div className="bg-gray-800/50 p-4 rounded-lg">
-                        <p className="text-sm text-gray-400">{t('joinClassPaymentStatus')}</p>
-                        <p className={`font-semibold text-lg ${classDetails.paid_state === 'PAID' ? 'text-green-400' : 'text-red-400'}`}>
-                            {classDetails.paid_state === 'PAID' ? t('statusPaid') : t('statusUnpaid')}
-                        </p>
-                    </div>
-                    {joinLink ? (
-                        <div className="flex flex-col gap-3 pt-4">
-                             <a href={joinLink} target="_blank" rel="noopener noreferrer" className="w-full block text-center bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold py-3 px-4 rounded-lg shadow-md">{t('joinClassJoinButton')}</a>
-                             <button onClick={handleImReady} disabled={readyButtonState !== 'idle'} className="w-full text-center bg-blue-600 text-white font-bold py-2 px-4 rounded-lg disabled:opacity-50">{readyButtonState === 'idle' ? t('imReadyButton') : (readyButtonState === 'sending' ? t('imReadyButtonSending') : t('imReadyButtonSent'))}</button>
-                             <div>
-                                <button onClick={handleCantAttend} className="w-full text-center bg-red-600 text-white font-bold py-2 px-4 rounded-lg">{t('cantAttendButton')}</button>
-                                <p className="text-xs text-gray-400 text-center mt-1">{t('cantAttendWarning')}</p>
-                             </div>
-                        </div>
-                    ) : <p className="text-center text-amber-400">Waiting for class link from admin...</p>}
-                     <div className="flex flex-col gap-3 pt-2">
-                        <button onClick={() => setView('homework')} className="w-full text-center bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">{t('homeworkButton')}</button>
-                        <button onClick={() => setView('calendar')} className="w-full text-center bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">{t('viewMonthlyLessons')}</button>
-                        <button onClick={() => onOpenChat(classDetails.name)} className="relative w-full text-center bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">
-                            {t('chatWithTeacher')}
-                            {unreadCount > 0 && <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{unreadCount}</span>}
-                        </button>
-                    </div>
-            </div>
-            </div>
-        )
-    }
+                 );
+            default:
+                return <LoginView onLogin={handleLogin} isLoading={isLoading} error={loginError} t={t} />;
+        }
+    };
     
-    if (view === 'calendar' && classDetails) {
-         return (
-             <div>
-                <button onClick={() => setView('details')} className="mb-4 text-sm font-semibold text-gray-400 hover:text-amber-400">&larr; {t('backButton')}</button>
-                <h3 className="text-xl font-bold text-center mb-4">{t('attendanceCalendarTitle')}</h3>
-                <AttendanceCalendar year={new Date().getFullYear()} month={new Date().getMonth()} scheduledDays={classDetails.selected_days.map(dayStringToNumber)} attendanceData={attendanceData} t={t} />
-             </div>
-         )
-    }
-
-    if (view === 'forgot_passcode') {
-        return (
-            <div>
-                 <div className="text-center mb-8">
-                    <h2 className="text-3xl font-bold text-gray-100">{t('forgotPasscodeTitle')}</h2>
-                </div>
-                {forgotSuccess ? <p className="text-center text-green-400">{t('forgotPasscodeSuccessMessage')}</p> : (
-                <form onSubmit={handleForgotPasscode} className="max-w-md mx-auto space-y-4">
-                    <input type="text" value={forgotName} onChange={e => setForgotName(e.target.value)} placeholder={t('forgotPasscodeNameLabel')} required className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-200" />
-                    <input type="tel" value={forgotWhatsapp} onChange={e => setForgotWhatsapp(e.target.value)} placeholder={t('forgotPasscodeWhatsappLabel')} required className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-200" />
-                    <button type="submit" className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-2 px-4 rounded-lg">{t('forgotPasscodeSendButton')}</button>
-                </form>
-                )}
-                <div className="text-center mt-4">
-                    <button onClick={() => setView('login')} className="text-sm text-gray-400 hover:text-amber-400">&larr; {t('backButton')}</button>
-                </div>
-            </div>
-        )
-    }
-
-    return (
-        <div>
-            <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold text-gray-100">{t('joinClassPageTitle')}</h2>
-            </div>
-            <form onSubmit={handleLogin} className="max-w-sm mx-auto space-y-4">
-                <div>
-                    <label htmlFor="join-name" className="sr-only">{t('joinClassNameLabel')}</label>
-                    <input id="join-name" type="text" value={name} onChange={e => setName(e.target.value)} placeholder={t('joinClassNameLabel')} required className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-200" />
-                </div>
-                <div>
-                    <label htmlFor="join-passcode" className="sr-only">{t('joinClassPasscodeLabel')}</label>
-                    <input id="join-passcode" type="password" value={passcode} onChange={e => setPasscode(e.target.value)} placeholder={t('joinClassPasscodeLabel')} required maxLength={3} pattern="[0-9]*" inputMode="numeric" className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-200 text-center tracking-[0.5em]" />
-                </div>
-                {error && <p className="text-red-400 text-sm text-center">{error}</p>}
-                <button type="submit" disabled={isLoading} className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-3 px-4 rounded-lg disabled:opacity-50">{t('joinClassSubmitButton')}</button>
-                 <div className="text-center">
-                    <button type="button" onClick={() => setView('forgot_passcode')} className="text-sm text-gray-400 hover:text-amber-400">{t('forgotPasscodeLink')}</button>
-                </div>
-            </form>
-        </div>
-    );
+    return <div>{renderContent()}</div>;
 };
 
 export default JoinClassPage;

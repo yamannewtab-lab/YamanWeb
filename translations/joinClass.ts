@@ -76,6 +76,9 @@ export const joinClassTranslations: LanguageData = {
         calendarScheduled: "Scheduled",
         calendarAttended: "Attended",
         calendarMissed: "Missed",
+        welcomeModalTitle: "Welcome, {name}!",
+        welcomeModalText: "You have been successfully enrolled in the {program} program. We're excited to have you with us!",
+        welcomeModalButton: "View My Dashboard",
     },
     ar: {
         joinClassPageTitle: "انضم إلى صفك",
@@ -152,6 +155,9 @@ export const joinClassTranslations: LanguageData = {
         calendarScheduled: "مجدول",
         calendarAttended: "حضر",
         calendarMissed: "غاب",
+        welcomeModalTitle: "أهلاً بك، {name}!",
+        welcomeModalText: "لقد تم تسجيلك بنجاح في برنامج {program}. يسعدنا انضمامك إلينا!",
+        welcomeModalButton: "عرض لوحة التحكم الخاصة بي",
     },
     id: {
         joinClassPageTitle: "Gabung Kelas Anda",
@@ -228,5 +234,8 @@ export const joinClassTranslations: LanguageData = {
         calendarScheduled: "Dijadwalkan",
         calendarAttended: "Hadir",
         calendarMissed: "Absen",
+        welcomeModalTitle: "Selamat datang, {name}!",
+        welcomeModalText: "Anda telah berhasil terdaftar di program {program}. Kami senang Anda bergabung!",
+        welcomeModalButton: "Lihat Dasbor Saya",
     }
 };
