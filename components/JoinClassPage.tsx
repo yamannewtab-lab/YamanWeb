@@ -191,7 +191,7 @@ const HomeworkView: React.FC<{ studentName: string; t: (key: string) => string; 
                     accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
                     multiple
                 />
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-500 mb-2" fill="none" viewBox="0 0 24" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
                 <p className="text-sm font-semibold text-gray-300 text-center">{t('homeworkFilePlaceholder')}</p>
@@ -204,7 +204,7 @@ const HomeworkView: React.FC<{ studentName: string; t: (key: string) => string; 
         <div className="page-transition">
             <div className="flex items-center gap-4 mb-6">
                 <button onClick={onBack} className="p-2 rounded-full hover:bg-gray-700 transition-colors" aria-label={t('backButton')}>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
                 </button>
                 <h2 className="text-2xl font-bold text-gray-100">{t('homeworkTitle')}</h2>
             </div>
@@ -261,7 +261,6 @@ const HomeworkView: React.FC<{ studentName: string; t: (key: string) => string; 
     );
 };
 
-
 const ClassDetailsView: React.FC<{
     classDetails: ClassDetails;
     t: (key: string) => string;
@@ -275,8 +274,11 @@ const ClassDetailsView: React.FC<{
     const [cantAttendStatus, setCantAttendStatus] = useState<'idle' | 'sending' | 'sent'>('idle');
     const [attendance, setAttendance] = useState<{ [day: string]: 'attended' | 'missed' }>({});
     const [isCalendarVisible, setIsCalendarVisible] = useState(false);
+    const [selectedCountdownDay, setSelectedCountdownDay] = useState<string | null>(null);
 
     const staticZoomLink = "https://us05web.zoom.us/j/2220657355?pwd=5LYF7JxcuWGqYqwIydNbi3cA8uAlxV.1";
+
+    const dayMap: { [key: string]: number } = useMemo(() => ({ 'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6 }), []);
 
     const timeSlot = useMemo(() => {
         return Object.values(TIME_SLOTS).flat().find(slot => slot.id === classDetails.start_time_id);
@@ -290,33 +292,47 @@ const ClassDetailsView: React.FC<{
     }, []);
 
     const nextSession = useMemo(() => {
-        const dayMap: { [key: string]: number } = { 'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6 };
-        const scheduledDays = classDetails.selected_days.map(d => dayMap[d]);
+        const scheduledDayNumbers = classDetails.selected_days.map(d => dayMap[d]);
 
-        if (!classDetails.start_time_id || scheduledDays.length === 0) return null;
+        if (!classDetails.start_time_id || scheduledDayNumbers.length === 0) return null;
 
-        // Correctly parse time from the ID, e.g., 'E_1820_1835' -> '1820'
         const timeParts = classDetails.start_time_id.split('_');
         if (timeParts.length < 2) return null;
-
         const timeString = timeParts[1];
         const hour = parseInt(timeString.substring(0, 2), 10);
         const minute = parseInt(timeString.substring(2, 4), 10);
 
         if (isNaN(hour) || isNaN(minute)) return null;
         
-        let now = new Date();
-        for (let i = 0; i < 14; i++) { // Check for the next two weeks
-            let nextDate = new Date(now);
-            nextDate.setDate(now.getDate() + i);
-            nextDate.setHours(hour, minute, 0, 0);
+        const now = new Date();
 
-            if (scheduledDays.includes(nextDate.getDay()) && nextDate > new Date(Date.now() - 20 * 60 * 1000)) { // 20 min grace period
-                return nextDate;
+        if (selectedCountdownDay) {
+            const targetDayNumber = dayMap[selectedCountdownDay];
+            const currentDayNumber = now.getDay();
+            let daysToAdd = (targetDayNumber - currentDayNumber + 7) % 7;
+            
+            const potentialDate = new Date(now);
+            potentialDate.setDate(now.getDate() + daysToAdd);
+            potentialDate.setHours(hour, minute, 0, 0);
+
+            if (potentialDate < now) {
+                potentialDate.setDate(potentialDate.getDate() + 7);
+            }
+            return potentialDate;
+        } else {
+            // Find the soonest upcoming session
+            for (let i = 0; i < 14; i++) {
+                let nextDate = new Date(now);
+                nextDate.setDate(now.getDate() + i);
+                nextDate.setHours(hour, minute, 0, 0);
+
+                if (scheduledDayNumbers.includes(nextDate.getDay()) && nextDate > new Date(Date.now() - 20 * 60 * 1000)) { // 20 min grace period
+                    return nextDate;
+                }
             }
         }
         return null;
-    }, [classDetails.selected_days, classDetails.start_time_id]);
+    }, [classDetails.selected_days, classDetails.start_time_id, selectedCountdownDay, dayMap]);
     
     const timeDiff = nextSession ? nextSession.getTime() - currentTime.getTime() : null;
     
@@ -430,6 +446,10 @@ const ClassDetailsView: React.FC<{
         return count;
     }, [classDetails.selected_days]);
 
+    const sortedSelectedDays = useMemo(() => 
+        [...classDetails.selected_days].sort((a, b) => dayMap[a] - dayMap[b]),
+    [classDetails.selected_days, dayMap]);
+
     return (
         <div className="page-transition">
             <h2 className="text-2xl font-bold text-center text-gray-100">{t('helloUser').replace('{name}', classDetails.name)}</h2>
@@ -443,8 +463,39 @@ const ClassDetailsView: React.FC<{
                     <p className="text-sm text-gray-400">{t('joinClassSelectedTime')}</p>
                     <p className="font-semibold text-gray-200">{timeText}</p>
                 </div>
-                <div>
-                    <p className="text-sm text-gray-400">{t('joinClassNextSession')}</p>
+                <div className="border-t border-gray-700/50 pt-4 text-center">
+                    <p className="text-sm text-gray-400 mb-2">{t('yourSchedule')}</p>
+                    <div className="flex flex-wrap justify-center gap-2">
+                        <button
+                            onClick={() => setSelectedCountdownDay(null)}
+                            className={`px-3 py-1 text-xs font-semibold rounded-full transition-colors ${
+                                selectedCountdownDay === null 
+                                ? 'bg-amber-500 text-white shadow-md' 
+                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                            }`}
+                        >
+                            {t('nextUpcoming')}
+                        </button>
+                        {sortedSelectedDays.map(day => (
+                            <button 
+                                key={day}
+                                onClick={() => setSelectedCountdownDay(day)}
+                                className={`px-3 py-1 text-xs font-semibold rounded-full transition-colors ${
+                                    selectedCountdownDay === day 
+                                    ? 'bg-amber-500 text-white shadow-md' 
+                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                }`}
+                            >
+                                {t(`day${day}`)}
+                            </button>
+                        ))}
+                    </div>
+                    <p className="text-sm text-gray-400 mt-4">
+                        {selectedCountdownDay 
+                            ? `${t('countdownFor')} ${t(`day${selectedCountdownDay}`)}`
+                            : t('joinClassNextSession')
+                        }
+                    </p>
                     <div className="text-2xl font-bold text-amber-400"><Countdown diff={timeDiff} /></div>
                 </div>
             </div>
@@ -496,7 +547,6 @@ const ClassDetailsView: React.FC<{
         </div>
     );
 };
-
 
 const LoginView: React.FC<{
     onLogin: (name: string, code: string) => void;
@@ -587,25 +637,21 @@ const JoinClassPage: React.FC<JoinClassPageProps> = ({ navigateTo, t, onOpenChat
         setIsLoading(true);
         setLoginError(null);
         try {
-            // Fetch the user record by name first (case-insensitive).
             const { data, error } = await supabase
                 .from('passcodes')
-                // Select the 'code' field to perform verification on the client side.
                 .select('id, name, code, path, start_time_id, selected_days, paid_state, next_paid, date_approved, has_seen_welcome')
                 .ilike('name', name.trim())
-                .single(); // .single() will error if no user is found.
+                .single();
 
-            // If no user is found (or another error occurs), show invalid credentials.
             if (error || !data) {
-                if (error && error.code !== 'PGRST116') { // PGRST116 is the code for "0 rows returned"
+                if (error && error.code !== 'PGRST116') {
                     console.error("Supabase login error:", JSON.stringify(error, null, 2));
                 }
                 setLoginError(t('joinClassInvalidCredentials'));
                 return;
             }
 
-            // Verify the passcode on the client. This is robust against type differences (e.g. '000' vs 0).
-            if (Number(data.code) !== Number(code.trim())) {
+            if (String(data.code) !== code.trim()) {
                  setLoginError(t('joinClassInvalidCredentials'));
                  return;
             }
@@ -638,7 +684,6 @@ const JoinClassPage: React.FC<JoinClassPageProps> = ({ navigateTo, t, onOpenChat
     
     const handleWelcomeContinue = async () => {
         if (!classDetails) return;
-        // Mark that the user has seen the welcome message
         const { error } = await supabase
             .from('passcodes')
             .update({ has_seen_welcome: true })
@@ -646,7 +691,6 @@ const JoinClassPage: React.FC<JoinClassPageProps> = ({ navigateTo, t, onOpenChat
 
         if (error) {
             console.error("Failed to update welcome status:", error);
-            // Don't block the user, just log the error and proceed
         }
         setShowWelcome(false);
         setView('details');
