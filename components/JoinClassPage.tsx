@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Page } from '../types';
 import { supabase } from '../supabaseClient';
@@ -388,7 +389,7 @@ const JoinClassPage: React.FC<JoinClassPageProps> = ({ navigateTo, t, onOpenChat
             return;
         }
 
-        const updateCountdown = () => {
+        const intervalId = setInterval(() => {
             const dayMap: { [key: string]: number } = {
                 Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3,
                 Thursday: 4, Friday: 5, Saturday: 6
@@ -410,7 +411,9 @@ const JoinClassPage: React.FC<JoinClassPageProps> = ({ navigateTo, t, onOpenChat
                     checkDate.setDate(now.getDate() + i);
                     checkDate.setHours(startHour, startMinute, 0, 0);
 
-                    if (scheduledDayNumbers.includes(checkDate.getDay()) && checkDate > now) {
+                    // A session is considered "next" if it's a scheduled day AND it hasn't ended more than 20 minutes ago.
+                    // This allows us to catch currently active sessions.
+                    if (scheduledDayNumbers.includes(checkDate.getDay()) && checkDate.getTime() > now.getTime() - (20 * 60 * 1000)) {
                         return checkDate;
                     }
                 }
@@ -427,27 +430,33 @@ const JoinClassPage: React.FC<JoinClassPageProps> = ({ navigateTo, t, onOpenChat
             const now = new Date();
             const diff = nextSessionDate.getTime() - now.getTime();
 
-            if (diff <= 60 * 60 * 1000) { // 1 hour threshold
+            // Show "Join Now" from 1 second before until 20 minutes after the start time
+            if (diff <= 1000 && diff > -20 * 60 * 1000) {
                 setCountdown(t('joinClassStartsNow'));
+                return;
+            }
+
+            if (diff <= 0) {
+                setCountdown(t('joinClassNoUpcoming')); // Should be caught by calculateNextSession, but as a fallback
                 return;
             }
 
             const days = Math.floor(diff / (1000 * 60 * 60 * 24));
             const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
             
             let countdownString = '';
             if (days > 0) {
-                countdownString += `${days}d `;
-            }
-            if (hours > 0) {
-                countdownString += `${hours}h`;
+                countdownString = `${days}d ${hours}h`;
+            } else if (hours > 0) {
+                countdownString = `${hours}h ${minutes}m`;
+            } else {
+                countdownString = `${minutes}m ${seconds}s`;
             }
 
             setCountdown(countdownString.trim());
-        };
-
-        updateCountdown();
-        const intervalId = setInterval(updateCountdown, 1000 * 60); // Update every minute
+        }, 1000); // Update every second
 
         return () => clearInterval(intervalId);
     }, [view, classDetails, t]);
@@ -530,7 +539,7 @@ const JoinClassPage: React.FC<JoinClassPageProps> = ({ navigateTo, t, onOpenChat
                     </div>
                     {joinLink ? (
                         <div className="flex flex-col gap-3 pt-4">
-                            <a href={joinLink} target="_blank" rel="noopener noreferrer" className="w-full text-center bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold py-3 px-4 rounded-lg shadow-md">{t('joinClassJoinButton')}</a>
+                             <a href={joinLink} target="_blank" rel="noopener noreferrer" className="w-full block text-center bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold py-3 px-4 rounded-lg shadow-md">{t('joinClassJoinButton')}</a>
                              <button onClick={handleImReady} disabled={readyButtonState !== 'idle'} className="w-full text-center bg-blue-600 text-white font-bold py-2 px-4 rounded-lg disabled:opacity-50">{readyButtonState === 'idle' ? t('imReadyButton') : (readyButtonState === 'sending' ? t('imReadyButtonSending') : t('imReadyButtonSent'))}</button>
                              <div>
                                 <button onClick={handleCantAttend} className="w-full text-center bg-red-600 text-white font-bold py-2 px-4 rounded-lg">{t('cantAttendButton')}</button>
