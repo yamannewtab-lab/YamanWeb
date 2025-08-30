@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Page } from '../types';
 import { supabase } from '../supabaseClient';
@@ -280,6 +281,7 @@ const JoinClassPage: React.FC<JoinClassPageProps> = ({ navigateTo, t, onOpenChat
     const [forgotSuccess, setForgotSuccess] = useState(false);
     const [readyButtonState, setReadyButtonState] = useState<'idle' | 'sending' | 'sent'>('idle');
     const [attendanceData, setAttendanceData] = useState<{ [day: string]: 'attended' | 'missed' }>({});
+    const [countdown, setCountdown] = useState<string>('');
     
     const dayStringToNumber = (day: string): number => {
         const map: { [key: string]: number } = { 'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6 };
@@ -381,6 +383,75 @@ const JoinClassPage: React.FC<JoinClassPageProps> = ({ navigateTo, t, onOpenChat
         }
     }, [link]);
 
+    useEffect(() => {
+        if (view !== 'details' || !classDetails) {
+            return;
+        }
+
+        const updateCountdown = () => {
+            const dayMap: { [key: string]: number } = {
+                Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3,
+                Thursday: 4, Friday: 5, Saturday: 6
+            };
+            const scheduledDayNumbers = classDetails.selected_days.map(day => dayMap[day.trim()]);
+            
+            const timeParts = classDetails.start_time_id.split('_')[1];
+            if (!timeParts || timeParts.length < 4) {
+                setCountdown(t('joinClassNoUpcoming'));
+                return;
+            }
+            const startHour = parseInt(timeParts.substring(0, 2), 10);
+            const startMinute = parseInt(timeParts.substring(2, 4), 10);
+
+            const calculateNextSession = (): Date | null => {
+                const now = new Date();
+                for (let i = 0; i < 14; i++) {
+                    const checkDate = new Date();
+                    checkDate.setDate(now.getDate() + i);
+                    checkDate.setHours(startHour, startMinute, 0, 0);
+
+                    if (scheduledDayNumbers.includes(checkDate.getDay()) && checkDate > now) {
+                        return checkDate;
+                    }
+                }
+                return null;
+            };
+
+            const nextSessionDate = calculateNextSession();
+
+            if (!nextSessionDate) {
+                setCountdown(t('joinClassNoUpcoming'));
+                return;
+            }
+
+            const now = new Date();
+            const diff = nextSessionDate.getTime() - now.getTime();
+
+            if (diff <= 60 * 60 * 1000) { // 1 hour threshold
+                setCountdown(t('joinClassStartsNow'));
+                return;
+            }
+
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            
+            let countdownString = '';
+            if (days > 0) {
+                countdownString += `${days}d `;
+            }
+            if (hours > 0) {
+                countdownString += `${hours}h`;
+            }
+
+            setCountdown(countdownString.trim());
+        };
+
+        updateCountdown();
+        const intervalId = setInterval(updateCountdown, 1000 * 60); // Update every minute
+
+        return () => clearInterval(intervalId);
+    }, [view, classDetails, t]);
+
 
     const timeSlotToKey = (slotId: string): string => {
         for (const block of Object.values(TIME_SLOTS)) {
@@ -437,6 +508,12 @@ const JoinClassPage: React.FC<JoinClassPageProps> = ({ navigateTo, t, onOpenChat
             <div>
                  <h2 className="text-3xl font-bold text-center mb-6">{t('joinClassWelcomeTitle').replace('{name}', classDetails.name)}</h2>
                  <div className="space-y-4 max-w-md mx-auto">
+                    <div className="bg-gray-800/50 p-4 rounded-lg text-center">
+                        <p className="text-sm text-gray-400">{t('joinClassNextSession')}</p>
+                        <p className={`font-bold text-2xl ${countdown === t('joinClassStartsNow') ? 'text-green-400 animate-pulse' : 'text-amber-400'}`}>
+                            {countdown}
+                        </p>
+                    </div>
                     <div className="bg-gray-800/50 p-4 rounded-lg">
                         <p className="text-sm text-gray-400">{t('joinClassSelectedIjazah')}</p>
                         <p className="font-semibold text-lg">{t(PATH_TRANSLATION_KEYS[classDetails.path] || classDetails.path)}</p>
@@ -455,7 +532,10 @@ const JoinClassPage: React.FC<JoinClassPageProps> = ({ navigateTo, t, onOpenChat
                         <div className="flex flex-col gap-3 pt-4">
                             <a href={joinLink} target="_blank" rel="noopener noreferrer" className="w-full text-center bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold py-3 px-4 rounded-lg shadow-md">{t('joinClassJoinButton')}</a>
                              <button onClick={handleImReady} disabled={readyButtonState !== 'idle'} className="w-full text-center bg-blue-600 text-white font-bold py-2 px-4 rounded-lg disabled:opacity-50">{readyButtonState === 'idle' ? t('imReadyButton') : (readyButtonState === 'sending' ? t('imReadyButtonSending') : t('imReadyButtonSent'))}</button>
-                             <button onClick={handleCantAttend} className="w-full text-center bg-red-600 text-white font-bold py-2 px-4 rounded-lg">{t('cantAttendButton')}</button>
+                             <div>
+                                <button onClick={handleCantAttend} className="w-full text-center bg-red-600 text-white font-bold py-2 px-4 rounded-lg">{t('cantAttendButton')}</button>
+                                <p className="text-xs text-gray-400 text-center mt-1">{t('cantAttendWarning')}</p>
+                             </div>
                         </div>
                     ) : <p className="text-center text-amber-400">Waiting for class link from admin...</p>}
                      <div className="flex flex-col gap-3 pt-2">

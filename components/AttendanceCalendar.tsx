@@ -19,6 +19,7 @@ const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
     onDayClick = () => {},
     t
 }) => {
+    const today = new Date();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0=Sun, 1=Mon...
 
@@ -53,6 +54,7 @@ const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
         // Add cells for each day of the month
         for (let day = 1; day <= daysInMonth; day++) {
             const { status, isScheduled } = getDayStatus(day);
+            const isToday = today.getFullYear() === year && today.getMonth() === month && today.getDate() === day;
             
             let bgColor = 'bg-gray-900'; // Non-lesson day (Darker Grey)
             if (isScheduled) {
@@ -76,6 +78,7 @@ const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
                         ${isEditable && isScheduled && 'cursor-pointer hover:ring-2 ring-amber-400 transition-all'}
                         ${!isScheduled ? 'text-gray-500' : 'text-white font-bold'}
                         ${isPast && isScheduled && status === 'scheduled' ? 'opacity-50' : ''}
+                        ${isToday ? 'ring-2 ring-yellow-400' : ''}
                     `}
                 >
                     {day}
@@ -86,20 +89,21 @@ const AttendanceCalendar: React.FC<AttendanceCalendarProps> = ({
     };
     
     const weekdays = ['daySunday', 'dayMonday', 'dayTuesday', 'dayWednesday', 'dayThursday', 'dayFriday', 'daySaturday'];
+    const isArabic = document.documentElement.dir === 'rtl';
 
     return (
         <div className="p-2 bg-gray-800 rounded-lg">
-            <div className="grid grid-cols-7 gap-1 mb-2 text-center text-xs font-bold text-gray-400">
-                {weekdays.map(dayKey => <div key={dayKey}>{t(dayKey).substring(0, 1)}</div>)}
+            <div className={`grid grid-cols-7 gap-px sm:gap-1 mb-2 text-center font-bold text-gray-400 ${isArabic ? 'text-[9px] sm:text-[10px] leading-tight' : 'text-[10px] sm:text-xs'}`}>
+                {weekdays.map(dayKey => <div key={dayKey} className="flex items-center justify-center h-6">{isArabic ? t(dayKey) : t(dayKey).substring(0, 3)}</div>)}
             </div>
             <div className="grid grid-cols-7 gap-1">
                 {renderCalendar()}
             </div>
             {(isEditable || Object.values(attendanceData).length > 0) && (
                 <div className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs">
-                    <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-gray-600"></div><span>Scheduled</span></div>
-                    <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-green-600"></div><span>Attended</span></div>
-                    <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-red-600"></div><span>Missed</span></div>
+                    <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-gray-600"></div><span>{t('calendarScheduled')}</span></div>
+                    <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-green-600"></div><span>{t('calendarAttended')}</span></div>
+                    <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-red-600"></div><span>{t('calendarMissed')}</span></div>
                 </div>
             )}
         </div>

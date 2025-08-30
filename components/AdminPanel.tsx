@@ -105,9 +105,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
 
     const [isTestMode, setIsTestMode] = useState<boolean>((window as any).maqraatIsTestMode || false);
     
-    const [approvalForLink, setApprovalForLink] = useState<ProcessedApproval | null>(null);
-    const [zoomLinkInput, setZoomLinkInput] = useState('');
-
     // Chat states
     const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
     const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
@@ -404,42 +401,26 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
         }
         setProcessingId(null);
     };
-    
-    const handleApproveClick = (approval: ProcessedApproval) => {
-        setZoomLinkInput('');
-        setApprovalForLink(approval);
-    };
 
-    const handleCancelApproval = () => {
-        setApprovalForLink(null);
-        setZoomLinkInput('');
-    };
-
-    const handleConfirmApproval = async () => {
-        if (!approvalForLink) return;
-        setProcessingId(approvalForLink.id);
+    const handleApprove = async (approval: ProcessedApproval) => {
+        setProcessingId(approval.id);
+        const staticZoomLink = 'https://us05web.zoom.us/j/2220657355?pwd=5LYF7JxcuWGqYqwIydNbi3cA8uAlxV.1';
         
         try {
             // Handle Tasmi separately as it has no booking/passcode logic
-            if (approvalForLink.type === 'Tasmi') {
-                const { error: updateError } = await supabase.from('approvals').update({ status: 'approved' }).eq('id', approvalForLink.id);
+            if (approval.type === 'Tasmi') {
+                const { error: updateError } = await supabase.from('approvals').update({ status: 'approved' }).eq('id', approval.id);
                 if (updateError) throw updateError;
                 alert('Tasmi request approved and removed from list.');
-                setApprovals(current => current.filter(a => a.id !== approvalForLink.id));
-                // Cleanup state after handling
+                setApprovals(current => current.filter(a => a.id !== approval.id));
                 setProcessingId(null);
-                handleCancelApproval();
                 return;
             }
 
             // For Ijazah and Tajwid, proceed with booking and account linking
-            if (!zoomLinkInput || zoomLinkInput.trim() === '') {
-                throw new Error('Please provide a valid Zoom link.');
-            }
-
-            const studentAccountName = approvalForLink.data?.accountName;
+            const studentAccountName = approval.data?.accountName;
             if (!studentAccountName) {
-                throw new Error(`Critical error: 'accountName' is missing from application data for '${approvalForLink.name}'. This application cannot be auto-approved and must be handled manually.`);
+                throw new Error(`Critical error: 'accountName' is missing from application data for '${approval.name}'. This application cannot be auto-approved and must be handled manually.`);
             }
 
             const { data: passcodeData, error: passcodeFetchError } = await supabase
@@ -454,8 +435,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
                 throw new Error(`Could not find the student account for "${studentAccountName}". Please ensure the account was created successfully. Error: ${errorMsg}`);
             }
 
-            if (approvalForLink.slots && approvalForLink.slots.length > 0) {
-                const bookingsToInsert = approvalForLink.slots.map(slot => ({
+            if (approval.slots && approval.slots.length > 0) {
+                const bookingsToInsert = approval.slots.map(slot => ({
                     time_slot: slot.time_slot,
                     day_number: slot.day_number,
                     is_booked: true
@@ -467,7 +448,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
             const { error: linkInsertError } = await supabase.from('links').insert([{
                 name: studentAccountName,
                 passcode: passcodeData.code,
-                zoom_link: zoomLinkInput.trim()
+                zoom_link: staticZoomLink
             }]);
             if (linkInsertError) throw new Error(`Failed to store Zoom link: ${linkInsertError.message}`);
             
@@ -477,17 +458,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
             }).eq('id', passcodeData.id);
             if (passcodeUpdateError) throw new Error(`Could not update student's approval status: ${passcodeUpdateError.message}. Please check manually.`);
 
-            const { error: approvalUpdateError } = await supabase.from('approvals').update({ status: 'approved' }).eq('id', approvalForLink.id);
+            const { error: approvalUpdateError } = await supabase.from('approvals').update({ status: 'approved' }).eq('id', approval.id);
             if (approvalUpdateError) throw new Error(`Failed to update approval status: ${approvalUpdateError.message}`);
             
             alert('Application approved, slots booked, and Zoom link stored successfully!');
-            setApprovals(current => current.filter(a => a.id !== approvalForLink.id));
+            setApprovals(current => current.filter(a => a.id !== approval.id));
 
         } catch (error: any) {
             alert(`Approval failed: ${error.message}`);
         } finally {
             setProcessingId(null);
-            handleCancelApproval();
         }
     };
     
@@ -641,7 +621,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
                                                 {approval.data.accountName && <p><strong className="text-gray-400">Account:</strong> {approval.data.accountName}</p>}
                                                 {Object.entries(approval.data.fullDetails || approval.data).map(([key, value]) => <p key={key}><strong className="text-gray-400 capitalize">{key.replace(/([A-Z])/g, ' $1')}:</strong> {typeof value === 'boolean' ? (value ? 'Yes' : 'No') : (Array.isArray(value) ? value.join(', ') : String(value))}</p>)}
                                                 <div className="flex gap-2 pt-2">
-                                                    <button onClick={() => handleApproveClick(approval)} disabled={processingId === approval.id} className="w-full bg-green-600 text-white font-bold py-2 px-4 rounded-md hover:bg-green-700 disabled:bg-green-800">Approve</button>
+                                                    <button onClick={() => handleApprove(approval)} disabled={processingId === approval.id} className="w-full bg-green-600 text-white font-bold py-2 px-4 rounded-md hover:bg-green-700 disabled:bg-green-800">Approve</button>
                                                     <button onClick={() => handleReject(approval.id)} disabled={processingId === approval.id} className="w-full bg-red-600 text-white font-bold py-2 px-4 rounded-md hover:bg-red-700 disabled:bg-red-800">Reject</button>
                                                 </div>
                                             </div></details>
@@ -752,19 +732,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, t }) => {
                     </>
                 )}
 
-                {approvalForLink && (
-                    <div className="absolute inset-0 bg-black/80 flex items-center justify-center" onClick={handleCancelApproval}>
-                        <div className="bg-gray-800 border border-gray-600 rounded-lg p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
-                            <h3 className="text-lg font-bold mb-4">Approve: {approvalForLink.name}</h3>
-                            <p className="text-sm text-gray-400 mb-4">Enter the Zoom meeting link for this student.</p>
-                            <input type="url" value={zoomLinkInput} onChange={e => setZoomLinkInput(e.target.value)} placeholder="https://zoom.us/..." autoFocus className="w-full bg-gray-700 p-2 rounded-md mb-4"/>
-                            <div className="flex gap-2">
-                                <button onClick={handleConfirmApproval} disabled={!zoomLinkInput.trim() || processingId === approvalForLink.id} className="w-full bg-green-600 text-white font-bold py-2 px-4 rounded-md hover:bg-green-700 disabled:opacity-50">Confirm Approval</button>
-                                <button onClick={handleCancelApproval} className="w-full bg-gray-600 text-white font-bold py-2 px-4 rounded-md hover:bg-gray-700">Cancel</button>
-                            </div>
-                        </div>
-                    </div>
-                )}
             </div>
         </div>
     );

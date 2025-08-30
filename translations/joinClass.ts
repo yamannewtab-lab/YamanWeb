@@ -41,6 +41,7 @@ export const joinClassTranslations: LanguageData = {
         imReadyButtonSending: "Sending...",
         imReadyButtonSent: "Sent!",
         cantAttendButton: "I Can't Attend",
+        cantAttendWarning: "Careful, this will cancel your class for today.",
         cantAttendButtonSending: "Updating...",
         cantAttendButtonSent: "Updated",
         attendanceCalendarTitle: "Attendance Calendar",
@@ -72,6 +73,9 @@ export const joinClassTranslations: LanguageData = {
         notificationsDisabled: "Notifications have been disabled for this device.",
         notificationsBlocked: "Notification permission has been blocked. You need to enable it in your browser settings.",
         loading: "Loading...",
+        calendarScheduled: "Scheduled",
+        calendarAttended: "Attended",
+        calendarMissed: "Missed",
     },
     ar: {
         joinClassPageTitle: "انضم إلى صفك",
@@ -113,6 +117,7 @@ export const joinClassTranslations: LanguageData = {
         imReadyButtonSending: "جارٍ الإرسال...",
         imReadyButtonSent: "تم الإرسال!",
         cantAttendButton: "لا أستطيع الحضور",
+        cantAttendWarning: "تنبيه، هذا سيؤدي إلى إلغاء درسك لهذا اليوم.",
         cantAttendButtonSending: "جارٍ التحديث...",
         cantAttendButtonSent: "تم التحديث",
         attendanceCalendarTitle: "تقويم الحضور",
@@ -144,6 +149,9 @@ export const joinClassTranslations: LanguageData = {
         notificationsDisabled: "تم تعطيل الإشعارات لهذا الجهاز.",
         notificationsBlocked: "تم حظر إذن الإشعارات. تحتاج إلى تفعيله في إعدادات متصفحك.",
         loading: "جار التحميل...",
+        calendarScheduled: "مجدول",
+        calendarAttended: "حضر",
+        calendarMissed: "غاب",
     },
     id: {
         joinClassPageTitle: "Gabung Kelas Anda",
@@ -185,6 +193,7 @@ export const joinClassTranslations: LanguageData = {
         imReadyButtonSending: "Mengirim...",
         imReadyButtonSent: "Terkirim!",
         cantAttendButton: "Saya Tidak Bisa Hadir",
+        cantAttendWarning: "Hati-hati, ini akan membatalkan kelas Anda untuk hari ini.",
         cantAttendButtonSending: "Memperbarui...",
         cantAttendButtonSent: "Diperbarui",
         attendanceCalendarTitle: "Kalender Kehadiran",
@@ -216,5 +225,8 @@ export const joinClassTranslations: LanguageData = {
         notificationsDisabled: "Notifikasi telah dinonaktifkan untuk perangkat ini.",
         notificationsBlocked: "Izin notifikasi telah diblokir. Anda perlu mengaktifkannya di pengaturan browser Anda.",
         loading: "Memuat...",
+        calendarScheduled: "Dijadwalkan",
+        calendarAttended: "Hadir",
+        calendarMissed: "Absen",
     }
 };
